@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="240" height="280" viewBox="0 0 240 280" fill="none">
+  <title>Jharokha lattice</title>
+  <defs>
+    <g id="arch">
+      <path d="M40 260V120a40 40 0 0 1 80 0v140" stroke="currentColor" stroke-width="2" fill="none"/>
+      <path d="M56 260V124a24 24 0 0 1 48 0v136" stroke="currentColor" stroke-width="1.2" fill="none"/>
+      <path d="M80 84c10 8 16 18 16 30" stroke="currentColor" stroke-width="1.2" fill="none"/>
+      <path d="M80 84c-10 8-16 18-16 30" stroke="currentColor" stroke-width="1.2" fill="none"/>
+      <circle cx="80" cy="76" r="5" stroke="currentColor" stroke-width="1.2" fill="none"/>
+    </g>
+  </defs>
+  <use href="#arch" x="0" y="0"/>
+  <use href="#arch" x="80" y="0"/>
+  <g stroke="currentColor" stroke-width="0.8" opacity="0.7">
+    <path d="M0 200h240M0 232h240"/>
+    <path d="M20 200v60M220 200v60"/>
+  </g>
+</svg>

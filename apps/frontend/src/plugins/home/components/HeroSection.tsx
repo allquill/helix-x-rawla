@@ -1,0 +1,98 @@
+import { forwardRef } from 'react';
+import { Link } from 'react-router-dom';
+import { Button, MaskedAsset, PageHero } from '@helix-x/design-system';
+import { useUser } from '@helix-x/web';
+
+export type HeroSectionProps = { className?: string };
+
+/**
+ * The first thing a visitor sees.
+ *
+ * Leads with **Khamaghanisa** — the Rajput greeting the community actually uses
+ * — rather than a generic welcome, because the point of the portal is that it
+ * feels like the samaj rather than like software.
+ *
+ * Signed-in members get their name and a route onward instead of a sign-up
+ * pitch: showing "Join us" to somebody who joined years ago is the fastest way
+ * to make a community site feel like a brochure.
+ *
+ * Layout, rhythm and the responsive action row come from `PageHero`; this
+ * component supplies only the surface colour, the artwork and the words.
+ */
+export const HeroSection = forwardRef<HTMLElement, HeroSectionProps>(
+  ({ className = '' }, ref) => {
+    const user = useUser();
+    const firstName = user?.name?.split(' ')[0];
+
+    return (
+      <PageHero
+        ref={ref}
+        className={['bg-amber-50 dark:bg-gray-900', className].join(' ')}
+        backdrop={
+          <>
+            {/* Assets live under /extension/ — see .claude/rules/ui-component.md. */}
+            <MaskedAsset
+              src="/extension/jharokha-pattern.svg"
+              tile={{ width: 240, height: 280 }}
+              className="absolute inset-0 text-amber-900/[0.07] dark:text-amber-200/[0.06]"
+            />
+            <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-b from-transparent to-amber-50 dark:to-gray-900" />
+          </>
+        }
+        mark={
+          <MaskedAsset
+            src="/extension/rra-crest.svg"
+            className="h-20 w-20 text-amber-800 dark:text-amber-300"
+          />
+        }
+        eyebrow={<span className="text-amber-800 dark:text-amber-300">Khamaghanisa</span>}
+        title={
+          firstName ? (
+            <>
+              Welcome back,{' '}
+              <span className="text-amber-800 dark:text-amber-300">{firstName}</span>
+            </>
+          ) : (
+            <>
+              Rajputana Rawla
+              <span className="block text-amber-800 dark:text-amber-300">of America</span>
+            </>
+          )
+        }
+        description={
+          firstName
+            ? 'Your samaj, your household, your chapter — all in one place.'
+            : 'Stay connected to your roots. A home in America for the Rajputs of historical Rajputana — to cherish a shared culture and pass it on to the next generation.'
+        }
+        actions={
+          user !== null ? (
+            <>
+              <Link to="/members">
+                <Button size="lg">Browse the directory</Button>
+              </Link>
+              <Link to="/join/status">
+                <Button size="lg" variant="secondary">
+                  My membership
+                </Button>
+              </Link>
+            </>
+          ) : (
+            <>
+              <Link to="/join">
+                <Button size="lg">Apply for membership</Button>
+              </Link>
+              <Link to="/login">
+                <Button size="lg" variant="secondary">
+                  Sign in
+                </Button>
+              </Link>
+            </>
+          )
+        }
+        footnote="Descended from the thirty-six royal clans — one platform, one brotherhood."
+      />
+    );
+  },
+);
+
+HeroSection.displayName = 'HeroSection';

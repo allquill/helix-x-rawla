@@ -1,0 +1,22 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "incremental": true,
+    "tsBuildInfoFile": "./dist/tsconfig.build.tsbuildinfo",
+    /*
+     * Explicit, and not to be "tidied" away. pnpm's `@types/*` are symlinks into
+     * `.pnpm/`, and the VS Code TS service intermittently fails to auto-include
+     * them even where `tsc` on the CLI resolves them fine — the symptom is
+     * `Cannot find name 'describe'` in a spec while the build is green.
+     * Narrowing `types` also drops other packages' global namespaces, so
+     * anything using `Express.Multer.File` must add "express" here.
+     */
+    "types": ["node", "jest"],
+    "strictBindCallApply": false,
+    "noFallthroughCasesInSwitch": false
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"]
+}

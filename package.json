@@ -1,0 +1,49 @@
+{
+  "name": "helix-x-rawla",
+  "private": true,
+  "version": "0.1.0",
+  "packageManager": "pnpm@9.12.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "turbo run build",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "lint": "turbo run lint",
+    "dev": "turbo run dev",
+    "dev:frontend": "turbo run dev --filter @helix-x-rawla/frontend",
+    "dev:backend": "turbo run dev --filter @helix-x-rawla/backend",
+    "start": "turbo run start",
+    "start:frontend": "turbo run start --filter @helix-x-rawla/frontend",
+    "start:backend": "turbo run start --filter @helix-x-rawla/backend",
+    "generate:sdk": "pnpm --filter @helix-x/client-sdk generate",
+    "migration:run": "turbo run migration:run --filter @helix-x-rawla/backend",
+    "migration:generate": "turbo run migration:generate --filter @helix-x-rawla/backend",
+    "seed:sample": "node scripts/seed-sample-data.mjs",
+    "clean": "rm -rf node_modules **/node_modules **/dist **/*.tsbuildinfo .turbo **/.turbo"
+  },
+  "devDependencies": {
+    "turbo": "^2.10.12",
+    "typescript": "^5.7.3"
+  },
+  "pnpm": {
+    "overrides": {
+      "@helix-x/authentication": "file:../helix-x-backend/.artifacts/helix-x-authentication-0.1.0.tgz",
+      "@helix-x/backend": "file:../helix-x-backend/.artifacts/helix-x-backend-0.1.0.tgz",
+      "@helix-x/client-sdk": "link:./packages/client-sdk",
+      "@helix-x/navigation": "file:../helix-x-backend/.artifacts/helix-x-navigation-0.1.0.tgz",
+      "@helix-x/nest-oauth-provider": "file:../helix-x-backend/.artifacts/helix-x-nest-oauth-provider-0.1.0.tgz",
+      "@helix-x/nestjs-ai": "file:../helix-x-backend/.artifacts/helix-x-nestjs-ai-0.1.0.tgz",
+      "@helix-x/notifications": "file:../helix-x-backend/.artifacts/helix-x-notifications-0.1.0.tgz"
+    },
+    "allowedDeprecatedVersions": {
+      "glob": "10.5.0"
+    },
+    "peerDependencyRules": {
+      "allowedVersions": {
+        "typeorm>better-sqlite3": "13"
+      }
+    }
+  }
+}

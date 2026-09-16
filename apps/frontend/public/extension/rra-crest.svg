@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="96" height="112" viewBox="0 0 96 112" fill="none">
+  <title>Rajputana Rawla of America crest</title>
+  <path d="M48 4 88 20v40c0 26-17 42-40 48C25 102 8 86 8 60V20L48 4Z"
+        stroke="currentColor" stroke-width="2.5" fill="none" stroke-linejoin="round"/>
+  <path d="M48 16 78 28v30c0 19-12 31-30 36-18-5-30-17-30-36V28L48 16Z"
+        stroke="currentColor" stroke-width="1" fill="none" opacity="0.55" stroke-linejoin="round"/>
+  <circle cx="48" cy="48" r="11" stroke="currentColor" stroke-width="2" fill="none"/>
+  <g stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+    <path d="M48 27v6M48 63v6M27 48h6M63 48h6"/>
+    <path d="M33.2 33.2l4.2 4.2M58.6 58.6l4.2 4.2M62.8 33.2l-4.2 4.2M37.4 58.6l-4.2 4.2"/>
+  </g>
+  <path d="M34 78h28" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+</svg>

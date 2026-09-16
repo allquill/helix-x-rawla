@@ -1,0 +1,39 @@
+{
+  "compilerOptions": {
+    "target": "ES2021",
+    /*
+     * `nodenext`, not `commonjs` + `node`.
+     *
+     * `moduleResolution: "node"` is an alias for `node10`, which TypeScript 5.9
+     * reports as deprecated and 7.0 will remove. The suggested
+     * `"ignoreDeprecations": "6.0"` only defers the problem, and for a
+     * CommonJS target `nodenext` is the only non-deprecated pairing —
+     * `bundler` requires an ESM `module`, and `node16`/`nodenext` resolution
+     * requires a matching `module`.
+     *
+     * This does NOT switch the emit to ESM. Under `nodenext` the format comes
+     * from the nearest package.json `type` field, and nothing here declares
+     * `"type": "module"`, so the output stays CommonJS — verified against
+     * `dist/main.js`, and by booting the apps and running the TypeORM CLI,
+     * which loads these files through ts-node.
+     */
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "lib": ["ES2021"],
+    "declaration": true,
+    "sourceMap": true,
+    "removeComments": true,
+
+    /* NestJS reads parameter types at runtime from emitted metadata. */
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "strictNullChecks": false,
+    "noImplicitAny": false
+  },
+  "exclude": ["node_modules", "dist"]
+}

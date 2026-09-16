@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="40" height="46" viewBox="0 0 96 112" fill="none">
+  <title>Rajputana Rawla of America</title>
+  <g stroke="#d97706">
+    <path d="M48 4 88 20v40c0 26-17 42-40 48C25 102 8 86 8 60V20L48 4Z"
+          stroke-width="6" fill="none" stroke-linejoin="round"/>
+    <circle cx="48" cy="50" r="13" stroke-width="5" fill="none"/>
+    <g stroke-width="4.5" stroke-linecap="round">
+      <path d="M48 27v7M48 66v7M25 50h7M64 50h7"/>
+      <path d="M31.8 33.8l5 5M59.2 61.2l5 5M64.2 33.8l-5 5M36.8 61.2l-5 5"/>
+    </g>
+  </g>
+</svg>

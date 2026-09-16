@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120" fill="none">
+  <title>Surya motif</title>
+  <circle cx="60" cy="60" r="20" stroke="currentColor" stroke-width="2" fill="none"/>
+  <circle cx="60" cy="60" r="12" stroke="currentColor" stroke-width="1" fill="none"/>
+  <g stroke="currentColor" stroke-width="2" stroke-linecap="round">
+    <path d="M60 8v16M60 96v16M8 60h16M96 60h16"/>
+    <path d="M23.2 23.2l11.3 11.3M85.5 85.5l11.3 11.3M96.8 23.2L85.5 34.5M34.5 85.5l-11.3 11.3"/>
+  </g>
+  <g stroke="currentColor" stroke-width="1.2" stroke-linecap="round" opacity="0.8">
+    <path d="M60 30l4 8-4-2-4 2 4-8Z"/>
+    <path d="M60 90l4-8-4 2-4-2 4 8Z"/>
+    <path d="M30 60l8-4-2 4 2 4-8-4Z"/>
+    <path d="M90 60l-8-4 2 4-2 4 8-4Z"/>
+  </g>
+</svg>

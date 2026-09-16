@@ -1,0 +1,26 @@
+/*
+ * The design system owns the palette and the dark-mode strategy; importing its
+ * theme is what keeps this app and the component library from drifting apart
+ * the way a duplicated tailwind.config.js always did.
+ */
+@import '@helix-x/design-system/theme.css';
+
+/*
+ * Tailwind emits only utilities it can see as literal text in a scanned file,
+ * and `@helix-x/*` is consumed as TypeScript source. These paths reach into the
+ * sibling `helix-x-web` checkout because that is where the source actually is —
+ * an app consuming published packages would point at `node_modules/@helix-x`
+ * instead, or need nothing at all if the packages shipped their own CSS.
+ *
+ * A new top-level directory of components needs a line here, or its classes are
+ * silently dropped: no error, just unstyled markup.
+ */
+@source '../../../../helix-x-web/packages';
+@source '../../../../helix-x-web/plugins';
+@source '../src';
+
+html,
+body,
+#root {
+  height: 100%;
+}

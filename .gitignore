@@ -1,0 +1,11 @@
+node_modules/
+dist/
+data/
+.turbo/
+*.tsbuildinfo
+coverage/
+.env
+.DS_Store
+data/*.db
+data/*.db-*
+.langgraph_api/

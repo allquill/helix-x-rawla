@@ -1,0 +1,48 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "verbatimModuleSyntax": true,
+    "isolatedModules": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "noEmit": true,
+    "types": ["vite/client"],
+
+    /*
+     * The type-level counterpart of `resolve.dedupe` in vite.config.ts.
+     *
+     * `@helix-x/*` is linked from a sibling checkout, so its files resolve
+     * `@types/react` from *that* repo's pnpm store. Even at an identical
+     * version those are two distinct copies, and TypeScript compares them
+     * nominally enough that `SVGProps<SVGSVGElement>` from one is not
+     * assignable to `SVGProps<SVGSVGElement>` from the other — producing
+     * baffling errors inside library source that typechecks fine in its own
+     * repo. Pinning the resolution collapses them.
+     *
+     * Consuming published packages needs none of this.
+     */
+    /*
+     * No `baseUrl`: it is deprecated in TypeScript 5.9 and removed in 7.0, and
+     * `paths` has not needed it since 4.1 — a mapping is resolved relative to
+     * this file's directory, which is exactly what `./node_modules/...` means
+     * here. The suggested `"ignoreDeprecations": "6.0"` only defers the removal.
+     */
+    "paths": {
+      "react": ["./node_modules/@types/react"],
+      "react/*": ["./node_modules/@types/react/*"],
+      "react-dom": ["./node_modules/@types/react-dom"],
+      "react-dom/*": ["./node_modules/@types/react-dom/*"],
+      "@helix-x/client-sdk": ["./node_modules/@helix-x/client-sdk"]
+    }
+  },
+  "include": ["src", "vite.config.ts"]
+}
