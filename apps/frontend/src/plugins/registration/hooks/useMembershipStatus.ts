@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { PortalMembersService, type MemberStatusDto } from '@helix-x/client-sdk';
+import { PortalMembersService, type MemberStatusDto } from '@helix-x-rawla/client-sdk';
 
 /**
  * The signed-in member's own gate progress (REG-13).

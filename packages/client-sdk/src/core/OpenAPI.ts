@@ -1,32 +1,5 @@
-/* generated using openapi-typescript-codegen -- do not edit */
-/* istanbul ignore file */
-/* tslint:disable */
-/* eslint-disable */
-import type { ApiRequestOptions } from './ApiRequestOptions';
-
-type Resolver<T> = (options: ApiRequestOptions) => Promise<T>;
-type Headers = Record<string, string>;
-
-export type OpenAPIConfig = {
-    BASE: string;
-    VERSION: string;
-    WITH_CREDENTIALS: boolean;
-    CREDENTIALS: 'include' | 'omit' | 'same-origin';
-    TOKEN?: string | Resolver<string> | undefined;
-    USERNAME?: string | Resolver<string> | undefined;
-    PASSWORD?: string | Resolver<string> | undefined;
-    HEADERS?: Headers | Resolver<Headers> | undefined;
-    ENCODE_PATH?: ((path: string) => string) | undefined;
-};
-
-export const OpenAPI: OpenAPIConfig = {
-    BASE: '',
-    VERSION: '1.0',
-    WITH_CREDENTIALS: false,
-    CREDENTIALS: 'include',
-    TOKEN: undefined,
-    USERNAME: undefined,
-    PASSWORD: undefined,
-    HEADERS: undefined,
-    ENCODE_PATH: undefined,
-};
+/* Written by helix-x-app-codegen -- do not edit */
+/* The framework owns this runtime; re-exported so that this package and
+ * @helix-x/core-sdk share one OpenAPI singleton and one axios instance. */
+export { OpenAPI } from '@helix-x/core-sdk';
+export type { OpenAPIConfig } from '@helix-x/core-sdk';

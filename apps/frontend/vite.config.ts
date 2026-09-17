@@ -21,7 +21,7 @@ export default defineConfig({
       'react-dom',
       'react-router-dom',
       /*
-       * `axios` carries the auth interceptor. `client-sdk`'s `core/request.ts`
+       * `axios` carries the auth interceptor. `core-sdk`'s `core/request.ts`
        * issues every call through the *global* axios instance, and
        * `plugin-auth` installs its 401 → sign-out handler on the *global* axios
        * instance — but the plugin resolves axios from the `helix-x-web`
@@ -32,16 +32,20 @@ export default defineConfig({
        */
       'axios',
       /*
-       * `@helix-x/client-sdk` exports a mutable `OpenAPI` singleton. Both this
-       * app and the linked `helix-x-web` plugins now `link:` the same
-       * `helix-x-client-sdk` checkout, so there is one copy on disk and this
-       * entry is belt-and-braces rather than the load-bearing fix it was when
-       * the SDK arrived here as a tarball. It stays because the failure it
-       * prevents is silent: two singletons means plugin-auth sets
-       * `OpenAPI.BASE` and the token on one while every request reads the
-       * other, and every call goes out unauthorised to a relative URL.
+       * `@helix-x/core-sdk` exports a mutable `OpenAPI` singleton, and this is
+       * load-bearing rather than belt-and-braces. The client is generated in
+       * two halves: the linked `helix-x-web` plugins import the framework's
+       * endpoints from `@helix-x/core-sdk`, and this app's own endpoints come
+       * from `@helix-x-rawla/client-sdk`, whose `src/core/` re-exports that
+       * same package. Both halves therefore have to agree on one copy.
+       *
+       * Two copies means `plugin-auth` sets `OpenAPI.BASE` and the token on
+       * one object while every request reads the other, and the failure is
+       * silent: calls go out unauthorised, to a relative URL, with nothing
+       * pointing at duplication as the cause.
        */
-      '@helix-x/client-sdk',
+      '@helix-x/core-sdk',
+      '@helix-x-rawla/client-sdk',
     ],
   },
   optimizeDeps: {

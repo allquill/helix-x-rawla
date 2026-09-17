@@ -5,7 +5,7 @@ import {
   type MemberSummaryDto,
   type UpdateMemberDto,
   type UpdateMemberPrivacyDto,
-} from '@helix-x/client-sdk';
+} from '@helix-x-rawla/client-sdk';
 
 export type MemberFilter = {
   search?: string;

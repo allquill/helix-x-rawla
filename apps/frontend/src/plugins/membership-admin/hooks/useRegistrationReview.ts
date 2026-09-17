@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import {
   PortalRegistrationsService,
   type MemberDetailDto,
-} from '@helix-x/client-sdk';
+} from '@helix-x-rawla/client-sdk';
 
 /**
  * One application under review, plus the four decisions available on it.

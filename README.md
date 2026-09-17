@@ -42,14 +42,16 @@ directory layout is load-bearing:
 Work/helix-x/
   helix-x-web/          React kernel, shell, design system, first-party plugins
   helix-x-backend/      NestJS modules  (needs `pnpm run pack`)
-  helix-x-client-sdk/   the demo's client — not used here
+  helix-x-core-sdk/   the demo's client — not used here
   helix-x-rawla/        this repo
 ```
 
 ```bash
-cd ../helix-x-backend && pnpm install && pnpm run pack
-cd ../helix-x-web    && pnpm install
-cd ../helix-x-rawla  && pnpm install
+# from the helix-x/ root
+cd framework/helix-x-backend  && pnpm install && pnpm run pack
+cd ../helix-x-web             && pnpm install
+cd ../helix-x-core-sdk        && pnpm install && pnpm build
+cd ../../example/helix-x-rawla && pnpm install
 
 cp apps/backend/.env.example  apps/backend/.env
 cp apps/frontend/.env.example apps/frontend/.env

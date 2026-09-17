@@ -10,7 +10,7 @@ import {
   Switch,
   type DataTableColumn,
 } from '@helix-x/design-system';
-import type { MemberSummaryDto } from '@helix-x/client-sdk';
+import type { MemberSummaryDto } from '@helix-x-rawla/client-sdk';
 import { useMembers } from '../hooks/useMembers';
 
 /**

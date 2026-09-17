@@ -15,8 +15,8 @@
  * A new top-level directory of components needs a line here, or its classes are
  * silently dropped: no error, just unstyled markup.
  */
-@source '../../../../helix-x-web/packages';
-@source '../../../../helix-x-web/plugins';
+@source '../../../../../framework/helix-x-web/packages';
+@source '../../../../../framework/helix-x-web/plugins';
 @source '../src';
 
 html,

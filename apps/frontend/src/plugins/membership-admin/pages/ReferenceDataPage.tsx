@@ -14,7 +14,7 @@ import {
   PortalAdministrationService,
   type ReferenceListDto,
   type ReferenceListValueDto,
-} from '@helix-x/client-sdk';
+} from '@helix-x-rawla/client-sdk';
 import { PortalAdminLayout } from '../components/PortalAdminLayout';
 
 /**

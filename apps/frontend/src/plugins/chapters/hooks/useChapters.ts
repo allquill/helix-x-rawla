@@ -4,7 +4,7 @@ import {
   type ChapterDto,
   type StateChapterMappingDto,
   type UpsertChapterDto,
-} from '@helix-x/client-sdk';
+} from '@helix-x-rawla/client-sdk';
 
 /** Chapters and the state map that drives auto-assignment (CHP-01 / CHP-02). */
 export function useChapters() {

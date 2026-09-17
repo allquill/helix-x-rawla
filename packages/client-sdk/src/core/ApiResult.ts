@@ -1,11 +1,4 @@
-/* generated using openapi-typescript-codegen -- do not edit */
-/* istanbul ignore file */
-/* tslint:disable */
-/* eslint-disable */
-export type ApiResult = {
-    readonly url: string;
-    readonly ok: boolean;
-    readonly status: number;
-    readonly statusText: string;
-    readonly body: any;
-};
+/* Written by helix-x-app-codegen -- do not edit */
+/* The framework owns this runtime; re-exported so that this package and
+ * @helix-x/core-sdk share one OpenAPI singleton and one axios instance. */
+export type { ApiResult } from '@helix-x/core-sdk';

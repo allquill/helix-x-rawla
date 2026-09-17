@@ -1,6 +1,6 @@
 import { forwardRef } from 'react';
 import { Badge } from '@helix-x/design-system';
-import type { GateSnapshotDto } from '@helix-x/client-sdk';
+import type { GateSnapshotDto } from '@helix-x-rawla/client-sdk';
 
 export type GateChecklistProps = {
   gates: GateSnapshotDto;

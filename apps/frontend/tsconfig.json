@@ -41,7 +41,8 @@
       "react/*": ["./node_modules/@types/react/*"],
       "react-dom": ["./node_modules/@types/react-dom"],
       "react-dom/*": ["./node_modules/@types/react-dom/*"],
-      "@helix-x/client-sdk": ["./node_modules/@helix-x/client-sdk"]
+      "@helix-x/core-sdk": ["./node_modules/@helix-x/core-sdk"],
+      "@helix-x-rawla/client-sdk": ["./node_modules/@helix-x-rawla/client-sdk"]
     }
   },
   "include": ["src", "vite.config.ts"]

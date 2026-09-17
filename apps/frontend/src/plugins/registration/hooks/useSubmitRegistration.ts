@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { PortalRegistrationService, SubmitRegistrationDto } from '@helix-x/client-sdk';
+import { PortalRegistrationService, SubmitRegistrationDto } from '@helix-x-rawla/client-sdk';
 
 const E164 = /^\+[1-9]\d{6,14}$/;
 

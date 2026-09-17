@@ -3,7 +3,7 @@ import {
   PortalRegistrationsService,
   type ListMembersResponseDto,
   type MemberSummaryDto,
-} from '@helix-x/client-sdk';
+} from '@helix-x-rawla/client-sdk';
 
 export type QueueFilter = {
   status: string;

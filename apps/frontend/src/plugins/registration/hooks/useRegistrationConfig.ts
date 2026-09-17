@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import {
   PortalRegistrationService,
   type PublicRegistrationConfigDto,
-} from '@helix-x/client-sdk';
+} from '@helix-x-rawla/client-sdk';
 
 /**
  * The public form's own configuration (ADM-09 / ADM-10).

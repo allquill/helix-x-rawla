@@ -2,7 +2,7 @@ import { Controller, Get } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiOkResponse } from '@nestjs/swagger';
 import { AppService, HealthDto } from '../providers/app.service';
 
-@ApiTags('Health')
+@ApiTags('Health', '@helix-x-core-api')
 @Controller()
 export class AppController {
   constructor(private readonly appService: AppService) {}

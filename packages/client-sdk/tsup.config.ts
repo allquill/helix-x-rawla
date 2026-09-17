@@ -6,5 +6,10 @@ export default defineConfig({
   dts: true,
   clean: true,
   sourcemap: true,
-  external: ['axios', 'form-data'],
+  /*
+   * `@helix-x/core-sdk` must stay external. Bundling it would put a second
+   * copy of the OpenAPI singleton inside this package, so plugin-auth would
+   * configure one object and every request here would read the other.
+   */
+  external: ['axios', 'form-data', '@helix-x/core-sdk'],
 });

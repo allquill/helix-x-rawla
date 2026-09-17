@@ -11,6 +11,6 @@ export default defineConfig({
   resolve: {
     // Same reason as vite.config.ts, and the same list — vitest does not read
     // vite.config.ts here, so the two must be edited together.
-    dedupe: ['react', 'react-dom', 'react-router-dom', 'axios', '@helix-x/client-sdk'],
+    dedupe: ['react', 'react-dom', 'react-router-dom', 'axios', '@helix-x/core-sdk', '@helix-x-rawla/client-sdk'],
   },
 });

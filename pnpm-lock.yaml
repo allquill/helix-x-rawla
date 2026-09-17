@@ -5,13 +5,13 @@ settings:
   excludeLinksFromLockfile: false
 
 overrides:
-  '@helix-x/authentication': file:../helix-x-backend/.artifacts/helix-x-authentication-0.1.0.tgz
-  '@helix-x/backend': file:../helix-x-backend/.artifacts/helix-x-backend-0.1.0.tgz
-  '@helix-x/client-sdk': link:./packages/client-sdk
-  '@helix-x/navigation': file:../helix-x-backend/.artifacts/helix-x-navigation-0.1.0.tgz
-  '@helix-x/nest-oauth-provider': file:../helix-x-backend/.artifacts/helix-x-nest-oauth-provider-0.1.0.tgz
-  '@helix-x/nestjs-ai': file:../helix-x-backend/.artifacts/helix-x-nestjs-ai-0.1.0.tgz
-  '@helix-x/notifications': file:../helix-x-backend/.artifacts/helix-x-notifications-0.1.0.tgz
+  '@helix-x/authentication': file:../../framework/helix-x-backend/.artifacts/helix-x-authentication-0.1.0.tgz
+  '@helix-x/backend': file:../../framework/helix-x-backend/.artifacts/helix-x-backend-0.1.0.tgz
+  '@helix-x/core-sdk': link:../../framework/helix-x-core-sdk
+  '@helix-x/navigation': file:../../framework/helix-x-backend/.artifacts/helix-x-navigation-0.1.0.tgz
+  '@helix-x/nest-oauth-provider': file:../../framework/helix-x-backend/.artifacts/helix-x-nest-oauth-provider-0.1.0.tgz
+  '@helix-x/nestjs-ai': file:../../framework/helix-x-backend/.artifacts/helix-x-nestjs-ai-0.1.0.tgz
+  '@helix-x/notifications': file:../../framework/helix-x-backend/.artifacts/helix-x-notifications-0.1.0.tgz
 
 importers:
 
@@ -27,8 +27,8 @@ importers:
   apps/backend:
     dependencies:
       '@helix-x/backend':
-        specifier: file:../../../helix-x-backend/.artifacts/helix-x-backend-0.1.0.tgz
-        version: file:../helix-x-backend/.artifacts/helix-x-backend-0.1.0.tgz(bzzajqwa36ji564ziltics2d7y)
+        specifier: file:../../../../framework/helix-x-backend/.artifacts/helix-x-backend-0.1.0.tgz
+        version: file:../../framework/helix-x-backend/.artifacts/helix-x-backend-0.1.0.tgz(bzzajqwa36ji564ziltics2d7y)
       '@nestjs/common':
         specifier: ^10.4.0
         version: 10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2)
@@ -135,36 +135,39 @@ importers:
 
   apps/frontend:
     dependencies:
-      '@helix-x/client-sdk':
-        specifier: link:../../packages/client-sdk
+      '@helix-x-rawla/client-sdk':
+        specifier: workspace:*
         version: link:../../packages/client-sdk
+      '@helix-x/core-sdk':
+        specifier: link:../../../../framework/helix-x-core-sdk
+        version: link:../../../../framework/helix-x-core-sdk
       '@helix-x/design-system':
-        specifier: link:../../../helix-x-web/packages/design-system
-        version: link:../../../helix-x-web/packages/design-system
+        specifier: link:../../../../framework/helix-x-web/packages/design-system
+        version: link:../../../../framework/helix-x-web/packages/design-system
       '@helix-x/plugin-admin':
-        specifier: link:../../../helix-x-web/plugins/plugin-admin
-        version: link:../../../helix-x-web/plugins/plugin-admin
+        specifier: link:../../../../framework/helix-x-web/plugins/plugin-admin
+        version: link:../../../../framework/helix-x-web/plugins/plugin-admin
       '@helix-x/plugin-auth':
-        specifier: link:../../../helix-x-web/plugins/plugin-auth
-        version: link:../../../helix-x-web/plugins/plugin-auth
+        specifier: link:../../../../framework/helix-x-web/plugins/plugin-auth
+        version: link:../../../../framework/helix-x-web/plugins/plugin-auth
       '@helix-x/plugin-navigation':
-        specifier: link:../../../helix-x-web/plugins/plugin-navigation
-        version: link:../../../helix-x-web/plugins/plugin-navigation
+        specifier: link:../../../../framework/helix-x-web/plugins/plugin-navigation
+        version: link:../../../../framework/helix-x-web/plugins/plugin-navigation
       '@helix-x/plugin-oauth':
-        specifier: link:../../../helix-x-web/plugins/plugin-oauth
-        version: link:../../../helix-x-web/plugins/plugin-oauth
+        specifier: link:../../../../framework/helix-x-web/plugins/plugin-oauth
+        version: link:../../../../framework/helix-x-web/plugins/plugin-oauth
       '@helix-x/plugin-reports':
-        specifier: link:../../../helix-x-web/plugins/plugin-reports
-        version: link:../../../helix-x-web/plugins/plugin-reports
+        specifier: link:../../../../framework/helix-x-web/plugins/plugin-reports
+        version: link:../../../../framework/helix-x-web/plugins/plugin-reports
       '@helix-x/plugin-theme':
-        specifier: link:../../../helix-x-web/plugins/plugin-theme
-        version: link:../../../helix-x-web/plugins/plugin-theme
+        specifier: link:../../../../framework/helix-x-web/plugins/plugin-theme
+        version: link:../../../../framework/helix-x-web/plugins/plugin-theme
       '@helix-x/react-router':
-        specifier: link:../../../helix-x-web/packages/react-router
-        version: link:../../../helix-x-web/packages/react-router
+        specifier: link:../../../../framework/helix-x-web/packages/react-router
+        version: link:../../../../framework/helix-x-web/packages/react-router
       '@helix-x/web':
-        specifier: link:../../../helix-x-web/packages/web
-        version: link:../../../helix-x-web/packages/web
+        specifier: link:../../../../framework/helix-x-web/packages/web
+        version: link:../../../../framework/helix-x-web/packages/web
       '@hookform/resolvers':
         specifier: 3.9.1
         version: 3.9.1(react-hook-form@7.87.0(react@19.3.0))
@@ -217,6 +220,9 @@ importers:
 
   packages/client-sdk:
     dependencies:
+      '@helix-x/core-sdk':
+        specifier: link:../../../../framework/helix-x-core-sdk
+        version: link:../../../../framework/helix-x-core-sdk
       axios:
         specifier: ^1.7.9
         version: 1.20.0
@@ -876,8 +882,8 @@ packages:
       '@noble/hashes':
         optional: true
 
-  '@helix-x/authentication@file:../helix-x-backend/.artifacts/helix-x-authentication-0.1.0.tgz':
-    resolution: {integrity: sha512-lATI80hr9bFTqjpuels0qXskQZjgepUbPhOrklJYOoOMoE60+BY41zNfXFakNAXXmzSyKybj3WXS2fCMncl0GA==, tarball: file:../helix-x-backend/.artifacts/helix-x-authentication-0.1.0.tgz}
+  '@helix-x/authentication@file:../../framework/helix-x-backend/.artifacts/helix-x-authentication-0.1.0.tgz':
+    resolution: {integrity: sha512-RZk2bORXGLRPM1qEjMbRhQIH9Rr/nQbf0nSNwbLnngk1tFGjW8Ex79YEf00eX4As4ul/9NlUwbqaEVHzEzJnzw==, tarball: file:../../framework/helix-x-backend/.artifacts/helix-x-authentication-0.1.0.tgz}
     version: 0.1.0
     peerDependencies:
       '@nestjs/common': ^10.0.0
@@ -890,37 +896,8 @@ packages:
       reflect-metadata: ^0.2.0
       typeorm: ^0.3.0
 
-  '@helix-x/backend@file:../helix-x-backend/.artifacts/helix-x-backend-0.1.0.tgz':
-    resolution: {integrity: sha512-sdnA/k6E5D1UjB8xg2+7uiMXKlJFhN++DjNone6CraDfQ/VF2qorT4R43fxgMHPG4St1oSs1L0UNieNH06fanw==, tarball: file:../helix-x-backend/.artifacts/helix-x-backend-0.1.0.tgz}
-    version: 0.1.0
-    peerDependencies:
-      '@nestjs/common': ^10.0.0
-      '@nestjs/config': ^3.0.0
-      '@nestjs/core': ^10.0.0
-      '@nestjs/platform-express': ^10.0.0
-      '@nestjs/swagger': ^7.0.0
-      '@nestjs/typeorm': ^10.0.0 || ^11.0.0
-      class-transformer: ^0.5.0
-      class-validator: ^0.14.0
-      reflect-metadata: ^0.2.0
-      rxjs: ^7.0.0
-      typeorm: ^0.3.0
-
-  '@helix-x/navigation@file:../helix-x-backend/.artifacts/helix-x-navigation-0.1.0.tgz':
-    resolution: {integrity: sha512-/AKBpZQ9KYjeBFX5tpgB3wHcD2yMMFUynzu8uROLDHYrHKhSt2Mm8K0Y8mydrHzm4MjKiKRZL0oZxK/oiG4e8w==, tarball: file:../helix-x-backend/.artifacts/helix-x-navigation-0.1.0.tgz}
-    version: 0.1.0
-    peerDependencies:
-      '@nestjs/common': ^10.0.0
-      '@nestjs/core': ^10.0.0
-      '@nestjs/swagger': ^7.0.0
-      '@nestjs/typeorm': ^10.0.0 || ^11.0.0
-      class-transformer: ^0.5.0
-      class-validator: ^0.14.0
-      reflect-metadata: ^0.2.0
-      typeorm: ^0.3.0
-
-  '@helix-x/nest-oauth-provider@file:../helix-x-backend/.artifacts/helix-x-nest-oauth-provider-0.1.0.tgz':
-    resolution: {integrity: sha512-s0fOVqi7rd4TsbHfM5i2B6xR871fQjkAkUL2kI5NOxtku5LOaes89NauhtFBJ7aw/2+fzIEMbtRb1JjdjnvwoQ==, tarball: file:../helix-x-backend/.artifacts/helix-x-nest-oauth-provider-0.1.0.tgz}
+  '@helix-x/backend@file:../../framework/helix-x-backend/.artifacts/helix-x-backend-0.1.0.tgz':
+    resolution: {integrity: sha512-wyjvs8lTN+49PWOnf/H0YU7E/9o/FaEaNN/ve1Hz6VdCdPnZYuPBjwG7YGxJZG63Z5WELhRqYLyNCn3yDSxAqw==, tarball: file:../../framework/helix-x-backend/.artifacts/helix-x-backend-0.1.0.tgz}
     version: 0.1.0
     peerDependencies:
       '@nestjs/common': ^10.0.0
@@ -935,8 +912,37 @@ packages:
       rxjs: ^7.0.0
       typeorm: ^0.3.0
 
-  '@helix-x/nestjs-ai@file:../helix-x-backend/.artifacts/helix-x-nestjs-ai-0.1.0.tgz':
-    resolution: {integrity: sha512-M1sr4XmUdLyspQdBwTOQb5/hP47RwD5tXWBM4DlxEmtoA5jqBM0afhZMb0msohjEh5yiUBNYysSwlNc1kD0yoA==, tarball: file:../helix-x-backend/.artifacts/helix-x-nestjs-ai-0.1.0.tgz}
+  '@helix-x/navigation@file:../../framework/helix-x-backend/.artifacts/helix-x-navigation-0.1.0.tgz':
+    resolution: {integrity: sha512-F+S8EyxIwDqGzoOULXTB0FgkioSr6tY7MLrIN39dsmNT3Q2ksQIwIaVWyI7Ol/UdJVZvbKchcRSCFAS1RHkEBQ==, tarball: file:../../framework/helix-x-backend/.artifacts/helix-x-navigation-0.1.0.tgz}
+    version: 0.1.0
+    peerDependencies:
+      '@nestjs/common': ^10.0.0
+      '@nestjs/core': ^10.0.0
+      '@nestjs/swagger': ^7.0.0
+      '@nestjs/typeorm': ^10.0.0 || ^11.0.0
+      class-transformer: ^0.5.0
+      class-validator: ^0.14.0
+      reflect-metadata: ^0.2.0
+      typeorm: ^0.3.0
+
+  '@helix-x/nest-oauth-provider@file:../../framework/helix-x-backend/.artifacts/helix-x-nest-oauth-provider-0.1.0.tgz':
+    resolution: {integrity: sha512-pOhslUW0s0G9iqd2qO4ZgkduUS6mCJP//JvKZrxZ9xYwCDXdCXbTSvFQDbSsg63L5tzNMJXTVN8gskLL3ZpKhg==, tarball: file:../../framework/helix-x-backend/.artifacts/helix-x-nest-oauth-provider-0.1.0.tgz}
+    version: 0.1.0
+    peerDependencies:
+      '@nestjs/common': ^10.0.0
+      '@nestjs/config': ^3.0.0
+      '@nestjs/core': ^10.0.0
+      '@nestjs/platform-express': ^10.0.0
+      '@nestjs/swagger': ^7.0.0
+      '@nestjs/typeorm': ^10.0.0 || ^11.0.0
+      class-transformer: ^0.5.0
+      class-validator: ^0.14.0
+      reflect-metadata: ^0.2.0
+      rxjs: ^7.0.0
+      typeorm: ^0.3.0
+
+  '@helix-x/nestjs-ai@file:../../framework/helix-x-backend/.artifacts/helix-x-nestjs-ai-0.1.0.tgz':
+    resolution: {integrity: sha512-GG525a9D/cb/du0+j1/InXm1AdjY544HmsluuYkmkL5AjkboKmNWqciTmLsJPtFIBg+p+uW1dMDR9qFDitptsg==, tarball: file:../../framework/helix-x-backend/.artifacts/helix-x-nestjs-ai-0.1.0.tgz}
     version: 0.1.0
     peerDependencies:
       '@nestjs/common': ^10.0.0
@@ -950,8 +956,8 @@ packages:
       reflect-metadata: ^0.2.0
       rxjs: ^7.0.0
 
-  '@helix-x/notifications@file:../helix-x-backend/.artifacts/helix-x-notifications-0.1.0.tgz':
-    resolution: {integrity: sha512-fkTD3WWcQ2LCpLXZZNga4JcLHDBPWHTffkFHW0lC88a5V1peZAhYP42y1qepb3BiCMTYNAZ+X9ahKDHp7m4ppw==, tarball: file:../helix-x-backend/.artifacts/helix-x-notifications-0.1.0.tgz}
+  '@helix-x/notifications@file:../../framework/helix-x-backend/.artifacts/helix-x-notifications-0.1.0.tgz':
+    resolution: {integrity: sha512-Fx1Zf2P9A/MQxMtcsrN42v9UaqXw7L903CqM58nhG4GsfY37/Ps39NYpIenGWdrjRi3GG0sTIPEbr7wEfxn3pA==, tarball: file:../../framework/helix-x-backend/.artifacts/helix-x-notifications-0.1.0.tgz}
     version: 0.1.0
     peerDependencies:
       '@nestjs/common': ^10.0.0
@@ -5572,9 +5578,9 @@ snapshots:
     optionalDependencies:
       '@noble/hashes': 1.8.0
 
-  ? '@helix-x/authentication@file:../helix-x-backend/.artifacts/helix-x-authentication-0.1.0.tgz(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/config@3.3.0(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(rxjs@7.8.2))(@nestjs/core@10.4.22)(@nestjs/swagger@7.4.2(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@10.4.22)(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2))(@nestjs/typeorm@11.0.3(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@10.4.22)(reflect-metadata@0.2.2)(rxjs@7.8.2)(typeorm@0.3.31(better-sqlite3@13.0.3)(ts-node@10.9.2(@types/node@22.20.2)(typescript@5.9.3))))(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(typeorm@0.3.31(better-sqlite3@13.0.3)(ts-node@10.9.2(@types/node@22.20.2)(typescript@5.9.3)))'
+  ? '@helix-x/authentication@file:../../framework/helix-x-backend/.artifacts/helix-x-authentication-0.1.0.tgz(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/config@3.3.0(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(rxjs@7.8.2))(@nestjs/core@10.4.22)(@nestjs/swagger@7.4.2(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@10.4.22)(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2))(@nestjs/typeorm@11.0.3(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@10.4.22)(reflect-metadata@0.2.2)(rxjs@7.8.2)(typeorm@0.3.31(better-sqlite3@13.0.3)(ts-node@10.9.2(@types/node@22.20.2)(typescript@5.9.3))))(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(typeorm@0.3.31(better-sqlite3@13.0.3)(ts-node@10.9.2(@types/node@22.20.2)(typescript@5.9.3)))'
   : dependencies:
-      '@helix-x/notifications': file:../helix-x-backend/.artifacts/helix-x-notifications-0.1.0.tgz(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/config@3.3.0(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(rxjs@7.8.2))(@nestjs/core@10.4.22)(@nestjs/swagger@7.4.2(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@10.4.22)(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2))(@nestjs/typeorm@11.0.3(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@10.4.22)(reflect-metadata@0.2.2)(rxjs@7.8.2)(typeorm@0.3.31(better-sqlite3@13.0.3)(ts-node@10.9.2(@types/node@22.20.2)(typescript@5.9.3))))(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(typeorm@0.3.31(better-sqlite3@13.0.3)(ts-node@10.9.2(@types/node@22.20.2)(typescript@5.9.3)))
+      '@helix-x/notifications': file:../../framework/helix-x-backend/.artifacts/helix-x-notifications-0.1.0.tgz(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/config@3.3.0(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(rxjs@7.8.2))(@nestjs/core@10.4.22)(@nestjs/swagger@7.4.2(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@10.4.22)(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2))(@nestjs/typeorm@11.0.3(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@10.4.22)(reflect-metadata@0.2.2)(rxjs@7.8.2)(typeorm@0.3.31(better-sqlite3@13.0.3)(ts-node@10.9.2(@types/node@22.20.2)(typescript@5.9.3))))(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(typeorm@0.3.31(better-sqlite3@13.0.3)(ts-node@10.9.2(@types/node@22.20.2)(typescript@5.9.3)))
       '@nestjs/common': 10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2)
       '@nestjs/config': 3.3.0(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(rxjs@7.8.2)
       '@nestjs/core': 10.4.22(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/platform-express@10.4.22)(reflect-metadata@0.2.2)(rxjs@7.8.2)
@@ -5590,13 +5596,13 @@ snapshots:
       reflect-metadata: 0.2.2
       typeorm: 0.3.31(better-sqlite3@13.0.3)(ts-node@10.9.2(@types/node@22.20.2)(typescript@5.9.3))
 
-  '@helix-x/backend@file:../helix-x-backend/.artifacts/helix-x-backend-0.1.0.tgz(bzzajqwa36ji564ziltics2d7y)':
+  '@helix-x/backend@file:../../framework/helix-x-backend/.artifacts/helix-x-backend-0.1.0.tgz(bzzajqwa36ji564ziltics2d7y)':
     dependencies:
-      '@helix-x/authentication': file:../helix-x-backend/.artifacts/helix-x-authentication-0.1.0.tgz(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/config@3.3.0(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(rxjs@7.8.2))(@nestjs/core@10.4.22)(@nestjs/swagger@7.4.2(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@10.4.22)(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2))(@nestjs/typeorm@11.0.3(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@10.4.22)(reflect-metadata@0.2.2)(rxjs@7.8.2)(typeorm@0.3.31(better-sqlite3@13.0.3)(ts-node@10.9.2(@types/node@22.20.2)(typescript@5.9.3))))(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(typeorm@0.3.31(better-sqlite3@13.0.3)(ts-node@10.9.2(@types/node@22.20.2)(typescript@5.9.3)))
-      '@helix-x/navigation': file:../helix-x-backend/.artifacts/helix-x-navigation-0.1.0.tgz(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/config@3.3.0(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(rxjs@7.8.2))(@nestjs/core@10.4.22)(@nestjs/swagger@7.4.2(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@10.4.22)(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2))(@nestjs/typeorm@11.0.3(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@10.4.22)(reflect-metadata@0.2.2)(rxjs@7.8.2)(typeorm@0.3.31(better-sqlite3@13.0.3)(ts-node@10.9.2(@types/node@22.20.2)(typescript@5.9.3))))(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(typeorm@0.3.31(better-sqlite3@13.0.3)(ts-node@10.9.2(@types/node@22.20.2)(typescript@5.9.3)))
-      '@helix-x/nest-oauth-provider': file:../helix-x-backend/.artifacts/helix-x-nest-oauth-provider-0.1.0.tgz(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/config@3.3.0(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(rxjs@7.8.2))(@nestjs/core@10.4.22)(@nestjs/platform-express@10.4.22)(@nestjs/swagger@7.4.2(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@10.4.22)(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2))(@nestjs/typeorm@11.0.3(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@10.4.22)(reflect-metadata@0.2.2)(rxjs@7.8.2)(typeorm@0.3.31(better-sqlite3@13.0.3)(ts-node@10.9.2(@types/node@22.20.2)(typescript@5.9.3))))(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2)(typeorm@0.3.31(better-sqlite3@13.0.3)(ts-node@10.9.2(@types/node@22.20.2)(typescript@5.9.3)))
-      '@helix-x/nestjs-ai': file:../helix-x-backend/.artifacts/helix-x-nestjs-ai-0.1.0.tgz(bzzajqwa36ji564ziltics2d7y)
-      '@helix-x/notifications': file:../helix-x-backend/.artifacts/helix-x-notifications-0.1.0.tgz(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/config@3.3.0(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(rxjs@7.8.2))(@nestjs/core@10.4.22)(@nestjs/swagger@7.4.2(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@10.4.22)(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2))(@nestjs/typeorm@11.0.3(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@10.4.22)(reflect-metadata@0.2.2)(rxjs@7.8.2)(typeorm@0.3.31(better-sqlite3@13.0.3)(ts-node@10.9.2(@types/node@22.20.2)(typescript@5.9.3))))(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(typeorm@0.3.31(better-sqlite3@13.0.3)(ts-node@10.9.2(@types/node@22.20.2)(typescript@5.9.3)))
+      '@helix-x/authentication': file:../../framework/helix-x-backend/.artifacts/helix-x-authentication-0.1.0.tgz(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/config@3.3.0(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(rxjs@7.8.2))(@nestjs/core@10.4.22)(@nestjs/swagger@7.4.2(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@10.4.22)(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2))(@nestjs/typeorm@11.0.3(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@10.4.22)(reflect-metadata@0.2.2)(rxjs@7.8.2)(typeorm@0.3.31(better-sqlite3@13.0.3)(ts-node@10.9.2(@types/node@22.20.2)(typescript@5.9.3))))(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(typeorm@0.3.31(better-sqlite3@13.0.3)(ts-node@10.9.2(@types/node@22.20.2)(typescript@5.9.3)))
+      '@helix-x/navigation': file:../../framework/helix-x-backend/.artifacts/helix-x-navigation-0.1.0.tgz(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/config@3.3.0(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(rxjs@7.8.2))(@nestjs/core@10.4.22)(@nestjs/swagger@7.4.2(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@10.4.22)(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2))(@nestjs/typeorm@11.0.3(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@10.4.22)(reflect-metadata@0.2.2)(rxjs@7.8.2)(typeorm@0.3.31(better-sqlite3@13.0.3)(ts-node@10.9.2(@types/node@22.20.2)(typescript@5.9.3))))(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(typeorm@0.3.31(better-sqlite3@13.0.3)(ts-node@10.9.2(@types/node@22.20.2)(typescript@5.9.3)))
+      '@helix-x/nest-oauth-provider': file:../../framework/helix-x-backend/.artifacts/helix-x-nest-oauth-provider-0.1.0.tgz(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/config@3.3.0(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(rxjs@7.8.2))(@nestjs/core@10.4.22)(@nestjs/platform-express@10.4.22)(@nestjs/swagger@7.4.2(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@10.4.22)(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2))(@nestjs/typeorm@11.0.3(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@10.4.22)(reflect-metadata@0.2.2)(rxjs@7.8.2)(typeorm@0.3.31(better-sqlite3@13.0.3)(ts-node@10.9.2(@types/node@22.20.2)(typescript@5.9.3))))(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2)(typeorm@0.3.31(better-sqlite3@13.0.3)(ts-node@10.9.2(@types/node@22.20.2)(typescript@5.9.3)))
+      '@helix-x/nestjs-ai': file:../../framework/helix-x-backend/.artifacts/helix-x-nestjs-ai-0.1.0.tgz(bzzajqwa36ji564ziltics2d7y)
+      '@helix-x/notifications': file:../../framework/helix-x-backend/.artifacts/helix-x-notifications-0.1.0.tgz(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/config@3.3.0(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(rxjs@7.8.2))(@nestjs/core@10.4.22)(@nestjs/swagger@7.4.2(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@10.4.22)(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2))(@nestjs/typeorm@11.0.3(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@10.4.22)(reflect-metadata@0.2.2)(rxjs@7.8.2)(typeorm@0.3.31(better-sqlite3@13.0.3)(ts-node@10.9.2(@types/node@22.20.2)(typescript@5.9.3))))(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(typeorm@0.3.31(better-sqlite3@13.0.3)(ts-node@10.9.2(@types/node@22.20.2)(typescript@5.9.3)))
       '@nestjs/common': 10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2)
       '@nestjs/config': 3.3.0(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(rxjs@7.8.2)
       '@nestjs/core': 10.4.22(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/platform-express@10.4.22)(reflect-metadata@0.2.2)(rxjs@7.8.2)
@@ -5614,9 +5620,9 @@ snapshots:
       - react
       - react-dom
 
-  ? '@helix-x/navigation@file:../helix-x-backend/.artifacts/helix-x-navigation-0.1.0.tgz(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/config@3.3.0(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(rxjs@7.8.2))(@nestjs/core@10.4.22)(@nestjs/swagger@7.4.2(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@10.4.22)(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2))(@nestjs/typeorm@11.0.3(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@10.4.22)(reflect-metadata@0.2.2)(rxjs@7.8.2)(typeorm@0.3.31(better-sqlite3@13.0.3)(ts-node@10.9.2(@types/node@22.20.2)(typescript@5.9.3))))(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(typeorm@0.3.31(better-sqlite3@13.0.3)(ts-node@10.9.2(@types/node@22.20.2)(typescript@5.9.3)))'
+  ? '@helix-x/navigation@file:../../framework/helix-x-backend/.artifacts/helix-x-navigation-0.1.0.tgz(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/config@3.3.0(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(rxjs@7.8.2))(@nestjs/core@10.4.22)(@nestjs/swagger@7.4.2(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@10.4.22)(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2))(@nestjs/typeorm@11.0.3(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@10.4.22)(reflect-metadata@0.2.2)(rxjs@7.8.2)(typeorm@0.3.31(better-sqlite3@13.0.3)(ts-node@10.9.2(@types/node@22.20.2)(typescript@5.9.3))))(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(typeorm@0.3.31(better-sqlite3@13.0.3)(ts-node@10.9.2(@types/node@22.20.2)(typescript@5.9.3)))'
   : dependencies:
-      '@helix-x/authentication': file:../helix-x-backend/.artifacts/helix-x-authentication-0.1.0.tgz(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/config@3.3.0(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(rxjs@7.8.2))(@nestjs/core@10.4.22)(@nestjs/swagger@7.4.2(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@10.4.22)(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2))(@nestjs/typeorm@11.0.3(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@10.4.22)(reflect-metadata@0.2.2)(rxjs@7.8.2)(typeorm@0.3.31(better-sqlite3@13.0.3)(ts-node@10.9.2(@types/node@22.20.2)(typescript@5.9.3))))(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(typeorm@0.3.31(better-sqlite3@13.0.3)(ts-node@10.9.2(@types/node@22.20.2)(typescript@5.9.3)))
+      '@helix-x/authentication': file:../../framework/helix-x-backend/.artifacts/helix-x-authentication-0.1.0.tgz(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/config@3.3.0(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(rxjs@7.8.2))(@nestjs/core@10.4.22)(@nestjs/swagger@7.4.2(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@10.4.22)(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2))(@nestjs/typeorm@11.0.3(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@10.4.22)(reflect-metadata@0.2.2)(rxjs@7.8.2)(typeorm@0.3.31(better-sqlite3@13.0.3)(ts-node@10.9.2(@types/node@22.20.2)(typescript@5.9.3))))(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(typeorm@0.3.31(better-sqlite3@13.0.3)(ts-node@10.9.2(@types/node@22.20.2)(typescript@5.9.3)))
       '@nestjs/common': 10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2)
       '@nestjs/core': 10.4.22(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/platform-express@10.4.22)(reflect-metadata@0.2.2)(rxjs@7.8.2)
       '@nestjs/swagger': 7.4.2(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@10.4.22)(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)
@@ -5628,9 +5634,9 @@ snapshots:
     transitivePeerDependencies:
       - '@nestjs/config'
 
-  ? '@helix-x/nest-oauth-provider@file:../helix-x-backend/.artifacts/helix-x-nest-oauth-provider-0.1.0.tgz(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/config@3.3.0(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(rxjs@7.8.2))(@nestjs/core@10.4.22)(@nestjs/platform-express@10.4.22)(@nestjs/swagger@7.4.2(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@10.4.22)(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2))(@nestjs/typeorm@11.0.3(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@10.4.22)(reflect-metadata@0.2.2)(rxjs@7.8.2)(typeorm@0.3.31(better-sqlite3@13.0.3)(ts-node@10.9.2(@types/node@22.20.2)(typescript@5.9.3))))(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2)(typeorm@0.3.31(better-sqlite3@13.0.3)(ts-node@10.9.2(@types/node@22.20.2)(typescript@5.9.3)))'
+  ? '@helix-x/nest-oauth-provider@file:../../framework/helix-x-backend/.artifacts/helix-x-nest-oauth-provider-0.1.0.tgz(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/config@3.3.0(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(rxjs@7.8.2))(@nestjs/core@10.4.22)(@nestjs/platform-express@10.4.22)(@nestjs/swagger@7.4.2(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@10.4.22)(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2))(@nestjs/typeorm@11.0.3(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@10.4.22)(reflect-metadata@0.2.2)(rxjs@7.8.2)(typeorm@0.3.31(better-sqlite3@13.0.3)(ts-node@10.9.2(@types/node@22.20.2)(typescript@5.9.3))))(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2)(typeorm@0.3.31(better-sqlite3@13.0.3)(ts-node@10.9.2(@types/node@22.20.2)(typescript@5.9.3)))'
   : dependencies:
-      '@helix-x/authentication': file:../helix-x-backend/.artifacts/helix-x-authentication-0.1.0.tgz(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/config@3.3.0(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(rxjs@7.8.2))(@nestjs/core@10.4.22)(@nestjs/swagger@7.4.2(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@10.4.22)(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2))(@nestjs/typeorm@11.0.3(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@10.4.22)(reflect-metadata@0.2.2)(rxjs@7.8.2)(typeorm@0.3.31(better-sqlite3@13.0.3)(ts-node@10.9.2(@types/node@22.20.2)(typescript@5.9.3))))(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(typeorm@0.3.31(better-sqlite3@13.0.3)(ts-node@10.9.2(@types/node@22.20.2)(typescript@5.9.3)))
+      '@helix-x/authentication': file:../../framework/helix-x-backend/.artifacts/helix-x-authentication-0.1.0.tgz(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/config@3.3.0(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(rxjs@7.8.2))(@nestjs/core@10.4.22)(@nestjs/swagger@7.4.2(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@10.4.22)(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2))(@nestjs/typeorm@11.0.3(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@10.4.22)(reflect-metadata@0.2.2)(rxjs@7.8.2)(typeorm@0.3.31(better-sqlite3@13.0.3)(ts-node@10.9.2(@types/node@22.20.2)(typescript@5.9.3))))(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(typeorm@0.3.31(better-sqlite3@13.0.3)(ts-node@10.9.2(@types/node@22.20.2)(typescript@5.9.3)))
       '@nestjs/common': 10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2)
       '@nestjs/config': 3.3.0(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(rxjs@7.8.2)
       '@nestjs/core': 10.4.22(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/platform-express@10.4.22)(reflect-metadata@0.2.2)(rxjs@7.8.2)
@@ -5648,9 +5654,9 @@ snapshots:
       rxjs: 7.8.2
       typeorm: 0.3.31(better-sqlite3@13.0.3)(ts-node@10.9.2(@types/node@22.20.2)(typescript@5.9.3))
 
-  '@helix-x/nestjs-ai@file:../helix-x-backend/.artifacts/helix-x-nestjs-ai-0.1.0.tgz(bzzajqwa36ji564ziltics2d7y)':
+  '@helix-x/nestjs-ai@file:../../framework/helix-x-backend/.artifacts/helix-x-nestjs-ai-0.1.0.tgz(bzzajqwa36ji564ziltics2d7y)':
     dependencies:
-      '@helix-x/authentication': file:../helix-x-backend/.artifacts/helix-x-authentication-0.1.0.tgz(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/config@3.3.0(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(rxjs@7.8.2))(@nestjs/core@10.4.22)(@nestjs/swagger@7.4.2(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@10.4.22)(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2))(@nestjs/typeorm@11.0.3(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@10.4.22)(reflect-metadata@0.2.2)(rxjs@7.8.2)(typeorm@0.3.31(better-sqlite3@13.0.3)(ts-node@10.9.2(@types/node@22.20.2)(typescript@5.9.3))))(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(typeorm@0.3.31(better-sqlite3@13.0.3)(ts-node@10.9.2(@types/node@22.20.2)(typescript@5.9.3)))
+      '@helix-x/authentication': file:../../framework/helix-x-backend/.artifacts/helix-x-authentication-0.1.0.tgz(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/config@3.3.0(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(rxjs@7.8.2))(@nestjs/core@10.4.22)(@nestjs/swagger@7.4.2(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@10.4.22)(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2))(@nestjs/typeorm@11.0.3(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@10.4.22)(reflect-metadata@0.2.2)(rxjs@7.8.2)(typeorm@0.3.31(better-sqlite3@13.0.3)(ts-node@10.9.2(@types/node@22.20.2)(typescript@5.9.3))))(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(typeorm@0.3.31(better-sqlite3@13.0.3)(ts-node@10.9.2(@types/node@22.20.2)(typescript@5.9.3)))
       '@langchain/langgraph-sdk': 1.10.2(@langchain/core@1.2.10)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
       '@nestjs/common': 10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2)
       '@nestjs/config': 3.3.0(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(rxjs@7.8.2)
@@ -5669,7 +5675,7 @@ snapshots:
       - react-dom
       - typeorm
 
-  ? '@helix-x/notifications@file:../helix-x-backend/.artifacts/helix-x-notifications-0.1.0.tgz(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/config@3.3.0(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(rxjs@7.8.2))(@nestjs/core@10.4.22)(@nestjs/swagger@7.4.2(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@10.4.22)(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2))(@nestjs/typeorm@11.0.3(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@10.4.22)(reflect-metadata@0.2.2)(rxjs@7.8.2)(typeorm@0.3.31(better-sqlite3@13.0.3)(ts-node@10.9.2(@types/node@22.20.2)(typescript@5.9.3))))(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(typeorm@0.3.31(better-sqlite3@13.0.3)(ts-node@10.9.2(@types/node@22.20.2)(typescript@5.9.3)))'
+  ? '@helix-x/notifications@file:../../framework/helix-x-backend/.artifacts/helix-x-notifications-0.1.0.tgz(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/config@3.3.0(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(rxjs@7.8.2))(@nestjs/core@10.4.22)(@nestjs/swagger@7.4.2(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@10.4.22)(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2))(@nestjs/typeorm@11.0.3(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@10.4.22)(reflect-metadata@0.2.2)(rxjs@7.8.2)(typeorm@0.3.31(better-sqlite3@13.0.3)(ts-node@10.9.2(@types/node@22.20.2)(typescript@5.9.3))))(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(typeorm@0.3.31(better-sqlite3@13.0.3)(ts-node@10.9.2(@types/node@22.20.2)(typescript@5.9.3)))'
   : dependencies:
       '@nestjs/common': 10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2)
       '@nestjs/config': 3.3.0(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(rxjs@7.8.2)

@@ -48,7 +48,7 @@ bootstrap, and `GET /health` is all `src/controllers/` should ever hold.
 
 ## Changing a library while working here
 
-The three sides propagate differently:
+The four sides propagate differently:
 
 - **`helix-x-web`** is linked from source. Edits are live; no build, no
   reinstall.
@@ -57,10 +57,22 @@ The three sides propagate differently:
   running the previous build** — the symptom is a change that appears to have no
   effect. It is `pnpm run pack`: `pack` is a built-in pnpm command that shadows
   the script and exits 0 without repacking.
-- **`helix-x-client-sdk`** is linked, but consumers resolve its `dist/`. After
-  adding or changing a backend endpoint: `pnpm generate` there (with this app's
-  backend up on :3001), then restart Vite. `pnpm codegen` alone rewrites `src/`
-  and leaves everyone reading the previous build.
+- **`packages/client-sdk`** (`@helix-x-rawla/client-sdk`) is this app's own half
+  of the API client. After adding or changing an endpoint **in this repo**:
+  `pnpm generate:sdk` with the backend up on :3001, then restart Vite.
+  `pnpm codegen` alone rewrites `src/` and leaves everyone reading the previous
+  build.
+- **`@helix-x/core-sdk`** is the framework's half, and is regenerated in
+  `framework/helix-x-core-sdk` — **not** from this app. It reads
+  `apps/openapi-host` in `helix-x-backend` on **:3101**; start it there with
+  `pnpm openapi:dev`. Rebuild `helix-x-backend` first, or the host still serves
+  the previous build and the regeneration produces no diff.
+
+Which half an endpoint belongs to is decided by the `@helix-x-core-api` Swagger
+tag. Every framework controller carries it, this app's controllers do not, and
+`helix-x-backend/scripts/check-core-api-tags.mjs` fails the build if one is
+forgotten. Adding that tag to a controller *here* would make the endpoint vanish
+from both clients — codegen here subtracts it, and core-sdk never saw it.
 
 ## Module-resolution failures usually mean duplication
 
@@ -70,7 +82,7 @@ checkout and once from here:
 - `Nest can't resolve dependencies of the …Repository (?)` — two
   `TypeOrmModule` classes. The fix is the tarball install, not an import change.
 - "Invalid hook call", or requests going out unauthenticated to a relative URL —
-  duplicate `react` or `@helix-x/client-sdk`. The fix is `resolve.dedupe` in
+  duplicate `react` or `@helix-x-rawla/client-sdk`. The fix is `resolve.dedupe` in
   `apps/frontend/vite.config.ts` plus the matching tsconfig `paths`.
 - A session that expires server-side and never signs the user out — duplicate
   `axios`. The SDK calls through the global axios instance and `plugin-auth`

@@ -17,7 +17,7 @@
     "start": "turbo run start",
     "start:frontend": "turbo run start --filter @helix-x-rawla/frontend",
     "start:backend": "turbo run start --filter @helix-x-rawla/backend",
-    "generate:sdk": "pnpm --filter @helix-x/client-sdk generate",
+    "generate:sdk": "pnpm --filter @helix-x-rawla/client-sdk generate",
     "migration:run": "turbo run migration:run --filter @helix-x-rawla/backend",
     "migration:generate": "turbo run migration:generate --filter @helix-x-rawla/backend",
     "seed:sample": "node scripts/seed-sample-data.mjs",
@@ -29,13 +29,13 @@
   },
   "pnpm": {
     "overrides": {
-      "@helix-x/authentication": "file:../helix-x-backend/.artifacts/helix-x-authentication-0.1.0.tgz",
-      "@helix-x/backend": "file:../helix-x-backend/.artifacts/helix-x-backend-0.1.0.tgz",
-      "@helix-x/client-sdk": "link:./packages/client-sdk",
-      "@helix-x/navigation": "file:../helix-x-backend/.artifacts/helix-x-navigation-0.1.0.tgz",
-      "@helix-x/nest-oauth-provider": "file:../helix-x-backend/.artifacts/helix-x-nest-oauth-provider-0.1.0.tgz",
-      "@helix-x/nestjs-ai": "file:../helix-x-backend/.artifacts/helix-x-nestjs-ai-0.1.0.tgz",
-      "@helix-x/notifications": "file:../helix-x-backend/.artifacts/helix-x-notifications-0.1.0.tgz"
+      "@helix-x/authentication": "file:../../framework/helix-x-backend/.artifacts/helix-x-authentication-0.1.0.tgz",
+      "@helix-x/backend": "file:../../framework/helix-x-backend/.artifacts/helix-x-backend-0.1.0.tgz",
+      "@helix-x/core-sdk": "link:../../framework/helix-x-core-sdk",
+      "@helix-x/navigation": "file:../../framework/helix-x-backend/.artifacts/helix-x-navigation-0.1.0.tgz",
+      "@helix-x/nest-oauth-provider": "file:../../framework/helix-x-backend/.artifacts/helix-x-nest-oauth-provider-0.1.0.tgz",
+      "@helix-x/nestjs-ai": "file:../../framework/helix-x-backend/.artifacts/helix-x-nestjs-ai-0.1.0.tgz",
+      "@helix-x/notifications": "file:../../framework/helix-x-backend/.artifacts/helix-x-notifications-0.1.0.tgz"
     },
     "allowedDeprecatedVersions": {
       "glob": "10.5.0"

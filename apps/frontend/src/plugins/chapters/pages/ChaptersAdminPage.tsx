@@ -14,7 +14,7 @@ import {
   Switch,
   type DataTableColumn,
 } from '@helix-x/design-system';
-import type { ChapterDto, StateChapterMappingDto } from '@helix-x/client-sdk';
+import type { ChapterDto, StateChapterMappingDto } from '@helix-x-rawla/client-sdk';
 import { useChapters } from '../hooks/useChapters';
 
 /**

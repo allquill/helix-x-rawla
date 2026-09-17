@@ -10,13 +10,16 @@ something reusable, it belongs in one of the sibling repos instead:
 
 | Repo | Holds |
 | --- | --- |
-| [`helix-x-web`](../helix-x-web) | React plugin kernel, bindings, shell, design system, first-party plugins |
-| [`helix-x-backend`](../helix-x-backend) | NestJS modules (auth, notifications, navigation, OAuth) |
+| [`helix-x-web`](../../framework/helix-x-web) | React plugin kernel, bindings, shell, design system, first-party plugins |
+| [`helix-x-backend`](../../framework/helix-x-backend) | NestJS modules (auth, notifications, navigation, OAuth) |
 | `helix-x-rawla` (here) | two host apps, five portal plugins, the `community-core` domain module, and the generated client |
 
-Note the client SDK is **not** shared with `helix-x-demo`. It is generated per
-backend, and this repo owns its own copy at `packages/client-sdk` — regenerating
-the demo's from this backend would delete the services the demo needs.
+Note the client SDK is **not** shared with the other products. Each owns its own
+at `packages/client-sdk`, generated from its own backend; only the framework half,
+`@helix-x/core-sdk`, is common, and it is regenerated in `framework/` from
+`apps/openapi-host`, never from a product's backend. Regenerating here therefore
+cannot affect anyone else — which was not true of the single shared SDK this
+replaced.
 
 `.claude/rules/*.md` are path-scoped and attach automatically.
 
@@ -62,7 +65,7 @@ pnpm lint
 pnpm dev:frontend     # :5173   pnpm dev:backend  # :3001
 pnpm dev:agents       # :2024   pnpm dev:mcp      # :3002
 
-cd ../helix-x-client-sdk && pnpm generate   # regenerate the API client
+pnpm generate:sdk   # regenerate the API client
 
 pnpm --filter @helix-x-rawla/backend migration:run
 pnpm --filter @helix-x-rawla/backend migration:generate src/database/migrations/<Name>
@@ -99,13 +102,14 @@ module-resolution problem.
 so `apps/frontend` links them from the sibling checkout and editing a plugin
 there is live here — no build, no reinstall.
 
-**`@helix-x/client-sdk` is linked from its own checkout, but resolves `dist/`.**
-`apps/frontend` points at the in-repo `packages/client-sdk`,
-and so do the six `helix-x-web` plugins that use it — the *same directory*, so
-there is one copy of the client on disk and one `OpenAPI` singleton by
-construction rather than by configuration. Because it points `main` at `dist/`,
-a regeneration is not live: see
-[The generated client](#the-generated-client).
+**The API client is two packages, and both resolve `dist/`.**
+`@helix-x/core-sdk` is the framework's half, linked from `framework/`, and the six
+`helix-x-web` plugins import it. This repo owns the other half in
+`packages/client-sdk`, whose `src/core/*.ts` re-export `@helix-x/core-sdk` so the
+two share one `OpenAPI` singleton — the root `pnpm.overrides` pins that package to
+one directory so every resolution, the linked plugins included, lands on it.
+`apps/frontend` depends on both. Because they point `main` at `dist/`, a
+regeneration is not live: see [The generated client](#the-generated-client).
 
 **`@helix-x/backend` is installed from tarballs.** `pnpm run pack` in that repo
 writes `.artifacts/*.tgz`, which `apps/backend` installs as
@@ -134,7 +138,7 @@ without repacking anything.)
 
 ## The generated client
 
-`@helix-x/client-sdk` is generated from **this application's** OpenAPI document
+`@helix-x-rawla/client-sdk` is generated from **this application's** OpenAPI document
 and covers its full API surface — the endpoints composed from `@helix-x/backend`
 and this app's own, in one client with one `OpenAPI` singleton. `plugin-auth`
 sets `OpenAPI.BASE` and the bearer token once, and every call is covered whoever
@@ -145,7 +149,7 @@ Regenerating, after adding or changing an endpoint here:
 ```bash
 pnpm dev:backend                                  # something must answer on :3001
 curl -s localhost:3001/docs-json | head -c 40     # must start {"openapi":"3.0.0"
-cd ../helix-x-client-sdk && pnpm generate         # check-ids, codegen, build
+pnpm generate:sdk         # check-ids, codegen, build
 ```
 
 Three things bite:
@@ -169,18 +173,18 @@ Linking has the same duplication problem in a different costume, and
 `apps/frontend` handles it in four places that must stay in step:
 
 - `vite.config.ts` → `resolve.dedupe` for `react`, `react-dom`,
-  `react-router-dom`, **`axios`** and **`@helix-x/client-sdk`**.
+  `react-router-dom`, **`axios`** and **`@helix-x-rawla/client-sdk`**.
 - `vitest.config.ts` → its own `resolve.dedupe` with the same list. Vitest does
   not read `vite.config.ts` here, so a package deduped in one and not the other
   passes `pnpm dev` and fails `pnpm test`, or the reverse.
 - `tsconfig.json` → `paths` for the type-level half: `react`, `react-dom` and
-  `@helix-x/client-sdk` (`react-router-dom` ships its own types, so it needs no
+  `@helix-x-rawla/client-sdk` (`react-router-dom` ships its own types, so it needs no
   entry).
 - `vite.config.ts` → `optimizeDeps.exclude`, which lists every linked
   `@helix-x/*` package by name so Vite serves its source instead of pre-bundling
   it. **Adding a plugin to `src/plugins.ts` means adding it here too**, or edits
   in `helix-x-web` stop being live and you debug a stale bundle.
-  `@helix-x/client-sdk` is deliberately absent: Vite already declines to
+  `@helix-x-rawla/client-sdk` is deliberately absent: Vite already declines to
   pre-bundle a linked package, so listing it would change nothing.
 
 **Everything in `resolve.dedupe` must be a direct dependency of
@@ -194,7 +198,7 @@ about duplication. A duplicate SDK is worse because it fails quietly: the SDK
 exports a mutable `OpenAPI` singleton, so `plugin-auth` sets the base URL and
 bearer token on one copy while every request reads the other — calls go out
 unauthenticated to a relative URL. Since both this app and the `helix-x-web`
-plugins now link the same `helix-x-client-sdk` directory, that duplication cannot
+plugins now link the same `helix-x-core-sdk` directory, that duplication cannot
 happen; the entry stays because the failure is silent if it ever does.
 
 `axios` is the same failure one layer down. `core/request.ts` in the SDK issues
@@ -466,4 +470,4 @@ curl -s localhost:3001/docs-json | head -c 40    # must start {"openapi":"3.0.0"
 
 Anything else bound to :3001 returns its own 200 for every path, and codegen will
 overwrite the whole SDK with garbage. The regeneration itself runs in
-`../helix-x-client-sdk` — see [The generated client](#the-generated-client).
+`packages/client-sdk` — see [The generated client](#the-generated-client).

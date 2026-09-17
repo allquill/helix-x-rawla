@@ -1,6 +1,6 @@
 import { forwardRef } from 'react';
 import { DescriptionList, type DescriptionListItem } from '@helix-x/design-system';
-import type { MemberDetailDto } from '@helix-x/client-sdk';
+import type { MemberDetailDto } from '@helix-x-rawla/client-sdk';
 
 export type MemberProfileFieldsProps = {
   member: MemberDetailDto;

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { PortalAdministrationService, type PortalSettingDto } from '@helix-x/client-sdk';
+import { PortalAdministrationService, type PortalSettingDto } from '@helix-x-rawla/client-sdk';
 
 /** The ADM-11 activation levers. */
 export function usePortalSettings() {

@@ -1,12 +1,8 @@
 {
-  "name": "@helix-x/client-sdk",
+  "name": "@helix-x-rawla/client-sdk",
   "version": "0.1.0",
-  "description": "TypeScript client for the Rawla portal backend \u2014 generated from its OpenAPI document",
-  "license": "MIT",
-  "packageManager": "pnpm@9.12.0",
-  "engines": {
-    "node": ">=22"
-  },
+  "private": true,
+  "description": "This application's API client. Generated from its own OpenAPI document, with the framework surface subtracted and re-exported from @helix-x/core-sdk.",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
@@ -23,12 +19,12 @@
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
-    "check:operation-ids": "node scripts/check-operation-ids.mjs \"${OPENAPI_INPUT:-http://localhost:3001/docs-json}\"",
-    "codegen": "pnpm check:operation-ids && openapi --input \"${OPENAPI_INPUT:-http://localhost:3001/docs-json}\" --output ./src --client axios --useOptions --exportCore true --exportServices true --exportModels true",
+    "codegen": "helix-x-app-codegen",
     "generate": "pnpm codegen && pnpm build",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
+    "@helix-x/core-sdk": "link:../../../../framework/helix-x-core-sdk",
     "axios": "^1.7.9",
     "form-data": "^4.0.1"
   },
@@ -36,6 +32,5 @@
     "openapi-typescript-codegen": "^0.29.0",
     "tsup": "^8.3.0",
     "typescript": "^5.7.0"
-  },
-  "private": true
+  }
 }
