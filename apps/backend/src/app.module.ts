@@ -9,6 +9,7 @@ import {
   NavigationModule,
   NotificationsModule,
   OAuthModule,
+  resolveDbLogging,
 } from '@helix-x/backend';
 import { CommunityAuthHooksModule } from './modules/community-core/community-auth-hooks.module';
 import { CommunityCoreModule } from './modules/community-core/community-core.module';
@@ -36,7 +37,12 @@ import { CommunityCoreModule } from './modules/community-core/community-core.mod
             : configService.get<string>('DB_SYNCHRONIZE', 'true') !== 'false',
         migrations: [join(__dirname, 'database', 'migrations', '*.{ts,js}')],
         migrationsTableName: 'migrations',
-        logging: configService.get<string>('NODE_ENV') === 'development',
+        // SQL logging. DB_LOGGING=true|false|all, or a comma-separated list
+        // of TypeORM levels (query,error,schema,warn,info,log). Unset keeps
+        // the old behaviour — on under NODE_ENV=development, off everywhere
+        // else. Note TypeORM's `true` means query + error only; use `all` for
+        // schema and startup chatter too.
+        logging: resolveDbLogging(configService),
       }),
       inject: [ConfigService],
     }),
