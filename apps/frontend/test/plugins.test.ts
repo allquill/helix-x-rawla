@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { createApplication, createMemoryStorage, type HelixApplication } from '@helix-x/web';
+import { NavigationService } from '@helix-x/core-sdk';
 
 import { plugins } from '../src/plugins';
 
@@ -19,9 +20,22 @@ describe('every registered plugin activates under strict permissions', () => {
   let app: HelixApplication;
 
   beforeEach(() => {
-    // Nothing here should reach the network. plugin-navigation tries and is
-    // expected to fail softly, which is itself worth asserting.
-    vi.stubGlobal('fetch', vi.fn(async () => new Response('{}', { status: 503 })));
+    /*
+     * Nothing here should reach the network. plugin-navigation tries and is
+     * expected to fail softly, which is itself worth asserting.
+     *
+     * It has to be the SDK call that fails, not `fetch`: the generated client
+     * issues every request through axios, so a `fetch` stub left this suite
+     * quietly talking to whatever was listening on :3001.
+     */
+    vi.spyOn(NavigationService, 'getPublicNavigationConfig').mockRejectedValue(
+      new Error('offline'),
+    );
+    // plugin-navigation caches the last document it applied in `localStorage`,
+    // not in the storage injected below — so without this a document fetched
+    // by one test survives into every later one, and the file's result depends
+    // on the order its tests happen to run in.
+    localStorage.clear();
 
     app = createApplication({
       app: { id: 'test', name: 'Test', version: '0.0.0', environment: 'test' },
@@ -97,6 +111,29 @@ describe('every registered plugin activates under strict permissions', () => {
  * the intent is what we think it is.
  */
 describe('route layouts', () => {
+  /*
+   * These assert what *this host declares*, so nothing here may reach the
+   * network.
+   *
+   * plugin-navigation fetches a navigation document and applies it as a route
+   * override layer — it can move a path or disable a route outright. Without
+   * this stub the suite quietly read whatever a backend on :3001 happened to
+   * serve, so it passed with no dev server running and failed with one: the
+   * deployment's document moves `/join` to `/register` and disables
+   * `helix.auth.register`, and `matchAny('/register')` then answered with the
+   * Join page. A test that depends on whether a server is up is worse than no
+   * test, and the failure accuses the wrong code.
+   *
+   * The SDK calls through axios, not `fetch`, so stubbing the global does
+   * nothing here — the call itself has to be the thing that fails.
+   */
+  beforeEach(() => {
+    vi.spyOn(NavigationService, 'getPublicNavigationConfig').mockRejectedValue(
+      new Error('offline'),
+    );
+    localStorage.clear();
+  });
+
   test('every declared layout id is one the kernel or a plugin defines', async () => {
     const app = createApplication({
       app: { id: 'test', name: 'Test', version: '0.0.0', environment: 'test' },
@@ -137,6 +174,10 @@ describe('route layouts', () => {
 
     expect(layoutOf('/login')).toBe('app.focused');
     expect(layoutOf('/register')).toBe('app.focused');
+    // Where the emailed credential links land. Chrome-free for the same reason
+    // as the rest: AuthLayout is a full-page split.
+    expect(layoutOf('/verify-email')).toBe('app.focused');
+    expect(layoutOf('/set-password')).toBe('app.focused');
     expect(layoutOf('/admin/users')).toBe('app');
     expect(layoutOf('/oauth-clients')).toBe('app');
     // The root page is full-width with no sidebar, signed in or out. Its nav
@@ -153,6 +194,44 @@ describe('route layouts', () => {
     expect(layoutOf('/members/1')).toBe('app');
     expect(layoutOf('/admin/registrations')).toBe('app');
     expect(layoutOf('/admin/chapters')).toBe('app');
+    app.dispose();
+  });
+
+  /*
+   * The emailed-link screens are the only credential routes with no `when`
+   * clause, and that is load-bearing rather than an oversight.
+   *
+   * `/verify-email` is reached two ways: from the link a fresh applicant gets
+   * (signed out), and from the "Resend the confirmation email" button on
+   * `/join/status` — which only a *signed-in* member can be looking at. The
+   * backend hands out the same path as the `EMAIL_NOT_VERIFIED` remediation.
+   * Gate it on `!user.authenticated` and that second route answers with the
+   * shell's `denied` state instead of the page, which is invisible to a layout
+   * assertion and exactly the kind of thing a later tidy-up would "fix".
+   */
+  test('the emailed-link screens stay reachable while signed in', async () => {
+    const app = createApplication({
+      app: { id: 'test', name: 'Test', version: '0.0.0', environment: 'test' },
+      plugins,
+      storage: createMemoryStorage(),
+      router: { mode: 'memory' },
+      logLevel: 'silent',
+      pluginManager: { permissionMode: 'strict' },
+      settingsDefaults: { 'helix.auth.apiBaseUrl': 'http://localhost:3001' },
+    });
+    await app.start();
+
+    app.user.setUser({ id: '1', name: 'Member', roles: [], permissions: [] });
+
+    const visible = (path: string) =>
+      Boolean(app.routes.match(path, (when) => app.context.evaluate(when)));
+
+    // The control: a signed-in visitor is deliberately bounced off sign-in.
+    expect(visible('/login')).toBe(false);
+
+    expect(visible('/verify-email')).toBe(true);
+    expect(visible('/set-password')).toBe(true);
+
     app.dispose();
   });
 });

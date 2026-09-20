@@ -1,4 +1,4 @@
-import type { NotificationTemplate } from '@helix-x/backend';
+import { CREDENTIAL_TEMPLATES, portalUrl, type NotificationTemplate } from '@helix-x/backend';
 import { PORTAL_TEMPLATES } from '../constants';
 
 /**
@@ -38,9 +38,6 @@ const layout = (
   }
 </div>`;
 
-const portalUrl = (path: string): string =>
-  `${(process.env.PORTAL_PUBLIC_URL ?? 'http://localhost:3000').replace(/\/+$/, '')}${path}`;
-
 const simple = (
   name: string,
   subject: (v: Record<string, unknown>) => string,
@@ -51,7 +48,11 @@ const simple = (
   name,
   priority: 'transactional',
   render: (variables) => {
-    const text = body(variables).replace(/<[^>]+>/g, '');
+    // `<br>` becomes a line break before the tags are stripped, or the plain-text
+    // alternative runs sentences together — "…Membership Secretary.The link is".
+    const text = body(variables)
+      .replace(/<br\s*\/?>/gi, '\n')
+      .replace(/<[^>]+>/g, '');
     const act = action?.(variables);
     return {
       subject: subject(variables),
@@ -62,6 +63,23 @@ const simple = (
 });
 
 export const PORTAL_NOTIFICATION_TEMPLATES: NotificationTemplate[] = [
+  /*
+   * The framework's own credential mail, branded.
+   *
+   * `TemplateRegistryService.register` overwrites by name and the framework
+   * registers its unbranded defaults only when the name is still free, so
+   * claiming the name here is all it takes. Worth doing for this one above all
+   * the others: it is the first thing a new applicant ever receives from us,
+   * and it is the only step between applying and having an account.
+   */
+  simple(
+    CREDENTIAL_TEMPLATES.email_verification,
+    () => 'Confirm your email address',
+    () => 'Confirm your email address',
+    () =>
+      'You are almost a member. Confirm this address and choose a password, and your application goes straight to the Membership Secretary.<br><br>The link is valid for 24 hours.',
+    (v) => ({ href: String(v.link ?? ''), label: 'Confirm my email address' }),
+  ),
   simple(
     PORTAL_TEMPLATES.APPLICATION_RECEIVED,
     () => 'We have received your membership application',

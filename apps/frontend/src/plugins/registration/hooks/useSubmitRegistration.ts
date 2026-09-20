@@ -66,6 +66,33 @@ export const STEP_FIELDS: Array<Array<keyof RegistrationFields>> = [
   ['offlineVerification', 'referenceName1', 'referencePhone1', 'referenceName2', 'referencePhone2', 'acceptCommunityGuidelines', 'acceptPrivacyPolicy'],
 ];
 
+/**
+ * Every required text field defaults to `''` rather than undefined. Left
+ * undefined, zod reports `invalid_type` ("expected string, received
+ * undefined") and the authored message below it never runs — so the first
+ * Continue on an untouched step would show library prose instead of "First
+ * name is required.". The optional fields stay undefined on purpose, so an
+ * untouched one is omitted from the payload rather than sent as `''`.
+ */
+export const REGISTRATION_DEFAULTS = {
+  firstName: '',
+  lastName: '',
+  dateOfBirth: '',
+  email: '',
+  phone: '',
+  addressLine1: '',
+  city: '',
+  stateCode: '',
+  postalCode: '',
+  thikana: '',
+  gotra: '',
+  caste: '',
+  membershipTier: '',
+  offlineVerification: false,
+  acceptCommunityGuidelines: false as unknown as true,
+  acceptPrivacyPolicy: false as unknown as true,
+} satisfies Partial<RegistrationFields>;
+
 export function useSubmitRegistration() {
   const [languages, setLanguages] = useState<string[]>([]);
   const [volunteerInterests, setVolunteerInterests] = useState<string[]>([]);
@@ -75,11 +102,7 @@ export function useSubmitRegistration() {
   const form = useForm<RegistrationFields>({
     resolver: zodResolver(registrationSchema),
     mode: 'onTouched',
-    defaultValues: {
-      offlineVerification: false,
-      acceptCommunityGuidelines: false as unknown as true,
-      acceptPrivacyPolicy: false as unknown as true,
-    },
+    defaultValues: REGISTRATION_DEFAULTS,
   });
 
   const onSubmit = form.handleSubmit(async (data) => {
