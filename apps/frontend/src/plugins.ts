@@ -6,12 +6,14 @@ import { manifest as navigationManifest } from '@helix-x/plugin-navigation/manif
 import { manifest as adminManifest } from '@helix-x/plugin-admin/manifest';
 import { manifest as oauthManifest } from '@helix-x/plugin-oauth/manifest';
 import { manifest as reportsManifest } from '@helix-x/plugin-reports/manifest';
+import { manifest as devtoolsManifest } from '@helix-x/plugin-devtools/manifest';
 
 import { manifest as homeManifest } from './plugins/home/manifest';
 import { manifest as registrationManifest } from './plugins/registration/manifest';
 import { manifest as membersManifest } from './plugins/members/manifest';
 import { manifest as membershipAdminManifest } from './plugins/membership-admin/manifest';
 import { manifest as chaptersManifest } from './plugins/chapters/manifest';
+
 
 /**
  * The plugin registry.
@@ -89,4 +91,16 @@ export const plugins: PluginRegistration[] = [
     load: () => import('./plugins/chapters'),
     enabled: import.meta.env.VITE_FEATURE_CHAPTERS !== 'false',
   },
+  {
+    manifest: devtoolsManifest,
+    load: () => import('@helix-x/plugin-devtools'),
+    // Dev mode: the inspector that says which plugin contributed what.
+    //
+    // Opt-*in* (`=== 'true'`), unlike every flag above, which are opt-out. It
+    // is a diagnostic, so it should be absent unless somebody asked for it —
+    // but it is gated on the flag alone rather than `import.meta.env.DEV`, so
+    // it can be switched on in a deployed build, which is where the
+    // interesting "why is this contribution missing here" questions come from.
+    enabled: import.meta.env.VITE_FEATURE_DEVTOOLS === 'true',
+  },  
 ];

@@ -150,6 +150,9 @@ importers:
       '@helix-x/plugin-auth':
         specifier: link:../../../../framework/helix-x-web/plugins/plugin-auth
         version: link:../../../../framework/helix-x-web/plugins/plugin-auth
+      '@helix-x/plugin-devtools':
+        specifier: link:../../../../framework/helix-x-web/plugins/plugin-devtools
+        version: link:../../../../framework/helix-x-web/plugins/plugin-devtools
       '@helix-x/plugin-navigation':
         specifier: link:../../../../framework/helix-x-web/plugins/plugin-navigation
         version: link:../../../../framework/helix-x-web/plugins/plugin-navigation
@@ -897,7 +900,7 @@ packages:
       typeorm: ^0.3.0
 
   '@helix-x/backend@file:../../framework/helix-x-backend/.artifacts/helix-x-backend-0.1.0.tgz':
-    resolution: {integrity: sha512-+VLvfvAuZ5Jw5EUljOOQxSDeCTR1f1pJY0gzyssRUBFPbCF80xFI8NlTSmX5nImzLB/YCXk5eVqXoHugUlNuiA==, tarball: file:../../framework/helix-x-backend/.artifacts/helix-x-backend-0.1.0.tgz}
+    resolution: {integrity: sha512-ITEfgTXF1dY54iLWzXpwPuyekLPxPjm/73dPrZ1jK+X3ICquqIxOtchqMYIoIO2XTDlGDH3/q37/u5qoeNCIbg==, tarball: file:../../framework/helix-x-backend/.artifacts/helix-x-backend-0.1.0.tgz}
     version: 0.1.0
     peerDependencies:
       '@nestjs/common': ^10.0.0
