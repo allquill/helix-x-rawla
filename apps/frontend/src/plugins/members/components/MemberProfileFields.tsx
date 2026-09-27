@@ -53,6 +53,30 @@ export const MemberProfileFields = forwardRef<HTMLDListElement, MemberProfileFie
     return (
       <div className={className || undefined}>
         <DescriptionList ref={ref} items={items} variant="field" columns={3} />
+        {(member.spouse !== undefined || member.children !== undefined) && (
+          <div className="mt-6">
+            <DescriptionList
+              variant="field"
+              columns={1}
+              items={[
+                {
+                  term: 'Spouse',
+                  description: member.spouse
+                    ? `${member.spouse.firstName} ${member.spouse.lastName}`
+                    : 'None on file',
+                },
+                {
+                  term: 'Children',
+                  description: member.children?.length
+                    ? member.children
+                        .map((c) => `${c.firstName} ${c.lastName} (born ${c.dateOfBirth})`)
+                        .join(', ')
+                    : 'None on file',
+                },
+              ]}
+            />
+          </div>
+        )}
         {member.familyHistory !== undefined && (
           <div className="mt-6">
             <DescriptionList

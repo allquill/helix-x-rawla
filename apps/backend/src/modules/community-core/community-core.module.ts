@@ -23,6 +23,7 @@ import { StateChapterMap } from './entities/state-chapter-map.entity';
 import { ChapterService } from './providers/chapter.service';
 import { CredentialPolicyService } from './providers/credential-policy.service';
 import { DuesPaymentService } from './providers/dues-payment.service';
+import { HouseholdService } from './providers/household.service';
 import { MemberRegistrationService } from './providers/member-registration.service';
 import { MemberService } from './providers/member.service';
 import { MemberVettingService } from './providers/member-vetting.service';
@@ -78,6 +79,7 @@ import { AuthModule, Role, TemplateRegistryService, User } from '@helix-x/backen
     ChapterService,
     CredentialPolicyService,
     DuesPaymentService,
+    HouseholdService,
   ],
   exports: [MemberService, ReferenceDataService, ChapterService],
 })

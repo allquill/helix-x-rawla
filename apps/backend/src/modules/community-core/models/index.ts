@@ -25,6 +25,8 @@ export {
   MemberSummaryDto,
   MemberDetailDto,
   MemberReferenceDto,
+  MemberSpouseDto,
+  MemberChildDto,
   ListMembersResponseDto,
 } from './member-response.dto';
 export {
@@ -41,3 +43,4 @@ export {
   ReferenceListDto,
 } from './admin.dto';
 export { UpdateMemberDto, UpdateMemberPrivacyDto } from './member-update.dto';
+export { UpsertChildDto } from './household.dto';

@@ -35,6 +35,36 @@ export class MemberReferenceDto {
   @ApiProperty() isVerified: boolean;
 }
 
+/** The linked spouse record (`Spouse profile` tab, MP-17). */
+export class MemberSpouseDto {
+  @ApiProperty() firstName: string;
+  @ApiPropertyOptional() middleName?: string | null;
+  @ApiProperty() lastName: string;
+  @ApiPropertyOptional() caste?: string | null;
+  @ApiPropertyOptional() gotra?: string | null;
+  @ApiPropertyOptional() thikana?: string | null;
+  @ApiPropertyOptional() nanihal?: string | null;
+  @ApiPropertyOptional() email?: string | null;
+  @ApiPropertyOptional() phone?: string | null;
+  @ApiPropertyOptional() dateOfBirth?: string | null;
+  @ApiPropertyOptional() industry?: string | null;
+  @ApiPropertyOptional() education?: string | null;
+}
+
+/** One linked child record (`Child profile` tab, MP-18), in sibling order. */
+export class MemberChildDto {
+  @ApiProperty() id: string;
+  @ApiProperty() sequence: number;
+  @ApiProperty() firstName: string;
+  @ApiPropertyOptional() middleName?: string | null;
+  @ApiProperty() lastName: string;
+  @ApiPropertyOptional() gender?: string | null;
+  @ApiProperty() dateOfBirth: string;
+  @ApiPropertyOptional() educationLevel?: string | null;
+  @ApiPropertyOptional() achievements?: string | null;
+  @ApiProperty() membershipTier: string;
+}
+
 export class MemberDetailDto extends MemberSummaryDto {
   @ApiPropertyOptional() middleName?: string | null;
   @ApiPropertyOptional() honorific?: string | null;
@@ -57,6 +87,14 @@ export class MemberDetailDto extends MemberSummaryDto {
   @ApiPropertyOptional() infoRequestMessage?: string | null;
   @ApiPropertyOptional() offlineVerification?: boolean;
   @ApiPropertyOptional({ type: [MemberReferenceDto] }) references?: MemberReferenceDto[];
+
+  /**
+   * Household members. Visible to the record owner and to reviewers only —
+   * children are minors, so they stay out of the community tier until the
+   * youth rules (gap #2) are settled.
+   */
+  @ApiPropertyOptional({ type: MemberSpouseDto, nullable: true }) spouse?: MemberSpouseDto | null;
+  @ApiPropertyOptional({ type: [MemberChildDto] }) children?: MemberChildDto[];
   @ApiPropertyOptional() reviewerNotes?: string | null;
   @ApiPropertyOptional() approvedAt?: Date | null;
   @ApiPropertyOptional() activatedAt?: Date | null;

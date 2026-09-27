@@ -1,5 +1,6 @@
 import { forwardRef } from 'react';
 import {
+  Button,
   Checkbox,
   DateField,
   FormField,
@@ -8,8 +9,8 @@ import {
   Select,
   Textarea,
 } from '@helix-x/design-system';
-import type { UseFormReturn } from 'react-hook-form';
-import type { RegistrationFields } from '../hooks/useSubmitRegistration';
+import { useFieldArray, type UseFormReturn } from 'react-hook-form';
+import { MAX_CHILDREN_AT_JOIN, type RegistrationFields } from '../hooks/useSubmitRegistration';
 
 type Option = { value: string; label: string };
 
@@ -224,7 +225,182 @@ export const LineageStep = forwardRef<HTMLDivElement, RegistrationStepProps>(
 );
 LineageStep.displayName = 'LineageStep';
 
-/** Step 4 — tier and professional details. */
+/**
+ * Step 4 — spouse and children (MP-17 / MP-18).
+ *
+ * Every field here is optional. An applicant who would rather not list their
+ * family now can add or change it from My Profile after signing in, so this
+ * step never stands between them and submitting.
+ */
+export const FamilyStep = forwardRef<HTMLDivElement, RegistrationStepProps>(
+  ({ form, options, className = '' }, ref) => {
+    const { register, formState: { errors }, setValue, unregister, watch, control } = form;
+    const { fields, append, remove } = useFieldArray({ control, name: 'children' });
+    const hasSpouse = watch('spouse') !== undefined;
+    const gotras = options('gotra');
+    const thikanas = options('thikana');
+
+    const toggleSpouse = (checked: boolean) => {
+      if (checked) setValue('spouse', { firstName: '', lastName: '' });
+      else unregister('spouse');
+    };
+
+    return (
+      <div ref={ref} className={className}>
+        <Fieldset>
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            Optional. You can skip this step and add your spouse and children
+            from <strong>My profile</strong> once you have signed in.
+          </p>
+
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor="weddingDate" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              Wedding date
+            </label>
+            <DateField id="weddingDate" {...register('weddingDate')} />
+          </div>
+
+          <Checkbox
+            label="Add my spouse"
+            checked={hasSpouse}
+            onChange={(event) => toggleSpouse(event.target.checked)}
+          />
+
+          {hasSpouse && (
+            <div className="flex flex-col gap-4 rounded-lg border border-gray-200 p-4 dark:border-gray-700">
+              <Row>
+                <FormField label="First name" errorMessage={errors.spouse?.firstName?.message} {...register('spouse.firstName')} />
+                <FormField label="Middle name" helperText="Optional" {...register('spouse.middleName')} />
+              </Row>
+              <Row>
+                <FormField label="Last name" errorMessage={errors.spouse?.lastName?.message} {...register('spouse.lastName')} />
+                <div className="flex flex-col gap-1.5">
+                  <label htmlFor="spouseCaste" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Caste / sub-clan
+                  </label>
+                  <Select id="spouseCaste" options={options('caste')} placeholder="Optional" defaultValue="" {...register('spouse.caste')} />
+                </div>
+              </Row>
+              <Row>
+                {gotras.length > 0 ? (
+                  <div className="flex flex-col gap-1.5">
+                    <label htmlFor="spouseGotra" className="text-sm font-medium text-gray-700 dark:text-gray-300">Gotra</label>
+                    <Select id="spouseGotra" options={gotras} placeholder="Optional" defaultValue="" {...register('spouse.gotra')} />
+                  </div>
+                ) : (
+                  <FormField label="Gotra" helperText="Optional" {...register('spouse.gotra')} />
+                )}
+                {thikanas.length > 0 ? (
+                  <div className="flex flex-col gap-1.5">
+                    <label htmlFor="spouseThikana" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Ancestral village / Thikana
+                    </label>
+                    <Select id="spouseThikana" options={thikanas} placeholder="Optional" defaultValue="" {...register('spouse.thikana')} />
+                  </div>
+                ) : (
+                  <FormField label="Ancestral village / Thikana" helperText="Optional" {...register('spouse.thikana')} />
+                )}
+              </Row>
+              <Row>
+                <FormField label="Nanihal" helperText="Optional" {...register('spouse.nanihal')} />
+                <div className="flex flex-col gap-1.5">
+                  <label htmlFor="spouseDob" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Date of birth
+                  </label>
+                  <DateField id="spouseDob" {...register('spouse.dateOfBirth')} />
+                </div>
+              </Row>
+              <Row>
+                <FormField label="Email" type="email" helperText="Optional" errorMessage={errors.spouse?.email?.message} {...register('spouse.email')} />
+                <FormField label="Phone" placeholder="+14155550123" helperText="Optional" errorMessage={errors.spouse?.phone?.message} {...register('spouse.phone')} />
+              </Row>
+              <Row>
+                <FormField label="Industry" helperText="Optional" {...register('spouse.industry')} />
+                <FormField label="Education" helperText="Optional" {...register('spouse.education')} />
+              </Row>
+            </div>
+          )}
+
+          <div className="flex flex-col gap-3">
+            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Children</span>
+            {fields.map((field, index) => (
+              <div
+                key={field.id}
+                className="flex flex-col gap-4 rounded-lg border border-gray-200 p-4 dark:border-gray-700"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">Child {index + 1}</span>
+                  <Button type="button" variant="ghost" size="sm" onClick={() => remove(index)}>
+                    Remove
+                  </Button>
+                </div>
+                <Row>
+                  <FormField label="First name" errorMessage={errors.children?.[index]?.firstName?.message} {...register(`children.${index}.firstName`)} />
+                  <FormField label="Last name" errorMessage={errors.children?.[index]?.lastName?.message} {...register(`children.${index}.lastName`)} />
+                </Row>
+                <Row>
+                  <div className="flex flex-col gap-1.5">
+                    <label htmlFor={`childDob${index}`} className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Date of birth
+                    </label>
+                    <DateField
+                      id={`childDob${index}`}
+                      error={Boolean(errors.children?.[index]?.dateOfBirth)}
+                      {...register(`children.${index}.dateOfBirth`)}
+                    />
+                    {errors.children?.[index]?.dateOfBirth && (
+                      <p role="alert" className="text-xs text-red-500 dark:text-red-400">
+                        {errors.children[index]?.dateOfBirth?.message}
+                      </p>
+                    )}
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <span id={`childGender${index}`} className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Gender
+                    </span>
+                    <RadioGroup
+                      name={`children.${index}.gender`}
+                      aria-labelledby={`childGender${index}`}
+                      inline
+                      value={watch(`children.${index}.gender`)}
+                      onValueChange={(value) =>
+                        setValue(`children.${index}.gender`, value as RegistrationFields['children'][number]['gender'])
+                      }
+                      options={[
+                        { value: 'male', label: 'Male' },
+                        { value: 'female', label: 'Female' },
+                      ]}
+                    />
+                  </div>
+                </Row>
+                <Row>
+                  <FormField label="Education level / grade" helperText="Optional" {...register(`children.${index}.educationLevel`)} />
+                  <FormField label="Achievements" helperText="Optional" {...register(`children.${index}.achievements`)} />
+                </Row>
+              </div>
+            ))}
+            <div>
+              <Button
+                type="button"
+                variant="secondary"
+                disabled={fields.length >= MAX_CHILDREN_AT_JOIN}
+                onClick={() => append({ firstName: '', lastName: watch('lastName') ?? '', dateOfBirth: '' })}
+              >
+                Add a child
+              </Button>
+              <p className="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+                Up to {MAX_CHILDREN_AT_JOIN} here. You can add more from My profile.
+              </p>
+            </div>
+          </div>
+        </Fieldset>
+      </div>
+    );
+  },
+);
+FamilyStep.displayName = 'FamilyStep';
+
+/** Step 5 — tier and professional details. */
 export const MembershipStep = forwardRef<HTMLDivElement, RegistrationStepProps>(
   ({ form, options, volunteerInterests, setVolunteerInterests, className = '' }, ref) => {
     const { register, formState: { errors }, setValue, watch } = form;
@@ -274,7 +450,7 @@ export const MembershipStep = forwardRef<HTMLDivElement, RegistrationStepProps>(
 );
 MembershipStep.displayName = 'MembershipStep';
 
-/** Step 5 — the two vouching members, and the consent that is recorded. */
+/** Step 6 — the two vouching members, and the consent that is recorded. */
 export const VettingStep = forwardRef<HTMLDivElement, RegistrationStepProps>(
   ({ form, className = '' }, ref) => {
     const { register, formState: { errors }, watch } = form;

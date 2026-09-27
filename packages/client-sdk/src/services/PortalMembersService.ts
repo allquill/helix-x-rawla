@@ -7,8 +7,10 @@ import type { DuesCheckoutDto } from '../models/DuesCheckoutDto';
 import type { ListMembersResponseDto } from '../models/ListMembersResponseDto';
 import type { MemberDetailDto } from '../models/MemberDetailDto';
 import type { MemberStatusDto } from '../models/MemberStatusDto';
+import type { RegistrationSpouseDto } from '../models/RegistrationSpouseDto';
 import type { UpdateMemberDto } from '../models/UpdateMemberDto';
 import type { UpdateMemberPrivacyDto } from '../models/UpdateMemberPrivacyDto';
+import type { UpsertChildDto } from '../models/UpsertChildDto';
 import type { CancelablePromise } from '../core/CancelablePromise';
 import { OpenAPI } from '../core/OpenAPI';
 import { request as __request } from '../core/request';
@@ -79,6 +81,91 @@ export class PortalMembersService {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/api/members/me/payments/checkout',
+        });
+    }
+    /**
+     * Add or replace your spouse
+     * @returns MemberDetailDto
+     * @throws ApiError
+     */
+    public static upsertMySpouse({
+        requestBody,
+    }: {
+        requestBody: RegistrationSpouseDto,
+    }): CancelablePromise<MemberDetailDto> {
+        return __request(OpenAPI, {
+            method: 'PUT',
+            url: '/api/members/me/spouse',
+            body: requestBody,
+            mediaType: 'application/json',
+        });
+    }
+    /**
+     * Remove your spouse record
+     * @returns MemberDetailDto
+     * @throws ApiError
+     */
+    public static removeMySpouse(): CancelablePromise<MemberDetailDto> {
+        return __request(OpenAPI, {
+            method: 'DELETE',
+            url: '/api/members/me/spouse',
+        });
+    }
+    /**
+     * Add a child to your household
+     * @returns MemberDetailDto
+     * @throws ApiError
+     */
+    public static addMyChild({
+        requestBody,
+    }: {
+        requestBody: UpsertChildDto,
+    }): CancelablePromise<MemberDetailDto> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/members/me/children',
+            body: requestBody,
+            mediaType: 'application/json',
+        });
+    }
+    /**
+     * Replace one child's details
+     * @returns MemberDetailDto
+     * @throws ApiError
+     */
+    public static updateMyChild({
+        childId,
+        requestBody,
+    }: {
+        childId: string,
+        requestBody: UpsertChildDto,
+    }): CancelablePromise<MemberDetailDto> {
+        return __request(OpenAPI, {
+            method: 'PUT',
+            url: '/api/members/me/children/{childId}',
+            path: {
+                'childId': childId,
+            },
+            body: requestBody,
+            mediaType: 'application/json',
+        });
+    }
+    /**
+     * Remove a child from your household
+     * @returns MemberDetailDto
+     * @throws ApiError
+     */
+    public static removeMyChild({
+        childId,
+    }: {
+        childId: string,
+    }): CancelablePromise<MemberDetailDto> {
+        return __request(OpenAPI, {
+            method: 'DELETE',
+            url: '/api/members/me/children/{childId}',
+            path: {
+                'childId': childId,
+            },
         });
     }
     /**

@@ -4,6 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import {
   REGISTRATION_DEFAULTS,
   registrationSchema,
+  stepOf,
 } from '../src/plugins/registration/hooks/useSubmitRegistration';
 
 const resolve = (values: Record<string, unknown>) =>
@@ -70,5 +71,25 @@ describe('the registration resolver reports errors rather than throwing', () => 
 
     expect(errors).toEqual({});
     expect(values).toMatchObject({ email: 'arjun@example.com' });
+  });
+});
+
+/**
+ * The form is submitted from its last step, so a server refusal about the
+ * email or date of birth concerns a field that is not on screen. The form shows
+ * it by moving to the step that holds the field — which is only right if this
+ * mapping is.
+ */
+describe('stepOf finds the step that holds a field', () => {
+  test('top-level fields map to their own step', () => {
+    expect(stepOf('dateOfBirth')).toBe(0);
+    expect(stepOf('email')).toBe(1);
+    expect(stepOf('referenceName1')).toBe(5);
+    expect(stepOf('acceptCommunityGuidelines')).toBe(5);
+  });
+
+  test('nested field names resolve by their top-level key', () => {
+    expect(stepOf('children.0.dateOfBirth')).toBe(3);
+    expect(stepOf('spouse.email')).toBe(3);
   });
 });

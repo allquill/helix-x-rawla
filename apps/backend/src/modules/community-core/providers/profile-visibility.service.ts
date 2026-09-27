@@ -105,7 +105,12 @@ export class ProfileVisibilityService {
     member: Member,
     email: string,
     viewer: AuthenticatedUser,
-    extras: { references?: MemberDetailDto['references']; totalDonationsCents?: number } = {},
+    extras: {
+      references?: MemberDetailDto['references'];
+      spouse?: MemberDetailDto['spouse'];
+      children?: MemberDetailDto['children'];
+      totalDonationsCents?: number;
+    } = {},
   ): MemberDetailDto {
     const detail: MemberDetailDto = {
       ...this.toSummary(member, email),
@@ -130,6 +135,8 @@ export class ProfileVisibilityService {
       infoRequestMessage: member.infoRequestMessage,
       offlineVerification: member.offlineVerification,
       references: extras.references,
+      spouse: extras.spouse,
+      children: extras.children,
       reviewerNotes: member.reviewerNotes,
       approvedAt: member.approvedAt,
       activatedAt: member.activatedAt,
@@ -147,11 +154,15 @@ export class ProfileVisibilityService {
       }
     }
 
-    // Vetting internals are for reviewers, never for other members.
+    // Vetting internals are for reviewers, never for other members. The
+    // household goes with them: children are minors, and the community tier
+    // should not carry their details until the youth rules (gap #2) exist.
     if (!ProfileVisibilityService.canSeeAll(viewer, member)) {
       for (const field of [
         'reviewerNotes',
         'references',
+        'spouse',
+        'children',
         'rejectionReason',
         'infoRequestMessage',
         'paymentOverrideReason',

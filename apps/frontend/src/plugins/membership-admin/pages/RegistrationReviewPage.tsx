@@ -149,6 +149,55 @@ export function RegistrationReviewPage({ params }: RouteViewProps) {
 
           <Card>
             <CardHeader>
+              <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">Household</h2>
+            </CardHeader>
+            <CardBody>
+              {member.weddingDate && (
+                <p className="mb-3 text-sm text-gray-600 dark:text-gray-400">
+                  Wedding date: {member.weddingDate}
+                </p>
+              )}
+              {!member.spouse && !member.children?.length ? (
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  No spouse or children on file. Both are optional, and the
+                  applicant can add them after signing in.
+                </p>
+              ) : (
+                <div className="flex flex-col gap-4">
+                  {member.spouse && (
+                    <DescriptionList
+                      variant="field"
+                      columns={3}
+                      items={[
+                        { term: 'Spouse', description: `${member.spouse.firstName} ${member.spouse.lastName}` },
+                        { term: 'Date of birth', description: member.spouse.dateOfBirth },
+                        { term: 'Caste', description: member.spouse.caste },
+                        { term: 'Gotra', description: member.spouse.gotra },
+                        { term: 'Thikana', description: member.spouse.thikana },
+                        { term: 'Email', description: member.spouse.email },
+                      ]}
+                    />
+                  )}
+                  {member.children && member.children.length > 0 && (
+                    <ul className="flex flex-col gap-2">
+                      {member.children.map((child) => (
+                        <li key={child.id} className="text-sm text-gray-900 dark:text-gray-100">
+                          {child.sequence}. {child.firstName} {child.lastName}{' '}
+                          <span className="text-gray-500 dark:text-gray-400">
+                            · born {child.dateOfBirth}
+                            {child.gender ? ` · ${child.gender}` : ''} · {child.membershipTier}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              )}
+            </CardBody>
+          </Card>
+
+          <Card>
+            <CardHeader>
               <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">
                 References
               </h2>

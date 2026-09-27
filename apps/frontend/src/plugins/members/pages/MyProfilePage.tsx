@@ -9,6 +9,7 @@ import {
   PageHeader,
   Textarea,
 } from '@helix-x/design-system';
+import { HouseholdSection } from '../components/HouseholdSection';
 import { useMyProfile } from '../hooks/useMembers';
 
 const EDITABLE = [
@@ -30,7 +31,8 @@ const EDITABLE = [
  * sent.
  */
 export function MyProfilePage() {
-  const { member, loading, error, save } = useMyProfile();
+  const { member, loading, error, save, saveSpouse, removeSpouse, saveChild, removeChild } =
+    useMyProfile();
   const [draft, setDraft] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -122,6 +124,16 @@ export function MyProfilePage() {
               </div>
             </CardBody>
           </Card>
+        )}
+
+        {member && (
+          <HouseholdSection
+            member={member}
+            onSaveSpouse={saveSpouse}
+            onRemoveSpouse={removeSpouse}
+            onSaveChild={saveChild}
+            onRemoveChild={removeChild}
+          />
         )}
       </div>
   );

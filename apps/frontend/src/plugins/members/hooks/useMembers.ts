@@ -3,7 +3,9 @@ import {
   PortalMembersService,
   type MemberDetailDto,
   type MemberSummaryDto,
+  type RegistrationSpouseDto,
   type UpdateMemberDto,
+  type UpsertChildDto,
   type UpdateMemberPrivacyDto,
 } from '@helix-x-rawla/client-sdk';
 
@@ -126,5 +128,38 @@ export function useMyProfile() {
     [refresh],
   );
 
-  return { member, loading, error, refresh, save, savePrivacy };
+  // Household (MP-17 / MP-18). Each call returns the refreshed profile, so the
+  // page re-renders from what the server stored rather than from the draft.
+  const saveSpouse = useCallback(async (spouse: RegistrationSpouseDto) => {
+    setMember(await PortalMembersService.upsertMySpouse({ requestBody: spouse }));
+  }, []);
+
+  const removeSpouse = useCallback(async () => {
+    setMember(await PortalMembersService.removeMySpouse());
+  }, []);
+
+  const saveChild = useCallback(async (child: UpsertChildDto, childId?: string) => {
+    setMember(
+      childId
+        ? await PortalMembersService.updateMyChild({ childId, requestBody: child })
+        : await PortalMembersService.addMyChild({ requestBody: child }),
+    );
+  }, []);
+
+  const removeChild = useCallback(async (childId: string) => {
+    setMember(await PortalMembersService.removeMyChild({ childId }));
+  }, []);
+
+  return {
+    member,
+    loading,
+    error,
+    refresh,
+    save,
+    savePrivacy,
+    saveSpouse,
+    removeSpouse,
+    saveChild,
+    removeChild,
+  };
 }

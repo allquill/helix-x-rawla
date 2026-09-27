@@ -2,7 +2,9 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
+import type { MemberChildDto } from './MemberChildDto';
 import type { MemberReferenceDto } from './MemberReferenceDto';
+import type { MemberSpouseDto } from './MemberSpouseDto';
 export type MemberDetailDto = {
     id: string;
     publicMemberId?: string;
@@ -43,6 +45,8 @@ export type MemberDetailDto = {
     infoRequestMessage?: string;
     offlineVerification?: boolean;
     references?: Array<MemberReferenceDto>;
+    spouse?: MemberSpouseDto | null;
+    children?: Array<MemberChildDto>;
     reviewerNotes?: string;
     approvedAt?: string;
     activatedAt?: string;

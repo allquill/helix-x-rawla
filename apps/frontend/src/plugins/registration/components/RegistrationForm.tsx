@@ -2,19 +2,24 @@ import { forwardRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Alert, Button, Card, CardBody, Stepper } from '@helix-x/design-system';
 import { useRegistrationConfig } from '../hooks/useRegistrationConfig';
-import { STEP_FIELDS, useSubmitRegistration } from '../hooks/useSubmitRegistration';
+import { STEP_FIELDS, stepOf, useSubmitRegistration } from '../hooks/useSubmitRegistration';
 import {
   AboutYouStep,
   ContactStep,
+  FamilyStep,
   LineageStep,
   MembershipStep,
   VettingStep,
 } from './RegistrationSteps';
 
+/** Index of the Contact step, where an already-registered email is caught early. */
+const CONTACT_STEP = 1;
+
 const STEPS = [
   { id: 'about', label: 'About you' },
   { id: 'contact', label: 'Contact' },
   { id: 'lineage', label: 'Lineage' },
+  { id: 'family', label: 'Family' },
   { id: 'membership', label: 'Membership' },
   { id: 'vetting', label: 'References' },
 ];
@@ -33,15 +38,26 @@ export const RegistrationForm = forwardRef<HTMLFormElement, RegistrationFormProp
   ({ className = '' }, ref) => {
     const [step, setStep] = useState(0);
     const { config, loading, error, maxDateOfBirth, options } = useRegistrationConfig();
+    const [checkingEmail, setCheckingEmail] = useState(false);
     const {
       form,
       onSubmit,
       submitted,
+      serverError,
+      clearServerError,
+      checkEmailAvailable,
       languages,
       setLanguages,
       volunteerInterests,
       setVolunteerInterests,
-    } = useSubmitRegistration();
+    } = useSubmitRegistration({
+      // A refusal usually belongs to a field on an earlier step. Show that
+      // step, then focus the field once its inputs have mounted.
+      onFieldError: (field) => {
+        setStep(stepOf(field));
+        setTimeout(() => form.setFocus(field), 0);
+      },
+    });
 
     if (submitted) {
       return (
@@ -93,8 +109,21 @@ export const RegistrationForm = forwardRef<HTMLFormElement, RegistrationFormProp
     /* Validate only this step's fields — a later step's emptiness is not yet an
        error, and marking it as one is how multi-step forms become unusable. */
     const next = async () => {
+      clearServerError();
       const valid = await form.trigger(STEP_FIELDS[step]);
-      if (valid) setStep((s) => Math.min(STEPS.length - 1, s + 1));
+      if (!valid) return;
+      if (step === CONTACT_STEP) {
+        setCheckingEmail(true);
+        const available = await checkEmailAvailable();
+        setCheckingEmail(false);
+        if (!available) return;
+      }
+      setStep((s) => Math.min(STEPS.length - 1, s + 1));
+    };
+
+    const back = () => {
+      clearServerError();
+      setStep((s) => Math.max(0, s - 1));
     };
 
     return (
@@ -118,8 +147,20 @@ export const RegistrationForm = forwardRef<HTMLFormElement, RegistrationFormProp
 
         <Stepper steps={STEPS} current={step} onStepClick={setStep} />
 
-        {form.formState.errors.root && (
-          <Alert variant="error">{form.formState.errors.root.message}</Alert>
+        {serverError && (
+          <Alert variant="error">
+            <span className="block">{serverError.message}</span>
+            {serverError.remediation && (
+              <span className="mt-2 flex flex-wrap gap-4">
+                <Link to="/login" className="font-medium underline">
+                  Sign in
+                </Link>
+                <Link to={serverError.remediation.href} className="font-medium underline">
+                  Reset password
+                </Link>
+              </span>
+            )}
+          </Alert>
         )}
 
         <Card>
@@ -127,8 +168,9 @@ export const RegistrationForm = forwardRef<HTMLFormElement, RegistrationFormProp
             {step === 0 && <AboutYouStep {...stepProps} />}
             {step === 1 && <ContactStep {...stepProps} />}
             {step === 2 && <LineageStep {...stepProps} />}
-            {step === 3 && <MembershipStep {...stepProps} />}
-            {step === 4 && <VettingStep {...stepProps} />}
+            {step === 3 && <FamilyStep {...stepProps} />}
+            {step === 4 && <MembershipStep {...stepProps} />}
+            {step === 5 && <VettingStep {...stepProps} />}
           </CardBody>
         </Card>
 
@@ -136,7 +178,7 @@ export const RegistrationForm = forwardRef<HTMLFormElement, RegistrationFormProp
           <Button
             type="button"
             variant="secondary"
-            onClick={() => setStep((s) => Math.max(0, s - 1))}
+            onClick={back}
             disabled={step === 0 || form.formState.isSubmitting}
           >
             Back
@@ -147,7 +189,7 @@ export const RegistrationForm = forwardRef<HTMLFormElement, RegistrationFormProp
               Submit application
             </Button>
           ) : (
-            <Button type="button" onClick={next}>
+            <Button type="button" onClick={next} loading={checkingEmail}>
               Continue
             </Button>
           )}

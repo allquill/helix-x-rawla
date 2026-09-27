@@ -4,6 +4,8 @@ import { Brackets, In, Repository } from 'typeorm';
 import { User, type AuthenticatedUser } from '@helix-x/backend';
 import { Member } from '../entities/member.entity';
 import { MemberReferenceContact } from '../entities/member-reference-contact.entity';
+import { SpouseProfile } from '../entities/spouse-profile.entity';
+import { ChildProfile } from '../entities/child-profile.entity';
 import { CHAPTER_LEAD_ROLE, PORTAL_PERMISSIONS, STAFF_ROLES } from '../constants';
 import type { MemberDetailDto, MemberSummaryDto } from '../models/member-response.dto';
 import type { UpdateMemberDto } from '../models/member-update.dto';
@@ -48,6 +50,8 @@ export class MemberService {
     @InjectRepository(User) private readonly userRepo: Repository<User>,
     @InjectRepository(MemberReferenceContact)
     private readonly referenceRepo: Repository<MemberReferenceContact>,
+    @InjectRepository(SpouseProfile) private readonly spouseRepo: Repository<SpouseProfile>,
+    @InjectRepository(ChildProfile) private readonly childRepo: Repository<ChildProfile>,
     private readonly visibility: ProfileVisibilityService,
     private readonly gates: MemberGateService,
     private readonly referenceData: ReferenceDataService,
@@ -174,10 +178,11 @@ export class MemberService {
       where: { id: member.userId },
       select: { id: true, email: true },
     });
-    const references = await this.referenceRepo.find({
-      where: { memberId: id },
-      order: { sequence: 'ASC' },
-    });
+    const [references, spouse, children] = await Promise.all([
+      this.referenceRepo.find({ where: { memberId: id }, order: { sequence: 'ASC' } }),
+      this.spouseRepo.findOne({ where: { memberId: id } }),
+      this.childRepo.find({ where: { memberId: id }, order: { sequence: 'ASC' } }),
+    ]);
 
     return this.visibility.toDetail(member, user?.email ?? '', viewer, {
       references: references.map((r) => ({
@@ -185,6 +190,34 @@ export class MemberService {
         name: r.name,
         phone: r.phone,
         isVerified: r.isVerified,
+      })),
+      spouse: spouse
+        ? {
+            firstName: spouse.firstName,
+            middleName: spouse.middleName,
+            lastName: spouse.lastName,
+            caste: spouse.caste,
+            gotra: spouse.gotra,
+            thikana: spouse.thikana,
+            nanihal: spouse.nanihal,
+            email: spouse.email,
+            phone: spouse.phone,
+            dateOfBirth: spouse.dateOfBirth,
+            industry: spouse.industry,
+            education: spouse.education,
+          }
+        : null,
+      children: children.map((c) => ({
+        id: c.id,
+        sequence: c.sequence,
+        firstName: c.firstName,
+        middleName: c.middleName,
+        lastName: c.lastName,
+        gender: c.gender,
+        dateOfBirth: c.dateOfBirth,
+        educationLevel: c.educationLevel,
+        achievements: c.achievements,
+        membershipTier: c.membershipTier,
       })),
     });
   }

@@ -1,10 +1,12 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   Patch,
   Post,
+  Put,
   Query,
   UseGuards,
   UsePipes,
@@ -33,8 +35,11 @@ import {
 } from '../models/member-response.dto';
 import { DuesCheckoutDto, MemberStatusDto } from '../models/registration-response.dto';
 import { ArchiveMemberDto } from '../models/vetting.dto';
+import { UpsertChildDto } from '../models/household.dto';
+import { RegistrationSpouseDto } from '../models/registration.dto';
 import { UpdateMemberDto, UpdateMemberPrivacyDto } from '../models/member-update.dto';
 import { DuesPaymentService } from '../providers/dues-payment.service';
+import { HouseholdService } from '../providers/household.service';
 import { MemberService } from '../providers/member.service';
 import { MemberVettingService } from '../providers/member-vetting.service';
 
@@ -56,6 +61,7 @@ export class MemberController {
     private readonly members: MemberService,
     private readonly vetting: MemberVettingService,
     private readonly duesPayment: DuesPaymentService,
+    private readonly household: HouseholdService,
   ) {}
 
   // ── Self-service. Reachable while gates are still closed (IAM-14). ────────
@@ -117,6 +123,78 @@ export class MemberController {
   @Post('me/payments/checkout')
   createMyDuesCheckout(@CurrentUser() user: AuthenticatedUser): Promise<DuesCheckoutDto> {
     return this.duesPayment.startCheckout(user);
+  }
+
+  // ── Household (MP-17 / MP-18). Optional at joining, so filled in here. ────
+  //
+  // Gate-exempt like the rest of the profile: an applicant still waiting on
+  // approval or dues may complete their household in the meantime. Every
+  // route resolves the member from the session, never from the request.
+
+  @ApiOperation({ summary: 'Add or replace your spouse' })
+  @ApiOkResponse({ type: MemberDetailDto })
+  @GateExempt()
+  @UsePipes(new ValidationPipe({ transform: true, whitelist: true, forbidNonWhitelisted: true }))
+  @Put('me/spouse')
+  async upsertMySpouse(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() dto: RegistrationSpouseDto,
+  ): Promise<MemberDetailDto> {
+    const member = await this.members.byUserId(user.id);
+    await this.household.upsertSpouse(member, dto, user);
+    return this.members.detail(member.id, user, { all: true, chapterIds: [] });
+  }
+
+  @ApiOperation({ summary: 'Remove your spouse record' })
+  @ApiOkResponse({ type: MemberDetailDto })
+  @GateExempt()
+  @Delete('me/spouse')
+  async removeMySpouse(@CurrentUser() user: AuthenticatedUser): Promise<MemberDetailDto> {
+    const member = await this.members.byUserId(user.id);
+    await this.household.removeSpouse(member, user);
+    return this.members.detail(member.id, user, { all: true, chapterIds: [] });
+  }
+
+  @ApiOperation({ summary: 'Add a child to your household' })
+  @ApiCreatedResponse({ type: MemberDetailDto })
+  @GateExempt()
+  @UsePipes(new ValidationPipe({ transform: true, whitelist: true, forbidNonWhitelisted: true }))
+  @Post('me/children')
+  async addMyChild(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() dto: UpsertChildDto,
+  ): Promise<MemberDetailDto> {
+    const member = await this.members.byUserId(user.id);
+    await this.household.addChild(member, dto, user);
+    return this.members.detail(member.id, user, { all: true, chapterIds: [] });
+  }
+
+  @ApiOperation({ summary: "Replace one child's details" })
+  @ApiOkResponse({ type: MemberDetailDto })
+  @GateExempt()
+  @UsePipes(new ValidationPipe({ transform: true, whitelist: true, forbidNonWhitelisted: true }))
+  @Put('me/children/:childId')
+  async updateMyChild(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('childId') childId: string,
+    @Body() dto: UpsertChildDto,
+  ): Promise<MemberDetailDto> {
+    const member = await this.members.byUserId(user.id);
+    await this.household.updateChild(member, childId, dto, user);
+    return this.members.detail(member.id, user, { all: true, chapterIds: [] });
+  }
+
+  @ApiOperation({ summary: 'Remove a child from your household' })
+  @ApiOkResponse({ type: MemberDetailDto })
+  @GateExempt()
+  @Delete('me/children/:childId')
+  async removeMyChild(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('childId') childId: string,
+  ): Promise<MemberDetailDto> {
+    const member = await this.members.byUserId(user.id);
+    await this.household.removeChild(member, childId, user);
+    return this.members.detail(member.id, user, { all: true, chapterIds: [] });
   }
 
   // ── Directory and administration. Gated normally. ─────────────────────────
