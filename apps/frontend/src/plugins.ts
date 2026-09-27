@@ -6,6 +6,7 @@ import { manifest as navigationManifest } from '@helix-x/plugin-navigation/manif
 import { manifest as adminManifest } from '@helix-x/plugin-admin/manifest';
 import { manifest as oauthManifest } from '@helix-x/plugin-oauth/manifest';
 import { manifest as reportsManifest } from '@helix-x/plugin-reports/manifest';
+import { manifest as contactManifest } from '@helix-x/plugin-contact/manifest';
 import { manifest as devtoolsManifest } from '@helix-x/plugin-devtools/manifest';
 
 import { manifest as homeManifest } from './plugins/home/manifest';
@@ -59,7 +60,13 @@ export const plugins: PluginRegistration[] = [
     load: () => import('@helix-x/plugin-reports'),
     enabled: import.meta.env.VITE_FEATURE_REPORTS !== 'false',
   },
-
+  {
+    manifest: contactManifest,
+    load: () => import('@helix-x/plugin-contact'),
+    // Public Contact Us form. The recipient is backend configuration
+    // (CONTACT_TO_EMAIL); switching the plugin off only removes the form.
+    enabled: import.meta.env.VITE_FEATURE_CONTACT !== 'false',
+  },
   // ── Rawla portal ──
   // Owns '/', in place of plugin-dashboard. Public: the landing page is the
   // one screen reachable signed out besides /join and the auth routes.

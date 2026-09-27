@@ -154,6 +154,143 @@ the full `gates` snapshot, in a fixed precedence — except on a wrong password,
 which always answers `INVALID_CREDENTIALS` with no gate detail, so the endpoint
 cannot be used to enumerate accounts.
 
+## Testing dues payment
+
+The payment gate closes through a dues checkout, opened from **Pay $… now** on
+`/join/status` (`POST /api/members/me/payments/checkout`). `PAYMENT_PROVIDER` in
+`apps/backend/.env` decides how money moves, and there are three ways to run it
+locally, from cheapest to most realistic:
+
+| Mode | Needs | Checkout page | Gate closes on |
+| --- | --- | --- | --- |
+| `console` | nothing | a backend dev route | visiting that route |
+| stripe-mock | Docker | none (fixture URL) | a webhook you sign and send |
+| Stripe test mode | a Stripe account + Stripe CLI | Stripe's real hosted page | Stripe's real webhook |
+
+Whichever mode you use, the member must have a **verified email**, the portal
+setting that requires dues must be on, and their tier must cost more than $0 — a
+$0 tier (Youth) is recorded as `waived` and closes the gate with no checkout.
+With the [sample data](#sample-data) loaded, `bhavani.gehlot@example.test` /
+`Rawla!Demo1` is waiting on exactly this gate. Restart the backend after changing
+`.env`; it reads it only at boot.
+
+After a successful payment, check the result:
+
+```bash
+sqlite3 apps/backend/data/helix_x.db \
+  "select provider, providerRef, status, amountCents from membership_payments order by createdAt desc limit 3;"
+```
+
+The newest row should be `settled`, and the member's status page should show the
+payment gate as done (and the member as active if it was the last open gate).
+
+### 1. `console` — no Stripe at all
+
+The default. No money moves and no network calls are made.
+
+```bash
+PAYMENT_PROVIDER=console
+```
+
+Click **Pay now**: the browser goes to `GET /api/dev/payments/console_…/complete`,
+which settles the payment immediately and redirects to
+`/join/status?payment=success`. Use this for UI work and for running the whole
+join → approve → pay → active flow. It is refused under `NODE_ENV=production`.
+
+### 2. stripe-mock — the Stripe code path, offline
+
+Runs the real `stripe` SDK calls against
+[stripe/stripe-mock](https://github.com/stripe/stripe-mock), which checks every
+request against Stripe's API spec. Good for catching bad `checkout.sessions.create`
+parameters without a Stripe account.
+
+```bash
+cd docker/stripe-mock && docker compose up -d      # :12111
+curl -s localhost:12111/v1/balance -u sk_test_123: | head -c 80
+```
+
+```bash
+# apps/backend/.env
+PAYMENT_PROVIDER=stripe
+STRIPE_SECRET_KEY=sk_test_123
+STRIPE_WEBHOOK_SECRET=whsec_local_mock
+STRIPE_API_BASE=http://localhost:12111
+```
+
+Keep comments on their own lines, not after a value. `STRIPE_API_BASE` is what
+sends the SDK to the mock. Without it the SDK calls the real API, which rejects
+`sk_test_123`, and the portal shows "The payment service is unavailable". It is
+refused under `NODE_ENV=production`.
+
+stripe-mock stores nothing and **never sends webhooks**, so you play Stripe's
+part yourself:
+
+1. Click **Pay now**. The backend records a `pending` row and tries to send you to
+   the session URL, but that URL is a fixture and there is nothing to pay on.
+   Come back to the portal.
+2. Find the session id the backend stored:
+
+   ```bash
+   sqlite3 apps/backend/data/helix_x.db \
+     "select providerRef, status from membership_payments order by createdAt desc limit 1;"
+   ```
+
+3. Send the signed `checkout.session.completed` Stripe would have sent:
+
+   ```bash
+   node docker/stripe-mock/send-webhook.mjs cs_test_…   # → 200 {"received":true}
+   ```
+
+   It signs with `STRIPE_WEBHOOK_SECRET` from `apps/backend/.env`. Send it
+   again to check idempotency: it still answers 200 and settles nothing new.
+
+stripe-mock may return the **same session id every time**, and `providerRef` is
+unique, so a second checkout can fail. Delete the old `pending` row, or start
+from a fresh database, between runs. `docker compose down` stops the mock.
+[`docker/stripe-mock/README.md`](docker/stripe-mock/README.md) has more detail.
+
+### 3. Stripe test mode — end to end
+
+The real hosted Checkout page, real webhooks, no real money. You need a Stripe
+account in **test mode** and the [Stripe CLI](https://docs.stripe.com/stripe-cli).
+
+```bash
+stripe login
+stripe listen --forward-to localhost:3001/api/payments/stripe/webhook
+# prints: Ready! Your webhook signing secret is whsec_…
+```
+
+Leave `stripe listen` running. It is what delivers the webhooks to your machine.
+
+```bash
+# apps/backend/.env
+PAYMENT_PROVIDER=stripe
+STRIPE_SECRET_KEY=sk_test_…        # Dashboard → Developers → API keys (test mode)
+STRIPE_WEBHOOK_SECRET=whsec_…      # the secret `stripe listen` printed
+STRIPE_API_BASE=                   # must be empty, or calls go to the mock
+```
+
+Click **Pay now** and pay on Stripe's page with a
+[test card](https://docs.stripe.com/testing):
+
+| Card | Result |
+| --- | --- |
+| `4242 4242 4242 4242` | succeeds |
+| `4000 0000 0000 9995` | declined (insufficient funds) |
+| `4000 0025 0000 3155` | asks for 3-D Secure authentication |
+
+Use any future expiry, any CVC and any postcode. `stripe listen` should log
+`checkout.session.completed` → `200`. Stripe then redirects to
+`/join/status?payment=success`.
+
+The **redirect alone does not close the gate**. Only the signed webhook does, so
+anyone typing the success URL cannot fake a payment. The status page shows
+"Payment received — confirming with the payment provider…" and checks again
+every 2 s for about 20 s. If it never turns settled, look at `stripe listen`:
+a `400` there means `STRIPE_WEBHOOK_SECRET` does not match the secret it
+printed. Copy it again, restart the backend, and replay the delivery with
+`stripe events resend evt_…`.
+
 ## Commands
 
 ```bash

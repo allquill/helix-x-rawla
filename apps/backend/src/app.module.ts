@@ -6,6 +6,7 @@ import { AppController } from './controllers/app.controller';
 import { AppService } from './providers/app.service';
 import {
   AuthModule,
+  ContactModule,
   NavigationModule,
   NotificationsModule,
   OAuthModule,
@@ -103,6 +104,25 @@ import { CommunityCoreModule } from './modules/community-core/community-core.mod
       }),
       inject: [ConfigService],
     }),
+// Public Contact Us endpoint (POST /api/contact-messages), delivered
+    // through NotificationsModule above — so under MAIL_TRANSPORT=console the
+    // messages land in GET /api/dev/outbox. The recipient is configuration,
+    // never request data. Behind a proxy, enable `trust proxy` or the per-IP
+    // limit counts every visitor as the proxy.
+    ContactModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: (config: ConfigService) => ({
+        recipients: config
+          .getOrThrow<string>('CONTACT_TO_EMAIL')
+          .split(',')
+          .map((address) => address.trim()),
+        subjectPrefix: config.get<string>('CONTACT_SUBJECT_PREFIX', '[Contact]'),
+        rateLimit: {
+          perIpPerHour: Number(config.get<string>('CONTACT_RATE_LIMIT_PER_HOUR', '5')),
+        },
+      }),
+      inject: [ConfigService],
+    }),    
   ],
   controllers: [AppController],
   providers: [AppService],
