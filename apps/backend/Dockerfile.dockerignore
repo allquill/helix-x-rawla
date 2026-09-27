@@ -1,0 +1,38 @@
+# Ignore rules for apps/backend/Dockerfile.
+#
+# Named `Dockerfile.dockerignore` on purpose: the build context is the helix-x
+# workspace root (so ../../framework resolves), and BuildKit reads this file
+# instead of a `.dockerignore` at that root. Paths are relative to the
+# workspace root.
+#
+# Allow-list: exclude everything, then re-include only what the backend image
+# needs. Anything new has to be added here deliberately — which is how local
+# .env secrets and the SQLite database stay out of the image.
+
+*
+
+# Framework packages, as packed tarballs (`pnpm run pack` in helix-x-backend).
+!framework/helix-x-backend/.artifacts/*.tgz
+
+# Workspace manifests: the lockfile resolves every importer.
+!example/helix-x-rawla/package.json
+!example/helix-x-rawla/pnpm-lock.yaml
+!example/helix-x-rawla/pnpm-workspace.yaml
+!example/helix-x-rawla/tsconfig.base.json
+!example/helix-x-rawla/apps/frontend/package.json
+!example/helix-x-rawla/packages/client-sdk/package.json
+
+# The backend itself.
+!example/helix-x-rawla/apps/backend
+
+# …minus local state, build output and anything that is not source.
+example/helix-x-rawla/apps/backend/node_modules
+example/helix-x-rawla/apps/backend/dist
+example/helix-x-rawla/apps/backend/data
+example/helix-x-rawla/apps/backend/coverage
+example/helix-x-rawla/apps/backend/.turbo
+example/helix-x-rawla/apps/backend/.env
+example/helix-x-rawla/apps/backend/.env.*
+example/helix-x-rawla/apps/backend/**/*.tsbuildinfo
+example/helix-x-rawla/apps/backend/**/*.spec.ts
+**/.DS_Store
