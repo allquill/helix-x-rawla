@@ -180,7 +180,8 @@ Linking has the same duplication problem in a different costume, and
 `apps/frontend` handles it in four places that must stay in step:
 
 - `vite.config.ts` → `resolve.dedupe` for `react`, `react-dom`,
-  `react-router-dom`, **`axios`** and **`@helix-x-rawla/client-sdk`**.
+  `react-router-dom`, **`axios`**, **`@helix-x-rawla/client-sdk`** and the form
+  stack — **`zod`**, **`react-hook-form`**, **`@hookform/resolvers`**.
 - `vitest.config.ts` → its own `resolve.dedupe` with the same list. Vitest does
   not read `vite.config.ts` here, so a package deduped in one and not the other
   passes `pnpm dev` and fails `pnpm test`, or the reverse.
@@ -215,6 +216,16 @@ axios from different checkouts, so without deduping they are two different
 globals and the interceptor is installed on one nobody uses. The symptom is a
 session that expires server-side and never signs the user out: calls just start
 failing.
+
+The form stack fails in the dep optimizer, not in the module graph. Vite
+pre-bundles each package **name** once, and whichever copy it meets first serves
+every importer — so when the optimizer reached `zod` through the linked
+`plugin-auth`, this app's zod-4 schemas silently ran on the framework's zod 3.
+The symptom was a registration form that crashed inside zod with *"array.map is
+not a function"* on the first invalid submit. The versions now match (the
+framework plugins moved to zod 4 / resolvers 5), and the dedupe keeps a future
+drift from reaching the page. Check `node_modules/.vite/deps/_metadata.json`:
+a `src` path pointing into `framework/helix-x-web` means the wrong copy won.
 
 Duplicate `@types/react` produces the same class of confusion at compile time:
 identical versions from two pnpm stores are *not* the same type, so library

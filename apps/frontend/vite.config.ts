@@ -46,6 +46,18 @@ export default defineConfig({
        */
       '@helix-x/core-sdk',
       '@helix-x-rawla/client-sdk',
+      /*
+       * The form stack. `plugin-auth` and `plugin-contact` import these from
+       * the `helix-x-web` checkout, and the dep optimizer bundles each package
+       * name once — whichever copy it meets first serves *every* importer. When
+       * the framework's won, this app's zod-4 schemas ran on zod 3:
+       * `z.enum(SubmitRegistrationDto.gender)` built fine and then crashed
+       * inside zod with "array.map is not a function" on the first invalid
+       * submit. Deduping pins all three to this app's versions.
+       */
+      'zod',
+      'react-hook-form',
+      '@hookform/resolvers',
     ],
   },
   optimizeDeps: {
@@ -61,6 +73,8 @@ export default defineConfig({
       '@helix-x/plugin-admin',
       '@helix-x/plugin-oauth',
       '@helix-x/plugin-reports',
+      '@helix-x/plugin-contact',
+      '@helix-x/plugin-devtools',
     ],
   },
 });
