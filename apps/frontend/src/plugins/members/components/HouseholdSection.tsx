@@ -2,13 +2,9 @@ import { useEffect, useState } from 'react';
 import {
   Alert,
   Button,
-  Card,
-  CardBody,
-  CardHeader,
   DateField,
   DescriptionList,
   FormField,
-  Modal,
   RadioGroup,
   Select,
 } from '@helix-x/design-system';
@@ -20,6 +16,15 @@ import {
   type MemberSpouseDto,
   type RegistrationSpouseDto,
 } from '@helix-x-rawla/client-sdk';
+import {
+  EditDialog,
+  Label,
+  ProfileSection,
+  Row,
+  apiMessage,
+  orDash,
+  withoutBlanks,
+} from './ProfileEditing';
 
 type Option = { value: string; label: string };
 
@@ -39,25 +44,8 @@ function useReferenceOptions() {
   return (key: string): Option[] => lists[key] ?? [];
 }
 
-const apiMessage = (err: unknown, fallback: string): string => {
-  const message = (err as { body?: { message?: string | string[] } }).body?.message;
-  return Array.isArray(message) ? message.join(', ') : message ?? fallback;
-};
-
-/** `''` → `undefined`, so the API's email and E.164 checks see an omitted field. */
-const withoutBlanks = <T extends Record<string, unknown>>(value: T): T =>
-  Object.fromEntries(
-    Object.entries(value).map(([key, v]) => [key, typeof v === 'string' && v.trim() === '' ? undefined : v]),
-  ) as T;
-
 const fullName = (p: { firstName: string; middleName?: string | null; lastName: string }) =>
   [p.firstName, p.middleName, p.lastName].filter(Boolean).join(' ');
-
-const Label = ({ htmlFor, children }: { htmlFor: string; children: React.ReactNode }) => (
-  <label htmlFor={htmlFor} className="text-sm font-medium text-gray-700 dark:text-gray-300">
-    {children}
-  </label>
-);
 
 /** A select when the list is curated, free text until an administrator fills it. */
 function ListOrText(props: {
@@ -77,10 +65,6 @@ function ListOrText(props: {
     <FormField label={label} helperText="Optional" value={value} onChange={(e) => onChange(e.target.value)} />
   );
 }
-
-const Row = ({ children }: { children: React.ReactNode }) => (
-  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">{children}</div>
-);
 
 type SpouseDraft = Record<keyof RegistrationSpouseDto, string>;
 
@@ -108,79 +92,50 @@ function SpouseDialog(props: {
 }) {
   const { open, spouse, options, onClose, onSave } = props;
   const [draft, setDraft] = useState<SpouseDraft>(spouseDraft(spouse));
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (open) {
-      setDraft(spouseDraft(spouse));
-      setError(null);
-    }
+    if (open) setDraft(spouseDraft(spouse));
   }, [open, spouse]);
 
   const set = (key: keyof SpouseDraft) => (value: string) => setDraft((d) => ({ ...d, [key]: value }));
 
   const submit = async () => {
     if (!draft.firstName.trim() || !draft.lastName.trim()) {
-      setError("Your spouse's first and last name are required.");
-      return;
+      throw new Error("Your spouse's first and last name are required.");
     }
-    setSaving(true);
-    setError(null);
-    try {
-      await onSave(withoutBlanks(draft) as RegistrationSpouseDto);
-      onClose();
-    } catch (err) {
-      setError(apiMessage(err, 'The spouse record could not be saved.'));
-    } finally {
-      setSaving(false);
-    }
+    await onSave(withoutBlanks(draft) as RegistrationSpouseDto);
   };
 
   return (
-    <Modal
-      open={open}
-      onClose={onClose}
-      size="lg"
-      title={spouse ? 'Edit spouse' : 'Add spouse'}
-      footer={
-        <>
-          <Button variant="secondary" onClick={onClose} disabled={saving}>Cancel</Button>
-          <Button onClick={submit} loading={saving}>Save</Button>
-        </>
-      }
-    >
-      <div className="flex flex-col gap-4">
-        {error && <Alert variant="error">{error}</Alert>}
-        <Row>
-          <FormField label="First name" value={draft.firstName} onChange={(e) => set('firstName')(e.target.value)} />
-          <FormField label="Middle name" helperText="Optional" value={draft.middleName} onChange={(e) => set('middleName')(e.target.value)} />
-        </Row>
-        <Row>
-          <FormField label="Last name" value={draft.lastName} onChange={(e) => set('lastName')(e.target.value)} />
-          <ListOrText id="spouseCaste" label="Caste / sub-clan" options={options('caste')} value={draft.caste} onChange={set('caste')} />
-        </Row>
-        <Row>
-          <ListOrText id="spouseGotra" label="Gotra" options={options('gotra')} value={draft.gotra} onChange={set('gotra')} />
-          <ListOrText id="spouseThikana" label="Ancestral village / Thikana" options={options('thikana')} value={draft.thikana} onChange={set('thikana')} />
-        </Row>
-        <Row>
-          <FormField label="Nanihal" helperText="Optional" value={draft.nanihal} onChange={(e) => set('nanihal')(e.target.value)} />
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="spouseDob">Date of birth</Label>
-            <DateField id="spouseDob" value={draft.dateOfBirth} onChange={(e) => set('dateOfBirth')(e.target.value)} />
-          </div>
-        </Row>
-        <Row>
-          <FormField label="Email" type="email" helperText="Optional" value={draft.email} onChange={(e) => set('email')(e.target.value)} />
-          <FormField label="Phone" placeholder="+14155550123" helperText="Optional" value={draft.phone} onChange={(e) => set('phone')(e.target.value)} />
-        </Row>
-        <Row>
-          <FormField label="Industry" helperText="Optional" value={draft.industry} onChange={(e) => set('industry')(e.target.value)} />
-          <FormField label="Education" helperText="Optional" value={draft.education} onChange={(e) => set('education')(e.target.value)} />
-        </Row>
-      </div>
-    </Modal>
+    <EditDialog open={open} onClose={onClose} onSubmit={submit} title={spouse ? 'Edit spouse' : 'Add spouse'}>
+      <Row>
+        <FormField label="First name" value={draft.firstName} onChange={(e) => set('firstName')(e.target.value)} />
+        <FormField label="Middle name" helperText="Optional" value={draft.middleName} onChange={(e) => set('middleName')(e.target.value)} />
+      </Row>
+      <Row>
+        <FormField label="Last name" value={draft.lastName} onChange={(e) => set('lastName')(e.target.value)} />
+        <ListOrText id="spouseCaste" label="Caste / sub-clan" options={options('caste')} value={draft.caste} onChange={set('caste')} />
+      </Row>
+      <Row>
+        <ListOrText id="spouseGotra" label="Gotra" options={options('gotra')} value={draft.gotra} onChange={set('gotra')} />
+        <ListOrText id="spouseThikana" label="Ancestral village / Thikana" options={options('thikana')} value={draft.thikana} onChange={set('thikana')} />
+      </Row>
+      <Row>
+        <FormField label="Nanihal" helperText="Optional" value={draft.nanihal} onChange={(e) => set('nanihal')(e.target.value)} />
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="spouseDob">Date of birth</Label>
+          <DateField id="spouseDob" value={draft.dateOfBirth} onChange={(e) => set('dateOfBirth')(e.target.value)} />
+        </div>
+      </Row>
+      <Row>
+        <FormField label="Email" type="email" helperText="Optional" value={draft.email} onChange={(e) => set('email')(e.target.value)} />
+        <FormField label="Phone" placeholder="+14155550123" helperText="Optional" value={draft.phone} onChange={(e) => set('phone')(e.target.value)} />
+      </Row>
+      <Row>
+        <FormField label="Industry" helperText="Optional" value={draft.industry} onChange={(e) => set('industry')(e.target.value)} />
+        <FormField label="Education" helperText="Optional" value={draft.education} onChange={(e) => set('education')(e.target.value)} />
+      </Row>
+    </EditDialog>
   );
 }
 
@@ -205,81 +160,52 @@ function ChildDialog(props: {
 }) {
   const { open, child, defaultLastName, onClose, onSave } = props;
   const [draft, setDraft] = useState<ChildDraft>(childDraft(child, defaultLastName));
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (open) {
-      setDraft(childDraft(child, defaultLastName));
-      setError(null);
-    }
+    if (open) setDraft(childDraft(child, defaultLastName));
   }, [open, child, defaultLastName]);
 
   const set = (key: keyof ChildDraft) => (value: string) => setDraft((d) => ({ ...d, [key]: value }));
 
   const submit = async () => {
     if (!draft.firstName.trim() || !draft.lastName.trim() || !draft.dateOfBirth) {
-      setError('First name, last name and date of birth are required.');
-      return;
+      throw new Error('First name, last name and date of birth are required.');
     }
-    setSaving(true);
-    setError(null);
-    try {
-      await onSave(withoutBlanks(draft) as UpsertChildDto);
-      onClose();
-    } catch (err) {
-      setError(apiMessage(err, 'The child record could not be saved.'));
-    } finally {
-      setSaving(false);
-    }
+    await onSave(withoutBlanks(draft) as UpsertChildDto);
   };
 
   return (
-    <Modal
-      open={open}
-      onClose={onClose}
-      size="lg"
-      title={child ? 'Edit child' : 'Add a child'}
-      footer={
-        <>
-          <Button variant="secondary" onClick={onClose} disabled={saving}>Cancel</Button>
-          <Button onClick={submit} loading={saving}>Save</Button>
-        </>
-      }
-    >
-      <div className="flex flex-col gap-4">
-        {error && <Alert variant="error">{error}</Alert>}
-        <Row>
-          <FormField label="First name" value={draft.firstName} onChange={(e) => set('firstName')(e.target.value)} />
-          <FormField label="Middle name" helperText="Optional" value={draft.middleName} onChange={(e) => set('middleName')(e.target.value)} />
-        </Row>
-        <Row>
-          <FormField label="Last name" value={draft.lastName} onChange={(e) => set('lastName')(e.target.value)} />
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="childDob">Date of birth</Label>
-            <DateField id="childDob" value={draft.dateOfBirth} onChange={(e) => set('dateOfBirth')(e.target.value)} />
-          </div>
-        </Row>
+    <EditDialog open={open} onClose={onClose} onSubmit={submit} title={child ? 'Edit child' : 'Add a child'}>
+      <Row>
+        <FormField label="First name" value={draft.firstName} onChange={(e) => set('firstName')(e.target.value)} />
+        <FormField label="Middle name" helperText="Optional" value={draft.middleName} onChange={(e) => set('middleName')(e.target.value)} />
+      </Row>
+      <Row>
+        <FormField label="Last name" value={draft.lastName} onChange={(e) => set('lastName')(e.target.value)} />
         <div className="flex flex-col gap-1.5">
-          <span id="childGender" className="text-sm font-medium text-gray-700 dark:text-gray-300">Gender</span>
-          <RadioGroup
-            name="childGender"
-            aria-labelledby="childGender"
-            inline
-            value={draft.gender}
-            onValueChange={(value) => setDraft((d) => ({ ...d, gender: value as UpsertChildDto.gender }))}
-            options={[
-              { value: UpsertChildDto.gender.MALE, label: 'Male' },
-              { value: UpsertChildDto.gender.FEMALE, label: 'Female' },
-            ]}
-          />
+          <Label htmlFor="childDob">Date of birth</Label>
+          <DateField id="childDob" value={draft.dateOfBirth} onChange={(e) => set('dateOfBirth')(e.target.value)} />
         </div>
-        <Row>
-          <FormField label="Education level / grade" helperText="Optional" value={draft.educationLevel} onChange={(e) => set('educationLevel')(e.target.value)} />
-          <FormField label="Achievements" helperText="Optional" value={draft.achievements} onChange={(e) => set('achievements')(e.target.value)} />
-        </Row>
+      </Row>
+      <div className="flex flex-col gap-1.5">
+        <span id="childGender" className="text-sm font-medium text-gray-700 dark:text-gray-300">Gender</span>
+        <RadioGroup
+          name="childGender"
+          aria-labelledby="childGender"
+          inline
+          value={draft.gender}
+          onValueChange={(value) => setDraft((d) => ({ ...d, gender: value as UpsertChildDto.gender }))}
+          options={[
+            { value: UpsertChildDto.gender.MALE, label: 'Male' },
+            { value: UpsertChildDto.gender.FEMALE, label: 'Female' },
+          ]}
+        />
       </div>
-    </Modal>
+      <Row>
+        <FormField label="Education level / grade" helperText="Optional" value={draft.educationLevel} onChange={(e) => set('educationLevel')(e.target.value)} />
+        <FormField label="Achievements" helperText="Optional" value={draft.achievements} onChange={(e) => set('achievements')(e.target.value)} />
+      </Row>
+    </EditDialog>
   );
 }
 
@@ -289,6 +215,7 @@ export type HouseholdSectionProps = {
   onRemoveSpouse: () => Promise<void>;
   onSaveChild: (child: UpsertChildDto, childId?: string) => Promise<void>;
   onRemoveChild: (childId: string) => Promise<void>;
+  className?: string;
 };
 
 /**
@@ -298,7 +225,7 @@ export type HouseholdSectionProps = {
  * in. Reachable while the account is still gated, like the rest of My Profile.
  */
 export function HouseholdSection(props: HouseholdSectionProps) {
-  const { member, onSaveSpouse, onRemoveSpouse, onSaveChild, onRemoveChild } = props;
+  const { member, onSaveSpouse, onRemoveSpouse, onSaveChild, onRemoveChild, className } = props;
   const options = useReferenceOptions();
   const [dialog, setDialog] = useState<'spouse' | 'child' | null>(null);
   const [editingChild, setEditingChild] = useState<MemberChildDto | undefined>(undefined);
@@ -318,102 +245,98 @@ export function HouseholdSection(props: HouseholdSectionProps) {
   };
 
   return (
-    <Card className="mt-6">
-      <CardHeader>
-        <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">Household</h2>
-        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-          Your spouse and children. Visible only to you and the Membership Secretary.
-        </p>
-      </CardHeader>
-      <CardBody>
-        <div className="flex flex-col gap-6">
-          {error && <Alert variant="error">{error}</Alert>}
+    <ProfileSection
+      className={className}
+      title="Household"
+      description="Your spouse and children. Visible only to you and the Membership Secretary."
+    >
+      <div className="flex flex-col gap-6">
+        {error && <Alert variant="error">{error}</Alert>}
 
-          <section className="flex flex-col gap-3">
-            <div className="flex items-center justify-between gap-3">
-              <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Spouse</h3>
-              <div className="flex gap-2">
-                <Button size="sm" variant="secondary" onClick={() => setDialog('spouse')}>
-                  {spouse ? 'Edit' : 'Add spouse'}
-                </Button>
-                {spouse && (
-                  <Button size="sm" variant="ghost" onClick={() => confirmRemove('your spouse', onRemoveSpouse)}>
-                    Remove
-                  </Button>
-                )}
-              </div>
-            </div>
-            {spouse ? (
-              <DescriptionList
-                variant="field"
-                columns={3}
-                items={[
-                  { term: 'Name', description: fullName(spouse) },
-                  { term: 'Date of birth', description: spouse.dateOfBirth },
-                  { term: 'Caste', description: spouse.caste },
-                  { term: 'Gotra', description: spouse.gotra },
-                  { term: 'Thikana', description: spouse.thikana },
-                  { term: 'Email', description: spouse.email },
-                  { term: 'Phone', description: spouse.phone },
-                ]}
-              />
-            ) : (
-              <p className="text-sm text-gray-500 dark:text-gray-400">No spouse on file.</p>
-            )}
-          </section>
-
-          <section className="flex flex-col gap-3">
-            <div className="flex items-center justify-between gap-3">
-              <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Children</h3>
-              <Button
-                size="sm"
-                variant="secondary"
-                onClick={() => {
-                  setEditingChild(undefined);
-                  setDialog('child');
-                }}
-              >
-                Add a child
+        <section className="flex flex-col gap-3">
+          <div className="flex items-center justify-between gap-3">
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Spouse</h3>
+            <div className="flex gap-2">
+              <Button size="sm" variant="secondary" onClick={() => setDialog('spouse')}>
+                {spouse ? 'Edit' : 'Add spouse'}
               </Button>
+              {spouse && (
+                <Button size="sm" variant="ghost" onClick={() => confirmRemove('your spouse', onRemoveSpouse)}>
+                  Remove
+                </Button>
+              )}
             </div>
-            {children.length > 0 ? (
-              <ul className="flex flex-col divide-y divide-gray-200 dark:divide-gray-700">
-                {children.map((child) => (
-                  <li key={child.id} className="flex flex-wrap items-center justify-between gap-3 py-2">
-                    <span className="text-sm text-gray-900 dark:text-gray-100">
-                      {fullName(child)}{' '}
-                      <span className="text-gray-500 dark:text-gray-400">
-                        · born {child.dateOfBirth} · {child.membershipTier}
-                      </span>
+          </div>
+          {spouse ? (
+            <DescriptionList
+              variant="field"
+              columns={3}
+              items={[
+                { term: 'Name', description: fullName(spouse) },
+                { term: 'Date of birth', description: orDash(spouse.dateOfBirth) },
+                { term: 'Caste', description: orDash(spouse.caste) },
+                { term: 'Gotra', description: orDash(spouse.gotra) },
+                { term: 'Thikana', description: orDash(spouse.thikana) },
+                { term: 'Email', description: orDash(spouse.email) },
+                { term: 'Phone', description: orDash(spouse.phone) },
+              ]}
+            />
+          ) : (
+            <p className="text-sm text-gray-500 dark:text-gray-400">No spouse on file.</p>
+          )}
+        </section>
+
+        <section className="flex flex-col gap-3">
+          <div className="flex items-center justify-between gap-3">
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Children</h3>
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() => {
+                setEditingChild(undefined);
+                setDialog('child');
+              }}
+            >
+              Add a child
+            </Button>
+          </div>
+          {children.length > 0 ? (
+            <ul className="flex flex-col divide-y divide-gray-200 dark:divide-gray-700">
+              {children.map((child) => (
+                <li key={child.id} className="flex flex-wrap items-center justify-between gap-3 py-2">
+                  <span className="text-sm text-gray-900 dark:text-gray-100">
+                    {fullName(child)}{' '}
+                    <span className="text-gray-500 dark:text-gray-400">
+                      · born {child.dateOfBirth} · {child.membershipTier}
                     </span>
-                    <div className="flex gap-2">
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => {
-                          setEditingChild(child);
-                          setDialog('child');
-                        }}
-                      >
-                        Edit
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => confirmRemove(child.firstName, () => onRemoveChild(child.id))}
-                      >
-                        Remove
-                      </Button>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="text-sm text-gray-500 dark:text-gray-400">No children on file.</p>
-            )}
-          </section>
-        </div>
-      </CardBody>
+                  </span>
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => {
+                        setEditingChild(child);
+                        setDialog('child');
+                      }}
+                    >
+                      Edit
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => confirmRemove(child.firstName, () => onRemoveChild(child.id))}
+                    >
+                      Remove
+                    </Button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-sm text-gray-500 dark:text-gray-400">No children on file.</p>
+          )}
+        </section>
+      </div>
 
       <SpouseDialog
         open={dialog === 'spouse'}
@@ -429,6 +352,6 @@ export function HouseholdSection(props: HouseholdSectionProps) {
         onClose={() => setDialog(null)}
         onSave={(child) => onSaveChild(child, editingChild?.id)}
       />
-    </Card>
+    </ProfileSection>
   );
 }

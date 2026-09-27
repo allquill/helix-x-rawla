@@ -28,6 +28,7 @@ export type MemberDetailDto = {
     honorific?: string;
     gender: string;
     dateOfBirth: string;
+    whatsappPhone?: string;
     sasural?: string;
     nanihal?: string;
     languages?: Array<string>;

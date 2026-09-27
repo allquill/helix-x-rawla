@@ -70,6 +70,7 @@ export class MemberDetailDto extends MemberSummaryDto {
   @ApiPropertyOptional() honorific?: string | null;
   @ApiProperty() gender: string;
   @ApiProperty() dateOfBirth: string;
+  @ApiPropertyOptional() whatsappPhone?: string | null;
   @ApiPropertyOptional() sasural?: string | null;
   @ApiPropertyOptional() nanihal?: string | null;
   @ApiPropertyOptional({ type: [String] }) languages?: string[] | null;

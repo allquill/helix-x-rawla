@@ -1,4 +1,5 @@
 import { NestFactory } from '@nestjs/core';
+import type { NestExpressApplication } from '@nestjs/platform-express';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { ValidationPipe } from '@nestjs/common';
 import { apiReference } from '@scalar/nestjs-api-reference';
@@ -7,7 +8,18 @@ import { AppModule } from './app.module';
 async function bootstrap() {
   // rawBody: Stripe signs the exact bytes it sent, so the dues webhook must
   // verify against the unparsed body (see PaymentWebhookController).
-  const app = await NestFactory.create(AppModule, { rawBody: true });
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, { rawBody: true });
+
+  // Behind a reverse proxy (the frontend image's nginx), every request arrives
+  // from the proxy's address. TRUST_PROXY tells Express to take the client IP
+  // from X-Forwarded-For instead — without it the contact form's per-IP rate
+  // limit counts every visitor as one. Express syntax: a hop count (`1`),
+  // `true`, or a subnet list. Unset trusts nothing, the safe default when the
+  // API is exposed directly.
+  const trustProxy = process.env.TRUST_PROXY;
+  if (trustProxy) {
+    app.set('trust proxy', /^\d+$/.test(trustProxy) ? Number(trustProxy) : trustProxy === 'true' || trustProxy);
+  }
 
   app.setGlobalPrefix('api');
   app.useGlobalPipes(new ValidationPipe({ transform: true, whitelist: true }));

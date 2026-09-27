@@ -118,6 +118,7 @@ export class ProfileVisibilityService {
       honorific: member.honorific,
       gender: member.gender,
       dateOfBirth: member.dateOfBirth,
+      whatsappPhone: member.whatsappPhone,
       sasural: member.sasural,
       nanihal: member.nanihal,
       languages: member.languages,

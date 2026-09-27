@@ -34,8 +34,8 @@ export class UpdateMemberDto {
   @ApiPropertyOptional() @IsOptional() @IsString() nanihal?: string;
   @ApiPropertyOptional({ type: [String] }) @IsOptional() @IsArray() @IsString({ each: true }) languages?: string[];
   @ApiPropertyOptional() @IsOptional() @IsString() familyHistory?: string;
-  @ApiPropertyOptional() @IsOptional() @Matches(E164) phone?: string;
-  @ApiPropertyOptional() @IsOptional() @Matches(E164) whatsappPhone?: string;
+  @ApiPropertyOptional() @IsOptional() @Matches(E164, { message: 'Phone must be in international format, e.g. +14155550123.' }) phone?: string;
+  @ApiPropertyOptional() @IsOptional() @Matches(E164, { message: 'WhatsApp must be in international format, e.g. +14155550123.' }) whatsappPhone?: string;
   @ApiPropertyOptional() @IsOptional() @IsISO8601() weddingDate?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() industry?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() jobTitle?: string;

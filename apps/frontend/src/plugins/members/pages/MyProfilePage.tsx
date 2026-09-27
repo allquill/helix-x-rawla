@@ -2,131 +2,176 @@ import { useEffect, useState } from 'react';
 import {
   Alert,
   Button,
-  Card,
-  CardBody,
-  CardHeader,
+  DescriptionList,
   FormField,
   PageHeader,
   Textarea,
 } from '@helix-x/design-system';
+import type { MemberDetailDto, UpdateMemberDto } from '@helix-x-rawla/client-sdk';
 import { HouseholdSection } from '../components/HouseholdSection';
+import { EditDialog, Label, ProfileSection, orDash } from '../components/ProfileEditing';
 import { useMyProfile } from '../hooks/useMembers';
 
-const EDITABLE = [
+type EditableKey =
+  | 'phone'
+  | 'whatsappPhone'
+  | 'industry'
+  | 'jobTitle'
+  | 'education'
+  | 'linkedinUrl'
+  | 'facebookUrl'
+  | 'familyHistory';
+
+type FieldSpec = { key: EditableKey; label: string; placeholder?: string };
+
+const CONTACT: FieldSpec[] = [
   { key: 'phone', label: 'Phone', placeholder: '+14155550123' },
   { key: 'whatsappPhone', label: 'WhatsApp', placeholder: '+14155550123' },
+];
+
+const WORK: FieldSpec[] = [
   { key: 'industry', label: 'Industry' },
   { key: 'jobTitle', label: 'Job title' },
   { key: 'education', label: 'Education and achievements' },
   { key: 'linkedinUrl', label: 'LinkedIn URL' },
   { key: 'facebookUrl', label: 'Facebook URL' },
-] as const;
+];
+
+// Module-level so the dialog's seeding effect sees a stable array.
+const FAMILY_HISTORY: FieldSpec[] = [{ key: 'familyHistory', label: 'Family history' }];
+
+type Section = 'contact' | 'work' | 'familyHistory';
+
+/** A field's saved value, or undefined when the server did not send it. */
+const valueOf = (member: MemberDetailDto, key: EditableKey) =>
+  (member as unknown as Record<EditableKey, string | null | undefined>)[key];
+
+const draftFor = (member: MemberDetailDto, fields: FieldSpec[]) =>
+  Object.fromEntries(fields.map(({ key }) => [key, valueOf(member, key) ?? '']));
+
+/**
+ * One section's edit dialog: its fields, seeded from the member when it opens.
+ *
+ * Only non-empty values are sent, as before — the API validates phone numbers
+ * as E.164, so an empty string would be refused rather than clear the field.
+ */
+function FieldsDialog(props: {
+  open: boolean;
+  title: string;
+  member: MemberDetailDto;
+  fields: FieldSpec[];
+  onClose: () => void;
+  onSave: (patch: UpdateMemberDto) => Promise<void>;
+}) {
+  const { open, title, member, fields, onClose, onSave } = props;
+  const [draft, setDraft] = useState<Record<string, string>>({});
+
+  // Seed on open, so Cancel discards and the next Edit starts from what is saved.
+  useEffect(() => {
+    if (open) setDraft(draftFor(member, fields));
+  }, [open, member, fields]);
+
+  const submit = () =>
+    onSave(Object.fromEntries(Object.entries(draft).filter(([, value]) => value.trim() !== '')));
+
+  return (
+    <EditDialog open={open} title={title} onClose={onClose} onSubmit={submit} size="md">
+      {fields.map((field) =>
+        field.key === 'familyHistory' ? (
+          <div key={field.key} className="flex flex-col gap-1.5">
+            <Label htmlFor="familyHistory">{field.label}</Label>
+            <Textarea
+              id="familyHistory"
+              rows={6}
+              value={draft.familyHistory ?? ''}
+              onChange={(event) => setDraft((d) => ({ ...d, familyHistory: event.target.value }))}
+            />
+          </div>
+        ) : (
+          <FormField
+            key={field.key}
+            label={field.label}
+            placeholder={field.placeholder}
+            value={draft[field.key] ?? ''}
+            onChange={(event) => setDraft((d) => ({ ...d, [field.key]: event.target.value }))}
+          />
+        ),
+      )}
+    </EditDialog>
+  );
+}
 
 /**
  * Self-service profile editing (MP-14).
  *
- * Reachable while the account is still gated — a member waiting on approval can
- * still correct their own details. Administrative fields (tier, chapter,
- * reviewer notes) are stripped server-side on this route regardless of what is
- * sent.
+ * Every section follows one pattern: read-only by default, with an Edit button
+ * that opens a dialog — the same as the household below it. Reachable while
+ * the account is still gated, so a member waiting on approval can still
+ * correct their own details. Administrative fields (tier, chapter, reviewer
+ * notes) are stripped server-side on this route regardless of what is sent.
  */
 export function MyProfilePage() {
   const { member, loading, error, save, saveSpouse, removeSpouse, saveChild, removeChild } =
     useMyProfile();
-  const [draft, setDraft] = useState<Record<string, string>>({});
-  const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
-  const [saveError, setSaveError] = useState<string | null>(null);
+  const [editing, setEditing] = useState<Section | null>(null);
 
-  useEffect(() => {
-    if (!member) return;
-    setDraft(
-      Object.fromEntries(
-        EDITABLE.map(({ key }) => [key, (member as Record<string, unknown>)[key] as string ?? '']),
-      ),
-    );
-  }, [member]);
+  const edit = (section: Section) => (
+    <Button size="sm" variant="secondary" onClick={() => setEditing(section)}>
+      Edit
+    </Button>
+  );
 
-  const submit = async () => {
-    setSaving(true);
-    setSaveError(null);
-    setSaved(false);
-    try {
-      await save(
-        Object.fromEntries(Object.entries(draft).filter(([, value]) => value !== '')),
-      );
-      setSaved(true);
-    } catch (err) {
-      const message = (err as { body?: { message?: string | string[] } }).body?.message;
-      setSaveError(
-        Array.isArray(message) ? message.join(', ') : message ?? 'Your profile could not be saved.',
-      );
-    } finally {
-      setSaving(false);
-    }
-  };
+  const summary = (fields: FieldSpec[]) => (
+    <DescriptionList
+      variant="field"
+      columns={fields.length > 2 ? 3 : 2}
+      items={fields.map(({ key, label }) => ({ term: label, description: orDash(member && valueOf(member, key)) }))}
+    />
+  );
 
   return (
-      <div className="mx-auto w-full max-w-3xl px-4 py-6 sm:px-6 lg:px-8">
-        <PageHeader title="My profile" />
+    <div className="mx-auto w-full max-w-3xl px-4 py-6 sm:px-6 lg:px-8">
+      <PageHeader title="My profile" />
 
-        {loading && <p className="text-sm text-gray-500 dark:text-gray-400" aria-live="polite">Loading…</p>}
-        {error && <Alert variant="error">{error}</Alert>}
-        {saveError && <Alert variant="error" className="mb-4">{saveError}</Alert>}
-        {saved && <Alert variant="success" className="mb-4">Profile saved.</Alert>}
+      {loading && <p className="text-sm text-gray-500 dark:text-gray-400" aria-live="polite">Loading…</p>}
+      {error && <Alert variant="error">{error}</Alert>}
 
-        {member && (
-          <Card>
-            <CardHeader>
-              <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">
-                {member.firstName} {member.lastName}
-              </h2>
-              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                Your name, lineage and tier are maintained by the Membership
-                Secretary. Contact them to change those.
-              </p>
-            </CardHeader>
-            <CardBody>
-              <div className="flex flex-col gap-4">
-                {EDITABLE.map((field) => (
-                  <FormField
-                    key={field.key}
-                    label={field.label}
-                    placeholder={'placeholder' in field ? field.placeholder : undefined}
-                    value={draft[field.key] ?? ''}
-                    disabled={saving}
-                    onChange={(event) =>
-                      setDraft((d) => ({ ...d, [field.key]: event.target.value }))
-                    }
-                  />
-                ))}
+      {member && (
+        <div className="flex flex-col gap-6">
+          <ProfileSection
+            title={`${member.firstName} ${member.lastName}`}
+            description="Your name, lineage and tier are maintained by the Membership Secretary. Contact them to change those."
+          >
+            <DescriptionList
+              variant="field"
+              columns={3}
+              items={[
+                { term: 'Member ID', description: orDash(member.publicMemberId) },
+                { term: 'Membership tier', description: orDash(member.membershipTier) },
+                { term: 'Chapter', description: member.chapterId ?? 'Unassigned' },
+                { term: 'Gotra', description: orDash(member.gotra) },
+                { term: 'Caste', description: orDash(member.caste) },
+                { term: 'Thikana', description: orDash(member.thikana) },
+              ]}
+            />
+          </ProfileSection>
 
-                <div className="flex flex-col gap-1.5">
-                  <label htmlFor="familyHistory" className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Family history
-                  </label>
-                  <Textarea
-                    id="familyHistory"
-                    rows={4}
-                    value={draft.familyHistory ?? member.familyHistory ?? ''}
-                    disabled={saving}
-                    onChange={(event) =>
-                      setDraft((d) => ({ ...d, familyHistory: event.target.value }))
-                    }
-                  />
-                </div>
+          <ProfileSection title="Contact" actions={edit('contact')}>
+            {summary(CONTACT)}
+          </ProfileSection>
 
-                <div className="flex justify-end">
-                  <Button onClick={submit} loading={saving}>
-                    Save changes
-                  </Button>
-                </div>
-              </div>
-            </CardBody>
-          </Card>
-        )}
+          <ProfileSection title="Work and education" actions={edit('work')}>
+            {summary(WORK)}
+          </ProfileSection>
 
-        {member && (
+          <ProfileSection title="Family history" actions={edit('familyHistory')}>
+            <p className="whitespace-pre-line text-sm text-gray-900 dark:text-gray-100">
+              {member.familyHistory || (
+                <span className="text-gray-500 dark:text-gray-400">Nothing recorded yet.</span>
+              )}
+            </p>
+          </ProfileSection>
+
           <HouseholdSection
             member={member}
             onSaveSpouse={saveSpouse}
@@ -134,7 +179,34 @@ export function MyProfilePage() {
             onSaveChild={saveChild}
             onRemoveChild={removeChild}
           />
-        )}
-      </div>
+
+          <FieldsDialog
+            open={editing === 'contact'}
+            title="Edit contact details"
+            member={member}
+            fields={CONTACT}
+            onClose={() => setEditing(null)}
+            onSave={save}
+          />
+          <FieldsDialog
+            open={editing === 'work'}
+            title="Edit work and education"
+            member={member}
+            fields={WORK}
+            onClose={() => setEditing(null)}
+            onSave={save}
+          />
+          <FieldsDialog
+            open={editing === 'familyHistory'}
+            title="Edit family history"
+            member={member}
+            fields={FAMILY_HISTORY}
+            onClose={() => setEditing(null)}
+            onSave={save}
+          />
+        </div>
+      )}
+    </div>
   );
 }
+
