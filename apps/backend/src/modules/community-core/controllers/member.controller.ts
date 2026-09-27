@@ -12,6 +12,7 @@ import {
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
+  ApiCreatedResponse,
   ApiOkResponse,
   ApiOperation,
   ApiQuery,
@@ -30,9 +31,10 @@ import {
   ListMembersResponseDto,
   MemberDetailDto,
 } from '../models/member-response.dto';
-import { MemberStatusDto } from '../models/registration-response.dto';
+import { DuesCheckoutDto, MemberStatusDto } from '../models/registration-response.dto';
 import { ArchiveMemberDto } from '../models/vetting.dto';
 import { UpdateMemberDto, UpdateMemberPrivacyDto } from '../models/member-update.dto';
+import { DuesPaymentService } from '../providers/dues-payment.service';
 import { MemberService } from '../providers/member.service';
 import { MemberVettingService } from '../providers/member-vetting.service';
 
@@ -53,6 +55,7 @@ export class MemberController {
   constructor(
     private readonly members: MemberService,
     private readonly vetting: MemberVettingService,
+    private readonly duesPayment: DuesPaymentService,
   ) {}
 
   // ── Self-service. Reachable while gates are still closed (IAM-14). ────────
@@ -100,6 +103,20 @@ export class MemberController {
     @Body() dto: UpdateMemberPrivacyDto,
   ): Promise<MemberStatusDto> {
     return this.members.updatePrivacy(user, dto);
+  }
+
+  @ApiOperation({
+    summary: 'Start paying your membership dues',
+    description:
+      'Opens a checkout for the dues of your tier. Available once your email is verified, ' +
+      'whether or not your application has been approved yet. The payment gate closes when ' +
+      'the provider confirms the payment, not when the browser returns.',
+  })
+  @ApiCreatedResponse({ type: DuesCheckoutDto })
+  @GateExempt()
+  @Post('me/payments/checkout')
+  createMyDuesCheckout(@CurrentUser() user: AuthenticatedUser): Promise<DuesCheckoutDto> {
+    return this.duesPayment.startCheckout(user);
   }
 
   // ── Directory and administration. Gated normally. ─────────────────────────

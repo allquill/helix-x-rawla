@@ -22,9 +22,9 @@ export type PaymentStatus = (typeof PAYMENT_STATUSES)[number];
 /**
  * A membership dues record (REG-16 / REG-18).
  *
- * Present in this phase even though no payment provider is integrated, because
- * an admin override is still a payment event and must be as auditable as a card
- * charge. `providerRef` is unique so a provider webhook replayed three times
+ * One row per checkout the member opens (`DuesPaymentService`), plus every admin
+ * override — an override is still a payment event and must be as auditable as a
+ * card charge. `providerRef` is unique so a provider webhook replayed three times
  * settles the dues once — the idempotency the spec asks for is a database
  * constraint here rather than application bookkeeping.
  */

@@ -15,6 +15,7 @@ export type { ArchiveMemberDto } from './models/ArchiveMemberDto';
 export type { AuditLogEntryDto } from './models/AuditLogEntryDto';
 export type { ChapterDto } from './models/ChapterDto';
 export type { CheckRegistrationDuplicateDto } from './models/CheckRegistrationDuplicateDto';
+export type { DuesCheckoutDto } from './models/DuesCheckoutDto';
 export { DuplicateProbeDto } from './models/DuplicateProbeDto';
 export type { GateSnapshotDto } from './models/GateSnapshotDto';
 export type { ListAuditLogResponseDto } from './models/ListAuditLogResponseDto';

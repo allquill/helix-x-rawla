@@ -1,6 +1,7 @@
 import { Module, OnModuleInit } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { MemberController } from './controllers/member.controller';
+import { PaymentWebhookController } from './controllers/payment-webhook.controller';
 import { PortalAdminController } from './controllers/portal-admin.controller';
 import { PublicRegistrationController } from './controllers/public-registration.controller';
 import { RegistrationAdminController } from './controllers/registration-admin.controller';
@@ -21,6 +22,7 @@ import { SpouseProfile } from './entities/spouse-profile.entity';
 import { StateChapterMap } from './entities/state-chapter-map.entity';
 import { ChapterService } from './providers/chapter.service';
 import { CredentialPolicyService } from './providers/credential-policy.service';
+import { DuesPaymentService } from './providers/dues-payment.service';
 import { MemberRegistrationService } from './providers/member-registration.service';
 import { MemberService } from './providers/member.service';
 import { MemberVettingService } from './providers/member-vetting.service';
@@ -65,6 +67,7 @@ import { AuthModule, Role, TemplateRegistryService, User } from '@helix-x/backen
     RegistrationAdminController,
     MemberController,
     PortalAdminController,
+    PaymentWebhookController,
   ],
   providers: [
     MemberRegistrationService,
@@ -74,6 +77,7 @@ import { AuthModule, Role, TemplateRegistryService, User } from '@helix-x/backen
     ReferenceDataService,
     ChapterService,
     CredentialPolicyService,
+    DuesPaymentService,
   ],
   exports: [MemberService, ReferenceDataService, ChapterService],
 })

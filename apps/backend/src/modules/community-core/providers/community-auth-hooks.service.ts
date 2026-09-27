@@ -6,7 +6,7 @@ import { STAFF_ROLES } from '../constants';
 import { AuditService } from './audit.service';
 import { MemberActivationService } from './member-activation.service';
 import { MemberGateService } from './member-gate.service';
-import { buildGateBody } from './gate-rules';
+import { blocksLogin, buildGateBody } from './gate-rules';
 import { type AuthHooks, type CredentialPurpose, User } from '@helix-x/backend';
 
 /**
@@ -34,6 +34,7 @@ export class CommunityAuthHooksService implements AuthHooks {
 
   /**
    * Runs after the password has verified and the account is not locked (§6.1).
+   * Refuses only the codes `blocksLogin` names; see there for why.
    *
    * Two things here are easy to get wrong and expensive to discover late:
    *
@@ -84,8 +85,11 @@ export class CommunityAuthHooksService implements AuthHooks {
       );
     }
 
+    // Only the gates in `blocksLogin` refuse a session. Approval, info requests
+    // and dues are worked through signed in, and the gate interceptor confines
+    // the member to the exempt routes until the account activates.
     const decision = this.gates.evaluate(member, user.isActive);
-    if (!decision.code) return;
+    if (!blocksLogin(decision.code)) return;
 
     await this.recordBlocked(user.id, decision.code);
     throw new ForbiddenException(decision.body!);

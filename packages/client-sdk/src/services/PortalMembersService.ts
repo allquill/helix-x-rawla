@@ -3,6 +3,7 @@
 /* tslint:disable */
 /* eslint-disable */
 import type { ArchiveMemberDto } from '../models/ArchiveMemberDto';
+import type { DuesCheckoutDto } from '../models/DuesCheckoutDto';
 import type { ListMembersResponseDto } from '../models/ListMembersResponseDto';
 import type { MemberDetailDto } from '../models/MemberDetailDto';
 import type { MemberStatusDto } from '../models/MemberStatusDto';
@@ -66,6 +67,18 @@ export class PortalMembersService {
             url: '/api/members/me/privacy',
             body: requestBody,
             mediaType: 'application/json',
+        });
+    }
+    /**
+     * Start paying your membership dues
+     * Opens a checkout for the dues of your tier. Available once your email is verified, whether or not your application has been approved yet. The payment gate closes when the provider confirms the payment, not when the browser returns.
+     * @returns DuesCheckoutDto
+     * @throws ApiError
+     */
+    public static createMyDuesCheckout(): CancelablePromise<DuesCheckoutDto> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/members/me/payments/checkout',
         });
     }
     /**

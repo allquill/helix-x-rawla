@@ -1,4 +1,5 @@
 import {
+  blocksLogin,
   computeIsActive,
   derivedStatus,
   firstFailingGate,
@@ -153,5 +154,30 @@ describe('derivedStatus', () => {
     expect(derivedStatus({ ...base, status: 'active_secured' }, 'active_secured')).toBe(
       'active_secured',
     );
+  });
+});
+
+describe('blocksLogin', () => {
+  it.each(['ACCOUNT_ARCHIVED', 'REGISTRATION_REJECTED', 'EMAIL_NOT_VERIFIED'] as const)(
+    'refuses a session for %s',
+    (code) => {
+      expect(blocksLogin(code)).toBe(true);
+    },
+  );
+
+  it.each(['PAYMENT_REQUIRED', 'ACCOUNT_PENDING_APPROVAL', 'INFO_REQUESTED'] as const)(
+    'lets %s sign in, to be worked through on the exempt routes',
+    (code) => {
+      expect(blocksLogin(code)).toBe(false);
+    },
+  );
+
+  it('lets an active member in', () => {
+    expect(blocksLogin(null)).toBe(false);
+  });
+
+  it('lets a verified, unpaid, unapproved applicant in', () => {
+    const applicant = { ...base, status: 'pending' as const, isApproved: false, isPaymentMade: false };
+    expect(blocksLogin(firstFailingGate(applicant))).toBe(false);
   });
 });

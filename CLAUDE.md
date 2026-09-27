@@ -46,6 +46,13 @@ hrefs it returns (`/join/status`, `/verify-email`, `/forgot-password`) are
 **hardcoded backend-side and must match the frontend route table** — change a
 route path and that link 404s with nothing failing at build time.
 
+**Only an unverified email, a rejected application or an archived account
+refuses sign-in** (`blocksLogin` in `gate-rules.ts`). Approval and dues are
+worked through *signed in*: `MemberGateInterceptor` confines a not-yet-active
+member to the `@GateExempt()` routes — their status page, their profile and the
+dues checkout — until the last gate closes. Refusing those at login instead is a
+dead end, because every one of their remediation pages needs a session.
+
 A blocked login answers with a machine-readable `code`, a `remediation` and the
 `gates` snapshot. A *wrong password* always answers `INVALID_CREDENTIALS` with
 no gate detail, so the endpoint cannot be used to enumerate accounts. That
@@ -329,6 +336,18 @@ row exists in `permissions` and a role holds it — until then every caller gets
 `MAIL_TRANSPORT` defaults to `console`, which sends nothing over the network and
 captures each message at `GET /api/dev/outbox` — that is where verification,
 password-setup and reset links are read locally.
+
+`PAYMENT_PROVIDER` works the same way. `console` (the default, refused under
+`NODE_ENV=production`) takes no money: the dues checkout URL is
+`GET /api/dev/payments/:ref/complete`, which settles on the spot. `stripe` opens
+a Stripe Checkout Session and closes the payment gate **only on the signed
+webhook** at `POST /api/payments/stripe/webhook`, never on the browser's return
+to the success URL. Locally, forward it with
+`stripe listen --forward-to localhost:3001/api/payments/stripe/webhook` and put
+the printed `whsec_…` in `STRIPE_WEBHOOK_SECRET`. Settlement is idempotent — a
+conditional `pending → settled` update — so replayed webhooks are harmless. A
+tier priced at `$0` (Youth) is recorded as `waived` and closes the gate without
+a checkout.
 
 **Granting yourself permissions takes a sign-out.** A fresh account has no roles.
 `sql/admin-seed.sql` (edit `:admin_email` at the top) grants them:

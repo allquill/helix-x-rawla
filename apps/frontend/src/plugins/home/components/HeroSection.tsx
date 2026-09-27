@@ -1,7 +1,34 @@
-import { forwardRef } from 'react';
+import { forwardRef, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button, MaskedAsset, PageHero } from '@helix-x/design-system';
 import { useUser } from '@helix-x/web';
+import { PortalMembersService } from '@helix-x-rawla/client-sdk';
+
+/**
+ * Whether the signed-in account is a member still working through activation.
+ *
+ * Sign-in is allowed from the moment the address is verified, so a signed-in
+ * visitor is not necessarily an active member — and for one who is not, the
+ * directory would only answer 403. Staff hold no member record (404) and read
+ * as "not pending", as does any failure: the hero should never block on this.
+ */
+function useMembershipPending(signedIn: boolean): boolean {
+  const [pending, setPending] = useState(false);
+  useEffect(() => {
+    if (!signedIn) {
+      setPending(false);
+      return;
+    }
+    let cancelled = false;
+    PortalMembersService.getMyMembershipStatus()
+      .then((status) => !cancelled && setPending(!status.isActive))
+      .catch(() => !cancelled && setPending(false));
+    return () => {
+      cancelled = true;
+    };
+  }, [signedIn]);
+  return pending;
+}
 
 export type HeroSectionProps = { className?: string };
 
@@ -13,7 +40,7 @@ export type HeroSectionProps = { className?: string };
  * feels like the samaj rather than like software.
  *
  * Signed-in members get their name and a route onward instead of a sign-up
- * pitch: showing "Join us" to somebody who joined years ago is the fastest way
+ * pitch — onward to `/join/status` while their membership is still activating: showing "Join us" to somebody who joined years ago is the fastest way
  * to make a community site feel like a brochure.
  *
  * Layout, rhythm and the responsive action row come from `PageHero`; this
@@ -23,6 +50,7 @@ export const HeroSection = forwardRef<HTMLElement, HeroSectionProps>(
   ({ className = '' }, ref) => {
     const user = useUser();
     const firstName = user?.name?.split(' ')[0];
+    const pending = useMembershipPending(user !== null);
 
     return (
       <PageHero
@@ -60,12 +88,18 @@ export const HeroSection = forwardRef<HTMLElement, HeroSectionProps>(
           )
         }
         description={
-          firstName
+          firstName && pending
+            ? 'Your membership is nearly there. Finish the remaining steps to open up the directory, your household and your chapter.'
+            : firstName
             ? 'Your samaj, your household, your chapter — all in one place.'
             : 'Stay connected to your roots. A home in America for the Rajputs of historical Rajputana — to cherish a shared culture and pass it on to the next generation.'
         }
         actions={
-          user !== null ? (
+          user !== null && pending ? (
+            <Link to="/join/status">
+              <Button size="lg">Complete your membership</Button>
+            </Link>
+          ) : user !== null ? (
             <>
               <Link to="/members">
                 <Button size="lg">Browse the directory</Button>

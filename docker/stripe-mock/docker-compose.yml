@@ -1,0 +1,18 @@
+# stripe-mock — a local stand-in for the Stripe API (https://github.com/stripe/stripe-mock)
+#
+#   docker compose up -d        # from this directory
+#   curl -s localhost:12111/v1/customers -H 'Authorization: Bearer sk_test_123' | head -c 80
+#
+# It answers every Stripe endpoint from Stripe's own OpenAPI spec and validates
+# request parameters, but it is STATELESS: responses are canned fixtures, and it
+# never sends webhooks. See README.md for how to drive the rawla dues flow with it.
+name: rawla-stripe-mock
+
+services:
+  stripe-mock:
+    image: stripe/stripe-mock:${STRIPE_MOCK_VERSION:-latest}
+    container_name: rawla-stripe-mock
+    restart: unless-stopped
+    ports:
+      - "${STRIPE_MOCK_HTTP_PORT:-12111}:12111"   # HTTP
+      - "${STRIPE_MOCK_HTTPS_PORT:-12112}:12112"  # HTTPS (self-signed)

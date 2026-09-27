@@ -64,3 +64,9 @@ export class MemberStatusDto {
   @ApiPropertyOptional() membershipTier?: string;
   @ApiPropertyOptional() duesCents?: number;
 }
+
+/** Where to send the member to pay their dues (REG-16). */
+export class DuesCheckoutDto {
+  @ApiProperty({ description: 'Hosted checkout page. Navigate the browser here; do not open it in a frame.' })
+  checkoutUrl: string;
+}

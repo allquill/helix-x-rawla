@@ -68,6 +68,27 @@ export function firstFailingGate(input: GateInput): GateCode | null {
   return null;
 }
 
+/**
+ * The failing gates that refuse a sign-in outright.
+ *
+ * Only the ones a session cannot help with: a closed account, a rejected
+ * application, and an address nobody has proved they control. Every other gate
+ * — approval, an info request, outstanding dues — is *meant* to be worked
+ * through while signed in, on the `@GateExempt()` routes, and
+ * `MemberGateInterceptor` keeps the member confined to those until the account
+ * activates. Refusing those at login instead leaves the member nowhere to go:
+ * the remediation for each of them is a page that needs a session.
+ */
+const LOGIN_BLOCKING: ReadonlySet<GateCode> = new Set<GateCode>([
+  'ACCOUNT_ARCHIVED',
+  'REGISTRATION_REJECTED',
+  'EMAIL_NOT_VERIFIED',
+]);
+
+export function blocksLogin(code: GateCode | null): boolean {
+  return code !== null && LOGIN_BLOCKING.has(code);
+}
+
 type Remediation = { action: string; href: string };
 
 const REMEDIATIONS: Record<GateCode, Remediation> = {
