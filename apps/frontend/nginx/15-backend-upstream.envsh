@@ -1,0 +1,14 @@
+#!/bin/sh
+# Sourced by the nginx image's entrypoint before templates are rendered, so an
+# export here reaches envsubst.
+#
+# BACKEND_UPSTREAM may arrive as a bare host:port — some platforms' private-
+# service addresses have no scheme (Render's `hostport`, for one) — while
+# nginx's proxy_pass needs a full URL.
+# Prefix http:// when the scheme is missing; a full URL (compose's
+# http://backend:3001) passes through untouched.
+case "${BACKEND_UPSTREAM:-}" in
+  "") ;;
+  *://*) ;;
+  *) export BACKEND_UPSTREAM="http://${BACKEND_UPSTREAM}" ;;
+esac

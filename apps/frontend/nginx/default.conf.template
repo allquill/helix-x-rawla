@@ -4,7 +4,9 @@
 # substitutes variables that are set in the environment — so nginx's own
 # $uri, $host and friends pass through untouched.
 #
-#   BACKEND_UPSTREAM        where /api goes, e.g. http://backend:3001 (no path)
+#   PORT                    listen port: 80 by default, or whatever the platform sets
+#   BACKEND_UPSTREAM        where /api goes, e.g. http://backend:3001 (no path);
+#                           a bare host:port gets http:// added (15-backend-upstream.envsh)
 #   NGINX_LOCAL_RESOLVERS   filled in by the image from /etc/resolv.conf
 #
 # The bundle is built with an empty VITE_API_SERVER, so the app calls /api on
@@ -12,8 +14,8 @@
 # into the JavaScript.
 
 server {
-    listen 80;
-    listen [::]:80;
+    listen ${PORT};
+    listen [::]:${PORT};
     server_name _;
 
     root /usr/share/nginx/html;

@@ -70,9 +70,12 @@ COPY example/helix-x-rawla/apps/backend/package.json ./
 COPY --chmod=0755 example/helix-x-rawla/apps/backend/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 
 # SQLite lives on a volume, so the database outlives the container.
+# No `USER node` here on purpose: the entrypoint starts as root, makes the
+# database directory writable (a platform's persistent disk, a Linux bind mount
+# or a Kubernetes volume can arrive root-owned), then drops to `node` before
+# migrations and the app run.
 RUN mkdir -p /data && chown node:node /data
 VOLUME /data
-USER node
 
 EXPOSE 3001
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \

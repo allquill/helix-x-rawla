@@ -61,13 +61,18 @@ RUN pnpm --filter @helix-x-rawla/client-sdk build \
 # ── runtime ────────────────────────────────────────────────────────────────
 FROM nginx:${NGINX_VERSION}-alpine AS runtime
 
-# Where /api is proxied. The default matches a compose service named `backend`.
+# Where /api is proxied. The default matches a compose service named `backend`;
+# a bare host:port, as some platforms give private-service addresses, is
+# accepted too. PORT is what nginx listens on: platforms such as Render, Heroku
+# and Cloud Run set it; 80 otherwise.
 ENV BACKEND_UPSTREAM=http://backend:3001 \
+    PORT=80 \
     NGINX_ENTRYPOINT_LOCAL_RESOLVERS=1
 
 COPY example/helix-x-rawla/apps/frontend/nginx/default.conf.template /etc/nginx/templates/default.conf.template
+COPY --chmod=0755 example/helix-x-rawla/apps/frontend/nginx/15-backend-upstream.envsh /docker-entrypoint.d/15-backend-upstream.envsh
 COPY --from=build /ws/example/helix-x-rawla/apps/frontend/dist /usr/share/nginx/html
 
 EXPOSE 80
 HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
-  CMD wget -q -O /dev/null http://127.0.0.1/ || exit 1
+  CMD wget -q -O /dev/null "http://127.0.0.1:${PORT}/" || exit 1
