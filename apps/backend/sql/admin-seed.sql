@@ -28,7 +28,7 @@
 -- ────────────────────────────────────────────────────────────────────────────
 -- ⚠  CHANGE THIS to the email of the user you want to grant admin to.
 -- ────────────────────────────────────────────────────────────────────────────
-.parameter set :admin_email 'admin@rawla.test'
+.parameter set :admin_email 'admin@example.com'
 
 -- ────────────────────────────────────────────────────────────────────────────
 -- Sample users. 'no' (the default) skips section 5 entirely, so this script
@@ -158,11 +158,14 @@ WHERE u.email = :admin_email
 
 -- ── 5. Sample users (only when :seed_sample_users = 'yes') ────────────────
 --
--- Password for ALL five accounts: ChangeMe!123
---   (8+ chars with upper, lower, digit and symbol — satisfies PASSWORD_PATTERN
+-- Passwords: admin@example.com uses Password!1 — the same administrator
+-- scripts/seed-sample-data.mjs registers, so both seeding paths agree whichever
+-- runs first (INSERT OR IGNORE keeps the first hash). The other four accounts
+-- use ChangeMe!123.
+--   (Both are 8+ chars with upper, lower, digit and symbol — satisfy PASSWORD_PATTERN
 --    in packages/framework/backend/authentication/src/models/auth.dto.ts)
 --
--- The hashes below are real bcrypt cost-12 digests of that password, matching
+-- The hashes below are real bcrypt cost-12 digests of those passwords, matching
 -- the cost AuthService uses, so these accounts log in through the normal flow.
 -- Emails are stored lowercased because AuthService.normaliseEmail() lowercases
 -- before comparing and SQLite's default collation is case-sensitive — a
@@ -174,7 +177,7 @@ INSERT OR IGNORE INTO users (email, passwordHash, firstName, lastName, isActive,
 SELECT email, passwordHash, firstName, lastName, isActive, 0
 FROM (
   SELECT 'superadmin@example.com' AS email, '$2b$12$TvUbcfC/BwWo4Utlceym9exbGvN5CZrvKs3.Cmiy1rKZfws6ws5A2' AS passwordHash, 'Sam'  AS firstName, 'Superuser'  AS lastName, 1 AS isActive
-  UNION ALL SELECT 'admin@example.com',      '$2b$12$bAKEB0mGOyLmBe5I3OwOeeCJnl//oCOr2TgX5zBK8maRmlJzP2NSm', 'Ada',  'Admin',      1
+  UNION ALL SELECT 'admin@example.com',      '$2b$12$ZfWq8d4fEj2kAUPW22q5qO3auruv/puCJSR.WomqCL1XLPKZwfrLG', 'Ada',  'Admin',      1
   UNION ALL SELECT 'navmanager@example.com', '$2b$12$DyVYXFlxKQgs.6X..lBY2eUZaSr8ZQ2VXpuBqYFGafEOzNqUIK0QC', 'Nina', 'Navigator',  1
   UNION ALL SELECT 'user@example.com',       '$2b$12$rneDsKNxVs.xECYXW./qlO0skX/xL81a/EODTlpRFOxf9w8R4YUNO', 'Uma',  'User',       1
   -- Logs in with the correct password and is then refused ACCOUNT_INACTIVE,
