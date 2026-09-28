@@ -30,8 +30,8 @@ import { fileURLToPath } from 'node:url';
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const API = process.env.API ?? 'http://localhost:3001/api';
 const DB = resolve(ROOT, process.env.DB ?? 'apps/backend/data/helix_x.db');
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? 'admin@rawla.test';
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD ?? 'Str0ng!Admin1';
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? 'admin@example.com';
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD ?? 'Password!1';
 const MEMBER_PASSWORD = 'Rawla!Demo1';
 const RESET = process.argv.includes('--reset');
 

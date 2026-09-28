@@ -25,6 +25,8 @@ services:
       # Requests arrive through the frontend's nginx; without this every
       # visitor shares the proxy's IP for the per-IP rate limits.
       TRUST_PROXY: "1"
+      # From .env: start an EMPTY data folder from the image's sample database.
+      SEED_SAMPLE_DB: ${SEED_SAMPLE_DB:-false}
     # The SQLite database, in a host folder (relative to this directory) so it
     # is a visible file: <DOCKER_VOLUME_FOLDER>/data/helix_x.db. It survives
     # `docker compose down -v`; deleting the folder is what removes it.

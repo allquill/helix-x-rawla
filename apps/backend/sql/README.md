@@ -73,6 +73,8 @@ exists. `super_admin` does get everything, by design.
 exercising RBAC — `superadmin@`, `admin@`, `navmanager@`, `user@` and
 `inactive@example.com`. Set it to anything else to skip them. They are framework
 accounts with no member record, which is why they never appear in the directory.
+`admin@example.com` signs in with `Password!1` (the same administrator
+`pnpm seed:sample` creates); the other four use `ChangeMe!123`.
 
 > **Then sign out and back in.** Roles and permissions are baked into the JWT at
 > login and there is no refresh flow, so a session opened before the grant
@@ -138,7 +140,7 @@ values filling the four lists the migration leaves empty.
 
 | Sign in as | Password | What happens |
 | --- | --- | --- |
-| `admin@rawla.test` | `Str0ng!Admin1` | `admin`, all 13 portal permissions |
+| `admin@example.com` | `Password!1` | `admin`, all 13 portal permissions |
 | `vikram.singh@example.test` | `Rawla!Demo1` | active member, household with spouse and two children |
 | `pooja.jadeja@example.test` | `Rawla!Demo1` | active member, associate tier |
 | `bhavani.gehlot@example.test` | `Rawla!Demo1` | 403 `PAYMENT_REQUIRED` |

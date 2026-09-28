@@ -58,7 +58,8 @@ FROM node:${NODE_VERSION}-bookworm-slim AS runtime
 ENV NODE_ENV=production \
     PORT=3001 \
     DB_PATH=/data/helix_x.db \
-    RUN_MIGRATIONS=true
+    RUN_MIGRATIONS=true \
+    SEED_SAMPLE_DB=false
 
 # Same paths as the build: pnpm's node_modules are relative symlinks into the
 # root store, so the layout has to survive the copy.
@@ -68,6 +69,12 @@ COPY --from=prod-deps /ws/example/helix-x-rawla/apps/backend/node_modules ./node
 COPY --from=build /ws/example/helix-x-rawla/apps/backend/dist ./dist
 COPY example/helix-x-rawla/apps/backend/package.json ./
 COPY --chmod=0755 example/helix-x-rawla/apps/backend/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+
+# The sample database (apps/backend/seed/, made by `pnpm docker:sample-db`).
+# Inert unless SEED_SAMPLE_DB=true, and then only copied into a data directory
+# that has no database yet. Copying the directory rather than the file keeps
+# the build working when no sample has been generated.
+COPY example/helix-x-rawla/apps/backend/seed/ /opt/rawla/seed/
 
 # SQLite lives on a volume, so the database outlives the container.
 # No `USER node` here on purpose: the entrypoint starts as root, makes the

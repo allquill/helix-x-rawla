@@ -1,0 +1,128 @@
+# Render Blueprint — the Rawla portal, same topology as docker/portal:
+#
+#   internet → rawla-frontend (web, nginx) ──/api──▶ rawla-backend (private, SQLite on a disk)
+#
+# One-time prerequisites (docs/deploy-render.md walks through them):
+#   1. Push multi-arch images:  docker login docker.allquill.com && TAG=0.1.0 pnpm docker:push
+#      Render runs linux/amd64; an image built only on Apple Silicon will not start.
+#   2. In Render: Settings → Registry Credentials → add `allquill` for docker.allquill.com.
+#   3. This repo pushed to GitHub/GitLab/Bitbucket, then New → Blueprint.
+#
+# Upgrading: push a new tag, bump both `image.url` tags below, commit.
+#
+# SQLite constraint: rawla-backend must stay at ONE instance. A service with a
+# disk cannot scale out anyway, and each deploy briefly stops the old instance
+# before the new one starts — a few seconds of API downtime, by design.
+
+services:
+  # ── API ──────────────────────────────────────────────────────────────────
+  # Private service: no public URL. Only rawla-frontend reaches it, over
+  # Render's private network.
+  - type: pserv
+    name: rawla-backend
+    runtime: image
+    image:
+      url: docker.allquill.com/helix-x-rawla-backend:0.1.0
+      creds:
+        fromRegistryCreds:
+          name: allquill
+    # Persistent disks need a paid instance type.
+    plan: starter
+    region: oregon
+    numInstances: 1
+    # /data holds helix_x.db. Render snapshots disks daily.
+    disk:
+      name: rawla-data
+      mountPath: /data
+      sizeGB: 1
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "3001"
+      - key: DB_PATH
+        value: /data/helix_x.db
+      # The entrypoint runs pending migrations on every start; migrations own
+      # the schema, so synchronize stays off.
+      - key: RUN_MIGRATIONS
+        value: "true"
+      - key: DB_SYNCHRONIZE
+        value: "false"
+      - key: DB_LOGGING
+        value: "false"
+      # "true" starts an empty disk from the sample database bundled in the
+      # image (demo sites only). It signs in as admin@example.com / Password!1,
+      # which is published — change that password immediately if you enable it.
+      # An existing database is never overwritten.
+      - key: SEED_SAMPLE_DB
+        value: "false"
+      # Two proxies sit in front of the API — Render's edge, then nginx — so
+      # the client IP is the second-from-last X-Forwarded-For entry. Without
+      # this the contact form's per-IP limit counts every visitor as one.
+      - key: TRUST_PROXY
+        value: "2"
+
+      # ── Secrets, generated once by Render (they must differ) ──
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRES_IN
+        value: 7d
+      - key: OAUTH_JWT_SECRET
+        generateValue: true
+
+      # ── Mail: Gmail with an App Password ──
+      # https://myaccount.google.com/apppasswords — not the account password.
+      - key: MAIL_TRANSPORT
+        value: gmail
+      - key: GMAIL_USER
+        sync: false
+      - key: GMAIL_APP_PASSWORD
+        sync: false
+      # e.g. "Rajputana Rawla <you@gmail.com>" — Gmail rewrites other senders.
+      - key: MAIL_FROM
+        sync: false
+      # Where Contact Us messages go; comma-separate several addresses.
+      - key: CONTACT_TO_EMAIL
+        sync: false
+
+      # ── Membership dues: Stripe (console is refused in production) ──
+      # Test-mode keys (sk_test_…) are fine until you take real payments.
+      - key: PAYMENT_PROVIDER
+        value: stripe
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      # Signing secret of the webhook endpoint
+      # https://<rawla-frontend URL>/api/payments/stripe/webhook
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false
+
+      # ── Public URLs: both are rawla-frontend's URL (https://…onrender.com or
+      #    your custom domain). Emailed links and the Stripe return URL use them.
+      - key: PORTAL_PUBLIC_URL
+        sync: false
+      - key: API_PUBLIC_URL
+        sync: false
+
+  # ── Portal ───────────────────────────────────────────────────────────────
+  # nginx serves the app and proxies /api to rawla-backend. Render sets PORT
+  # (10000) and the image listens on it.
+  - type: web
+    name: rawla-frontend
+    runtime: image
+    image:
+      url: docker.allquill.com/helix-x-rawla-frontend:0.1.0
+      creds:
+        fromRegistryCreds:
+          name: allquill
+    # `free` also works, but sleeps after 15 idle minutes (slow first load).
+    plan: starter
+    region: oregon
+    healthCheckPath: /
+    envVars:
+      # Render's private address for the backend, as host:port. The image
+      # adds the http:// that nginx needs.
+      - key: BACKEND_UPSTREAM
+        fromService:
+          type: pserv
+          name: rawla-backend
+          property: hostport

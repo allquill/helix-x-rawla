@@ -124,7 +124,7 @@ queue and the audit log read like a system that has been used.
 
 | Sign in as | Password | Gets |
 | --- | --- | --- |
-| `admin@rawla.test` | `Str0ng!Admin1` | the `admin` role, all 13 portal permissions |
+| `admin@example.com` | `Password!1` | the `admin` role, all 13 portal permissions |
 | `vikram.singh@example.test` | `Rawla!Demo1` | an active member (household, spouse, two children) |
 | `bhavani.gehlot@example.test` | `Rawla!Demo1` | blocked: `PAYMENT_REQUIRED` |
 | `ajay.parmar@example.test` | `Rawla!Demo1` | blocked: `ACCOUNT_PENDING_APPROVAL` |
@@ -293,61 +293,22 @@ printed. Copy it again, restart the backend, and replay the delivery with
 
 ## Docker images
 
-The backend and frontend ship as two separate images:
+The portal ships as two images: `helix-x-rawla-backend` (the API, with SQLite on
+`/data`) and `helix-x-rawla-frontend` (nginx, which serves the app and proxies
+`/api`).
 
 ```bash
-pnpm docker:build:backend     # → helix-x-rawla-backend:local
-pnpm docker:build:frontend    # → helix-x-rawla-frontend:local
-pnpm docker:build             # both
-
-TAG=1.2.0 pnpm docker:build:backend          # another tag
-pnpm docker:build:frontend --no-cache        # extra flags pass through to docker build
+pnpm docker:build          # both images, this machine's platform (:local)
+TAG=0.1.0 pnpm docker:push # multi-arch (amd64 + arm64), pushed to docker.allquill.com
+pnpm docker:up             # run both via docker/portal (docker:down, docker:logs)
 ```
 
-**The build context is the helix-x workspace root (`../..`), not this repo.**
-Both apps reach the framework through relative paths into the sibling
-checkouts: the backend's tarballs, and the frontend's `link:`s and Tailwind
-`@source`. The images mirror that layout (`/ws/framework` beside
-`/ws/example/helix-x-rawla`) so those paths resolve unchanged. That is why the
-ignore files are `apps/*/Dockerfile.dockerignore`: BuildKit reads a
-`<Dockerfile>.dockerignore` beside the Dockerfile. A plain `.dockerignore`
-would have to sit at the workspace root, outside this repo. Both files are
-allow-lists, so local `.env` files and `data/` never enter the context.
-
-**The backend image bakes whatever is in `framework/helix-x-backend/.artifacts/`.**
-Run `pnpm run pack` there first, or the image ships the previous framework
-build.
-
-### Running them
-
-`docker/portal/` runs both images together on their own network with Docker
-Compose. The registry (`docker.allquill.com`), the image tags, the data folder
-and the ports come from its `.env`. Leave `DOCKER_REGISTRY` empty to run your
-local builds instead:
-
-```bash
-cp docker/portal/.env.example docker/portal/.env
-cp docker/portal/backend.env.example docker/portal/backend.env   # edit the secrets
-pnpm docker:up        # docker:down, docker:logs
-```
-
-The portal is then on http://localhost:8080. See
-[`docker/portal/README.md`](docker/portal/README.md) for switching tags or
-the data folder (the database is the file
-`docker/portal/docker-volume/data/helix_x.db`), and for seeding an administrator. The images' own
-settings:
-
-| Image | Setting | Default | Notes |
-|---|---|---|---|
-| backend | `NODE_ENV` | `production` | The `console` mail and payment providers refuse to load under it. Configure SMTP/Gmail and Stripe from `.env.example`, or pass `-e NODE_ENV=development` for a local smoke run. |
-| backend | `DB_PATH` | `/data/helix_x.db` | `/data` is a volume (in compose, the host folder `DOCKER_VOLUME_FOLDER`), so the database outlives the container. |
-| backend | `RUN_MIGRATIONS` | `true` | The entrypoint runs pending migrations before starting. That is idempotent, and set `false` when a separate job owns them. |
-| backend | `TRUST_PROXY` | unset | Set `1` behind the frontend's nginx, or the per-IP contact-form limit counts every visitor as the proxy. |
-| backend | `JWT_SECRET`, `OAUTH_JWT_SECRET`, `CONTACT_TO_EMAIL` | none | Required. See `apps/backend/.env.example` for the rest. |
-| frontend | `BACKEND_UPSTREAM` | `http://backend:3001` | Where nginx proxies `/api`. The bundle calls `/api` on its own origin (`VITE_API_SERVER` is empty in `.env.production`), so there is no CORS and no backend URL in the JavaScript. |
-
-`VITE_*` flags are baked in at build time from `apps/frontend/.env.production`.
-Changing one means rebuilding the frontend image.
+**[DEPLOY.md](DEPLOY.md) is the full reference.** It covers:
+- building and publishing
+- the bundled sample database
+- Docker Compose, other Docker hosts, and [Render](docs/deploy-render.md)
+- every environment variable
+- a production checklist, backups, upgrades and troubleshooting
 
 ## Commands
 

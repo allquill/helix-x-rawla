@@ -1,5 +1,7 @@
 # portal
 
+> Full reference, including every environment variable: [DEPLOY.md](../../DEPLOY.md).
+
 The Rawla backend and frontend images, run together on their own network.
 
 ```bash
@@ -54,18 +56,45 @@ With the default that is `docker/portal/docker-volume/data/helix_x.db`, which is
 gitignored. A new folder starts from an empty database, and the migrations run
 into it. Pointing at an existing folder reuses its database.
 
-## Making yourself an administrator
+## Starting from sample data
 
-A fresh account has no roles. `apps/backend/sql/admin-seed.sql` grants them.
-Edit `:admin_email` at the top of it first. The database is on the host, so
-run it with your own `sqlite3`, from this directory. This is safe while the
-stack is running:
+The backend image bundles a sample database: 21 members in every status across
+five chapters, with households, an audit trail and reference data. To start
+from it instead of an empty portal:
 
 ```bash
-sqlite3 docker-volume/data/helix_x.db < ../../apps/backend/sql/admin-seed.sql
+# .env
+SEED_SAMPLE_DB=true
+DOCKER_VOLUME_FOLDER=./docker-volume-demo   # must not hold a database yet
 ```
 
-Then sign out and back in, because roles are baked into the JWT at login.
+On first start the backend copies the sample into the empty folder, then runs
+any newer migrations over it. Sign in as **`admin@example.com` /
+`Password!1`**. Members are `<first>.<last>@example.test` / `Rawla!Demo1`.
+
+- **An existing database is never overwritten,** so leaving the flag on is
+  harmless. Delete the folder to re-seed.
+- **The credentials are published,** so this is for demos only.
+- **To refresh the sample,** run `pnpm build && pnpm docker:sample-db`, then
+  rebuild or push the backend image. See `apps/backend/seed/README.md`.
+
+## Making yourself an administrator
+
+Join through `/join` and verify your email, then grant yourself `super_admin`,
+which holds every permission:
+
+```bash
+docker compose exec --user node backend node -e "
+const db = require('better-sqlite3')(process.env.DB_PATH);
+const r = db.prepare(\"INSERT OR IGNORE INTO user_roles (user_id, role_id) SELECT u.id, r.id FROM users u, roles r WHERE u.email = lower(?) AND r.name = 'super_admin'\").run(process.argv[1]);
+console.log(r.changes ? 'granted super_admin to ' + process.argv[1] : 'nothing changed: no such user, or already super_admin');
+" you@example.com
+```
+
+Sign out and back in, because roles are baked into the JWT at login. Avoid
+`apps/backend/sql/admin-seed.sql` on a real database: it also inserts five
+sample accounts with published passwords. See
+[DEPLOY.md §6](../../DEPLOY.md#6-running-with-docker-compose).
 
 ## Stopping
 
