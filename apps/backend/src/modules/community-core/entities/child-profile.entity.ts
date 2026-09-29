@@ -11,6 +11,7 @@ import {
 import type { Gender } from '../constants';
 import { Household } from './household.entity';
 import { Member } from './member.entity';
+import { uuidRef } from '../../../database/db-type';
 
 /**
  * A child in the household (`Child profile` tab).
@@ -30,7 +31,7 @@ export class ChildProfile {
   member: Member;
 
   @Index()
-  @Column({ type: 'text', name: 'member_id' })
+  @Column({ type: uuidRef(), name: 'member_id' })
   memberId: string;
 
   @ManyToOne(() => Household, { nullable: false, onDelete: 'CASCADE' })
@@ -38,7 +39,7 @@ export class ChildProfile {
   household: Household;
 
   @Index()
-  @Column({ type: 'text', name: 'household_id' })
+  @Column({ type: uuidRef(), name: 'household_id' })
   householdId: string;
 
   @Column({ type: 'text' })

@@ -9,6 +9,7 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { Member } from './member.entity';
+import { uuidRef } from '../../../database/db-type';
 
 /**
  * A Rawla member who vouches for an applicant (REG-05, `Member profile!E33`).
@@ -28,7 +29,7 @@ export class MemberReferenceContact {
   member: Member;
 
   @Index()
-  @Column({ type: 'text', name: 'member_id' })
+  @Column({ type: uuidRef(), name: 'member_id' })
   memberId: string;
 
   /** 1 or 2 — the workbook asks for exactly two vouching members. */
@@ -47,7 +48,7 @@ export class MemberReferenceContact {
   @Column({ type: 'integer', nullable: true })
   verifiedByUserId: number | null;
 
-  @Column({ type: 'datetime', nullable: true })
+  @Column({ type: Date, nullable: true })
   verifiedAt: Date | null;
 
   @Column({ type: 'text', nullable: true })

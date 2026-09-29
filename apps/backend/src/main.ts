@@ -1,11 +1,39 @@
+// First: entity decorators read DB_TYPE at import time (see load-env.ts).
+import './load-env';
 import { NestFactory } from '@nestjs/core';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { ValidationPipe } from '@nestjs/common';
 import { apiReference } from '@scalar/nestjs-api-reference';
+import { DataSource } from 'typeorm';
 import { AppModule } from './app.module';
+import { connectionOptions } from './database/connection';
+import { assertSchemaVersion } from './database/schema-version';
+
+/**
+ * Refuse to start on a database that is not at SCHEMA_VERSION. It runs on its
+ * own short-lived connection BEFORE Nest boots, because module init hooks read
+ * portal settings — on an unmigrated database they would fail first, with a
+ * bare "no such table".
+ */
+async function checkSchema(): Promise<void> {
+  const dataSource = new DataSource({ ...connectionOptions((key) => process.env[key]), entities: [] });
+  await dataSource.initialize();
+  try {
+    await assertSchemaVersion(dataSource);
+  } finally {
+    await dataSource.destroy();
+  }
+}
 
 async function bootstrap() {
+  try {
+    await checkSchema();
+  } catch (error) {
+    console.error(`\n${(error as Error).message}\n`);
+    process.exit(1);
+  }
+
   // rawBody: Stripe signs the exact bytes it sent, so the dues webhook must
   // verify against the unparsed body (see PaymentWebhookController).
   const app = await NestFactory.create<NestExpressApplication>(AppModule, { rawBody: true });

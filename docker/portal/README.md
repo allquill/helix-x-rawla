@@ -6,8 +6,7 @@ The Rawla backend and frontend images, run together on their own network.
 
 ```bash
 cd docker/portal
-cp .env.example .env                    # registry, image tags, data folder, ports
-cp backend.env.example backend.env      # backend config and secrets — required
+cp .env.example .env                    # ONE file: Compose settings + backend config and secrets
 docker compose up -d                    # or `pnpm docker:up` from the repo root
 ```
 
@@ -17,25 +16,42 @@ docker compose up -d                    # or `pnpm docker:up` from the repo root
 | http://127.0.0.1:3001/docs | Swagger, straight from the backend (published on localhost only). |
 | http://localhost:8080/api/dev/outbox | Captured mail — verification and reset links (`MAIL_TRANSPORT=console`). |
 
-The images come from `DOCKER_REGISTRY` (`docker.allquill.com` in
-`.env.example`). The first `up` pulls them; after that, `docker compose pull`
-fetches updates. Log in to the registry once with
-`docker login docker.allquill.com`. To run images you built yourself with
-`pnpm docker:build` instead, leave `DOCKER_REGISTRY` empty.
+By default (`DOCKER_REGISTRY` empty) the stack runs the images you built with
+`pnpm docker:build`. To pull published ones instead, set
+`DOCKER_REGISTRY=docker.allquill.com` and log in once with
+`docker login docker.allquill.com`. The first `up` then pulls them, and
+`docker compose pull` fetches updates.
 
-The frontend waits for the backend to report healthy, which happens only after
-its migrations have run. The first start takes a few seconds longer.
+The frontend waits for the backend to report healthy. The backend applies no
+migrations itself: it starts only once its database is at the schema version
+it needs. See "Data" below.
 
-## Two env files, on purpose
+## One settings file
 
-- **`.env`** is read by Compose itself. It holds the image names and tags, the
-  data folder, the network and the host ports. It never reaches a container.
-- **`backend.env`** is handed to the backend container. It holds the app config
-  and the secrets: JWT, mail, Stripe. It is gitignored. The full list, with an
-  explanation of each setting, is `apps/backend/.env.example`.
+`.env` is the only file you edit, and it does two jobs:
 
-`DB_PATH` and `TRUST_PROXY` are set in `docker-compose.yml` rather than in
-either file, because this topology fixes them.
+- **Compose reads it** to fill in `docker-compose.yml`: image names and tags,
+  the data folder, the network and the host ports.
+- **The backend receives all of it** as its environment: app config and
+  secrets (JWT, mail, Stripe) and the database choice (`DB_TYPE`,
+  `DATABASE_URL`, `DB_SSL`). It is gitignored.
+
+Every setting is explained in `.env.example`, with more on each backend
+setting in `apps/backend/.env.example`. `TRUST_PROXY` is set in
+`docker-compose.yml`, because this topology fixes it, and `DB_PATH` defaults
+to `/data/helix_x.db` there. Compose interpolates the file, so write a literal
+`$` in any value (e.g. a generated secret) as `$$`.
+
+**Database choice**, in `.env` (details in `.env.example`):
+
+| Database | Set |
+|---|---|
+| SQLite (default) | nothing: `DB_TYPE=sqlite` |
+| The bundled `postgres` service | `DB_TYPE=postgres`, `COMPOSE_PROFILES=postgres`, `DATABASE_URL=postgres://rawla:rawla@postgres:5432/rawla` |
+| Your own Postgres, e.g. one published on your Mac's port 5432 | `DB_TYPE=postgres`, `DATABASE_URL=postgresql://USER:PASSWORD@host.docker.internal:5432/DB`, `DB_SSL=` empty for a local server |
+
+`localhost` in `DATABASE_URL` means the backend container itself, so it
+never reaches a database on your Mac: use `host.docker.internal`.
 
 ## Changing the version or the data folder
 
@@ -53,30 +69,47 @@ independently, so bumping a tag never needs the full image path.
 
 The database is a plain file on the host: `<DOCKER_VOLUME_FOLDER>/data/helix_x.db`.
 With the default that is `docker/portal/docker-volume/data/helix_x.db`, which is
-gitignored. A new folder starts from an empty database, and the migrations run
-into it. Pointing at an existing folder reuses its database.
-
-## Starting from sample data
-
-The backend image bundles a sample database: 21 members in every status across
-five chapters, with households, an audit trail and reference data. To start
-from it instead of an empty portal:
+gitignored. A new, empty folder needs every migration applied by hand
+before the backend will start, **with the stack down**. From the repo root:
 
 ```bash
-# .env
-SEED_SAMPLE_DB=true
-DOCKER_VOLUME_FOLDER=./docker-volume-demo   # must not hold a database yet
+pnpm docker:down
+mkdir -p docker/portal/docker-volume/data
+for f in apps/backend/node_modules/@helix-x/backend/migrations/sqlite/*.sql \
+         apps/backend/migrations/sqlite/*.sql; do
+  echo "applying $f"; sqlite3 -bail docker/portal/docker-volume/data/helix_x.db < "$f" || break
+done
+pnpm docker:up
 ```
 
-On first start the backend copies the sample into the empty folder, then runs
-any newer migrations over it. Sign in as **`admin@example.com` /
-`Password!1`**. Members are `<first>.<last>@example.test` / `Rawla!Demo1`.
+Pointing at an existing folder reuses its database. After upgrading the
+images, apply any new migration files the same way (each by its full name).
+The backend refuses to start until you do, and tells you which ones.
+PostgreSQL (`COMPOSE_PROFILES=postgres`), upgrades and troubleshooting:
+[`apps/backend/migrations/README.md`](../../apps/backend/migrations/README.md#set-up-a-database).
 
-- **An existing database is never overwritten,** so leaving the flag on is
-  harmless. Delete the folder to re-seed.
-- **The credentials are published,** so this is for demos only.
-- **To refresh the sample,** run `pnpm build && pnpm docker:sample-db`, then
-  rebuild or push the backend image. See `apps/backend/seed/README.md`.
+**Never open that file from the host while the stack is running**: not
+`sqlite3`, not a GUI, and not an editor extension such as VS Code's SQLite
+viewers, especially with auto-reload on. SQLite relies on file locks, and
+Docker Desktop does not carry them between the Mac and the VM. A host reader
+mistakes the backend's in-progress journal for a crashed one and "rolls it
+back", which corrupts the database. The backend then fails with
+`SqliteError: disk I/O error` and `PRAGMA integrity_check` reports broken
+indexes. Stop the stack first (`pnpm docker:down`), or look from inside the
+container, where locking works:
+
+```bash
+docker compose exec --user node backend sqlite3 /data/helix_x.db
+```
+
+**Sample data**, with the stack running. `DB_CONTAINER` makes the script's
+SQL run inside the container, from the repo root:
+
+```bash
+API=http://localhost/api DB_CONTAINER=rawla-portal-backend-1 pnpm seed:sample
+# with the postgres profile:
+API=http://localhost/api DB_TYPE=postgres DB_CONTAINER=rawla-portal-postgres-1 pnpm seed:sample
+```
 
 ## Making yourself an administrator
 
@@ -91,9 +124,10 @@ console.log(r.changes ? 'granted super_admin to ' + process.argv[1] : 'nothing c
 " you@example.com
 ```
 
-Sign out and back in, because roles are baked into the JWT at login. Avoid
-`apps/backend/sql/admin-seed.sql` on a real database: it also inserts five
-sample accounts with published passwords. See
+Sign out and back in, because roles are baked into the JWT at login. A fresh
+database already has two administrators from the migrations
+(`admin@example.com` / `Password!1`, `superadmin@example.com` /
+`ChangeMe!123`). The passwords are published, so change them. See
 [DEPLOY.md §6](../../DEPLOY.md#6-running-with-docker-compose).
 
 ## Stopping

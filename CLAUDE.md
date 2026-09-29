@@ -74,8 +74,12 @@ pnpm dev:agents       # :2024   pnpm dev:mcp      # :3002
 
 pnpm generate:sdk   # regenerate the API client
 
-pnpm --filter @helix-x-rawla/backend migration:run
-pnpm --filter @helix-x-rawla/backend migration:generate src/database/migrations/<Name>
+# a new SQLite DB: every migration by hand, framework track first
+# (apps/backend/migrations/README.md: PostgreSQL, Compose, upgrades, seeding)
+for f in apps/backend/node_modules/@helix-x/backend/migrations/sqlite/*.sql apps/backend/migrations/sqlite/*.sql; do
+  sqlite3 -bail apps/backend/data/helix_x.db < "$f" || break; done
+pnpm seed:sample      # sample members via the API; DB_CONTAINER=… for a containerised DB
+pnpm db:schema:log    # SQL the entities still need vs the database — drafts a migration, checks drift
 pnpm clean            # node_modules, dist, .turbo — a full reinstall follows
 ```
 
@@ -308,26 +312,51 @@ The domain lives in `src/modules/community-core/` — 15 entities, 13 providers,
   Without it Swagger marks the parameter **required** and the generated client
   demands it — which is how casts creep into the UI hooks to paper over it.
 
-The app — not the library — owns the schema, and there are two paths to it that
-must not be confused:
+The schema is owned by **numbered SQL files applied by hand**, in two tracks
+of one `schema_migrations` table, always applied in this order:
 
-- The **running app** uses `autoLoadEntities: true`, so entities arrive through
-  each module's `forFeature()`. `DB_SYNCHRONIZE` defaults to *on* outside
-  production — but **`apps/backend/.env` sets it to `false`**, so in this repo
-  migrations own the schema locally too and an entity alone creates nothing.
-  Where synchronize is on, SQLite rewrites a whole table for a column change, so
-  a destructive entity edit can silently drop dev data.
-- The **TypeORM CLI** builds its own DataSource in `src/database/data-source.ts`
-  and has no module graph, so it reads `src/database/entities.ts` instead.
-  **Adding a module that registers an entity means adding it there too.** Forget
-  it and the CLI cannot see the entity at all: `migration:generate` reports *"No
-  changes in database schema were found"* and emits no `CREATE TABLE`. It does
-  **not** emit a `DROP` — TypeORM never drops a table it has no entity for. The
-  quiet failure is the reverse: with synchronize on, the app builds the table
-  from the entity anyway, so the feature works locally and fails wherever
-  migrations own the schema. The CLI also does not load `.env` — pass a
-  non-default database inline: `DB_PATH=data/other.db pnpm --filter
-  @helix-x-rawla/backend migration:run`.
+1. **`helix-x`** — the framework's tables (users, roles, permissions, OAuth,
+   notifications, tokens, navigation config), shipped **inside
+   `@helix-x/backend`** (`node_modules/@helix-x/backend/migrations/`) and
+   written in `framework/helix-x-backend`, never here.
+2. **`rawla`** — this app's tables and everything the portal needs to run:
+   `apps/backend/migrations/{sqlite,postgres}/NNNN_*.sql`.
+
+The backend never migrates. There are no TypeORM migrations, and
+`synchronize` is off unless `DB_SYNCHRONIZE=true`. **The app refuses to
+start** unless both tracks have reached what this build needs
+(`HELIX_SCHEMA_VERSION` from the package, `SCHEMA_VERSION` in
+`src/database/schema-version.ts`), and prints the exact `sqlite3` / `psql`
+commands, with full file names, in order. So a new `@helix-x/backend`
+tarball that adds a framework migration stops the app until it is applied —
+deliberately. `apps/backend/migrations/README.md` covers applying them.
+
+- The **running app** uses `autoLoadEntities: true`: entities describe the
+  schema to TypeORM but never create it.
+- **`pnpm db:schema:log`** (the TypeORM CLI on `src/database/data-source.ts`)
+  prints the SQL a database still needs to match the entities, or "Your schema
+  is up to date". It drafts a new migration and proves there is no drift. It
+  has no module graph and reads `src/database/entities.ts` (the framework's
+  `HELIX_ENTITIES` plus this app's), so **adding an entity means adding it
+  there too**, or it silently drafts nothing for it.
+  It loads `.env` first (`src/load-env.ts`); variables set inline still win.
+
+**Two drivers, one set of entities.** `DB_TYPE=sqlite` (default) or `postgres`
+(with `DATABASE_URL`), chosen in `src/database/connection.ts`. Every schema or
+seeded-data change to this app's track is a **pair**: the same `NNNN_name.sql` in both
+`migrations/sqlite/` and `migrations/postgres/`, plus a bump of
+`SCHEMA_VERSION`. Entities must stay portable: `type: Date` for timestamps,
+`uuidRef()` for uuid FKs, and per-driver SQL expressions in
+`src/database/db-type.ts`. Configuration a working portal needs (access,
+chapters and state map, navigation overrides, first-install administrators,
+reference-list values) is in the migrations; test data never is. **Every row
+has one owner:** `pnpm seed:sample` adds sample members through the API, only
+reads the SQL-owned rows (and refuses a database without them), and never
+writes access or configuration. The full checklist is
+`.claude/rules/database-migrations.md`, which attaches automatically.
+`src/load-env.ts` must stay the first import in `main.ts` and `data-source.ts`:
+entity decorators read `DB_TYPE` when first imported, before `ConfigModule`
+would have loaded `.env`.
 
 Serving: global prefix `/api`, Swagger at `/docs`, Scalar at `/docs-scalar`, raw
 OpenAPI at `/docs-json`. Everything but two things comes from the composed
@@ -360,16 +389,19 @@ conditional `pending → settled` update — so replayed webhooks are harmless. 
 tier priced at `$0` (Youth) is recorded as `waived` and closes the gate without
 a checkout.
 
-**Granting yourself permissions takes a sign-out.** A fresh account has no roles.
-`sql/admin-seed.sql` (edit `:admin_email` at the top) grants them:
+**Access ships in the migrations.** The framework's `0001` creates the four
+`*:manage` permissions its controllers check and the `user` role; this app's
+`0001_baseline.sql` adds the other 13 permissions and 12 roles the code
+checks, every grant, and two administrators with published passwords: `admin@example.com` / `Password!1`
+and `superadmin@example.com` / `ChangeMe!123`. Anything the portal needs to
+work after a first install belongs in a migration, never a script. Only
+**staff** roles (`STAFF_ROLES`) can sign in without a member record, which is
+why only those two accounts exist.
 
-```bash
-sqlite3 apps/backend/data/helix_x.db < apps/backend/sql/admin-seed.sql
-```
-
-Roles and permissions are baked into the JWT at login and there is no refresh
-flow, so a live session will not see the grant — sign out and back in.
-`sql/admin-inspect.sql` is the read-only counterpart.
+**Granting yourself permissions takes a sign-out.** Grant a role in the admin
+UI, or with the one-liner in `apps/backend/migrations/README.md`. Roles and
+permissions are baked into the JWT at login and there is no refresh flow, so a
+live session will not see the grant — sign out and back in.
 
 
 ### The recorded peer exception

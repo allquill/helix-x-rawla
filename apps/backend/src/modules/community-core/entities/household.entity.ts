@@ -9,6 +9,7 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { Chapter } from './chapter.entity';
+import { uuidRef } from '../../../database/db-type';
 
 /**
  * A household — one physical address linking several profiles (§3.3).
@@ -57,7 +58,7 @@ export class Household {
   chapter: Chapter | null;
 
   @Index()
-  @Column({ type: 'text', nullable: true, name: 'chapter_id' })
+  @Column({ type: uuidRef(), nullable: true, name: 'chapter_id' })
   chapterId: string | null;
 
   @Column({ type: 'date', nullable: true })

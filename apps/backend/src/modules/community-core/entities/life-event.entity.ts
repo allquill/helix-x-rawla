@@ -10,6 +10,7 @@ import {
 } from 'typeorm';
 import type { LifeEventType } from '../constants';
 import { Member } from './member.entity';
+import { uuidRef } from '../../../database/db-type';
 
 /** Births, weddings and anniversaries feeding the recognition engine (MP-05). */
 @Entity('life_events')
@@ -22,7 +23,7 @@ export class LifeEvent {
   member: Member;
 
   @Index()
-  @Column({ type: 'text', name: 'member_id' })
+  @Column({ type: uuidRef(), name: 'member_id' })
   memberId: string;
 
   @Column({ type: 'text' })
@@ -35,7 +36,7 @@ export class LifeEvent {
   @Column({ type: 'text', nullable: true })
   notes: string | null;
 
-  @Column({ type: 'datetime', nullable: true })
+  @Column({ type: Date, nullable: true })
   recognisedAt: Date | null;
 
   @CreateDateColumn()

@@ -8,6 +8,7 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { Member } from './member.entity';
+import { uuidRef } from '../../../database/db-type';
 
 export const CONSENT_DOCUMENTS = ['community_guidelines', 'privacy_policy'] as const;
 export type ConsentDocument = (typeof CONSENT_DOCUMENTS)[number];
@@ -30,7 +31,7 @@ export class ConsentRecord {
   @JoinColumn({ name: 'member_id' })
   member: Member;
 
-  @Column({ type: 'text', name: 'member_id' })
+  @Column({ type: uuidRef(), name: 'member_id' })
   memberId: string;
 
   @Column({ type: 'text' })

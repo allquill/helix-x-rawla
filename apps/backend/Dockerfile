@@ -58,8 +58,13 @@ FROM node:${NODE_VERSION}-bookworm-slim AS runtime
 ENV NODE_ENV=production \
     PORT=3001 \
     DB_PATH=/data/helix_x.db \
-    RUN_MIGRATIONS=true \
-    SEED_SAMPLE_DB=false
+    MIGRATIONS_DIR=/opt/migrations
+
+# The sqlite3 CLI, so the numbered migrations can be applied by hand inside the
+# container (docker exec, Render Shell) — the app itself never changes the schema.
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends sqlite3 \
+ && rm -rf /var/lib/apt/lists/*
 
 # Same paths as the build: pnpm's node_modules are relative symlinks into the
 # root store, so the layout has to survive the copy.
@@ -70,17 +75,20 @@ COPY --from=build /ws/example/helix-x-rawla/apps/backend/dist ./dist
 COPY example/helix-x-rawla/apps/backend/package.json ./
 COPY --chmod=0755 example/helix-x-rawla/apps/backend/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 
-# The sample database (apps/backend/seed/, made by `pnpm docker:sample-db`).
-# Inert unless SEED_SAMPLE_DB=true, and then only copied into a data directory
-# that has no database yet. Copying the directory rather than the file keeps
-# the build working when no sample has been generated.
-COPY example/helix-x-rawla/apps/backend/seed/ /opt/rawla/seed/
+# The numbered SQL migrations, for applying by hand from inside the container —
+# both tracks, the framework's first:
+#   sqlite3 -bail /data/helix_x.db < /opt/migrations/helix-x/sqlite/000N_*.sql
+#   sqlite3 -bail /data/helix_x.db < /opt/migrations/rawla/sqlite/000N_*.sql
+# The framework's ship inside @helix-x/backend; -L copies them out of the pnpm
+# store rather than as a symlink into it.
+COPY example/helix-x-rawla/apps/backend/migrations/ /opt/migrations/rawla/
+RUN cp -rL node_modules/@helix-x/backend/migrations /opt/migrations/helix-x
 
 # SQLite lives on a volume, so the database outlives the container.
 # No `USER node` here on purpose: the entrypoint starts as root, makes the
 # database directory writable (a platform's persistent disk, a Linux bind mount
 # or a Kubernetes volume can arrive root-owned), then drops to `node` before
-# migrations and the app run.
+# the app runs.
 RUN mkdir -p /data && chown node:node /data
 VOLUME /data
 

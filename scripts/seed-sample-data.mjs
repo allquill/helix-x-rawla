@@ -10,7 +10,15 @@
  * or trip the constraint.
  *
  * The one exception is `life_events`, which has no endpoint yet; those go in
- * through sqlite3 at the end, and they are inert rows with no derived state.
+ * through SQL at the end, and they are inert rows with no derived state.
+ *
+ * It adds SAMPLE DATA ONLY. Everything a working portal needs is owned by the
+ * numbered SQL migrations, and this script never writes any of it: users with
+ * roles, roles, permissions and grants, portal settings, chapters and the
+ * state→chapter map, navigation overrides, and the reference-list values
+ * (apps/backend/migrations/, 0001 and 0002). It reads them, and refuses to run
+ * against a database the migrations have not set up. One owner per row: if the
+ * portal needs something to boot, it goes in a migration, never here.
  *
  * Usage:
  *   node scripts/seed-sample-data.mjs [--reset]
@@ -19,19 +27,42 @@
  *             to run against a database that already has members, rather than
  *             half-applying itself on top.
  *
- * Env: API (default http://localhost:3001/api), DB (default
- * apps/backend/data/helix_x.db), ADMIN_EMAIL, ADMIN_PASSWORD.
+ * Env: API (default http://localhost:3001/api); ADMIN_EMAIL / ADMIN_PASSWORD, an
+ * EXISTING administrator to sign in as (default: 0001's admin@example.com); and
+ * the database the backend is using — DB_TYPE=sqlite (default) with DB (default
+ * apps/backend/data/helix_x.db), or DB_TYPE=postgres with DATABASE_URL.
+ *
+ * A database inside a container: set DB_CONTAINER and the script's SQL runs
+ * INSIDE that container rather than from the host.
+ *   SQLite — the backend's container (Compose: rawla-portal-backend-1); DB is
+ *   then a path in it (default /data/helix_x.db):
+ *     API=http://localhost/api DB_CONTAINER=rawla-portal-backend-1 pnpm seed:sample
+ *   PostgreSQL — the database's container (Compose profile: rawla-portal-postgres-1),
+ *   with psql there; DATABASE_URL as seen from inside it, or unset to use the
+ *   container's own POSTGRES_USER / POSTGRES_DB:
+ *     API=http://localhost/api DB_TYPE=postgres DB_CONTAINER=rawla-portal-postgres-1 pnpm seed:sample
+ * Never point a host sqlite3 at a bind-mounted file the container has open:
+ * Docker Desktop does not carry file locks across the mount, and two writers on
+ * one SQLite file corrupt it.
  */
 import { execFileSync } from 'node:child_process';
+import { randomUUID } from 'node:crypto';
 import { existsSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const API = process.env.API ?? 'http://localhost:3001/api';
-const DB = resolve(ROOT, process.env.DB ?? 'apps/backend/data/helix_x.db');
+const DB_CONTAINER = process.env.DB_CONTAINER;
+const DB = DB_CONTAINER
+  ? process.env.DB ?? '/data/helix_x.db'
+  : resolve(ROOT, process.env.DB ?? 'apps/backend/data/helix_x.db');
+const POSTGRES = (process.env.DB_TYPE ?? 'sqlite').toLowerCase() === 'postgres';
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? 'admin@example.com';
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD ?? 'Password!1';
+// Created by the app's 0001_baseline.sql; --reset keeps them.
+const BUILT_IN_ADMINS = "'admin@example.com', 'superadmin@example.com'";
 const MEMBER_PASSWORD = 'Rawla!Demo1';
 const RESET = process.argv.includes('--reset');
 
@@ -63,7 +94,38 @@ async function api(path, { method, body, token, expect } = {}) {
   return { status: res.status, body: parsed };
 }
 
-const sqlite = (sql) => execFileSync('sqlite3', [DB], { input: sql, encoding: 'utf8' });
+/**
+ * Run SQL against whichever database the backend uses; rows come back as arrays.
+ * The few statements here are written to mean the same on both: quoted
+ * camelCase columns, `= true`, CURRENT_TIMESTAMP, ids made in JS.
+ */
+let pgClient;
+async function sql(text) {
+  if (!POSTGRES) {
+    const [cmd, args] = DB_CONTAINER
+      ? ['docker', ['exec', '-i', '--user', 'node', DB_CONTAINER, 'sqlite3', '-separator', '\x1f', DB]]
+      : ['sqlite3', ['-separator', '\x1f', DB]];
+    const out = execFileSync(cmd, args, { input: text, encoding: 'utf8' });
+    return out.split('\n').filter(Boolean).map((line) => line.split('\x1f'));
+  }
+  if (DB_CONTAINER) {
+    // psql in the database's container: no published port needed.
+    const target = process.env.DATABASE_URL
+      ? `psql -q -v ON_ERROR_STOP=1 -At -F "$SEP" "$DATABASE_URL"`
+      : `psql -q -v ON_ERROR_STOP=1 -At -F "$SEP" -U "$POSTGRES_USER" -d "$POSTGRES_DB"`;
+    const env = ['-e', 'SEP=\x1f', ...(process.env.DATABASE_URL ? ['-e', `DATABASE_URL=${process.env.DATABASE_URL}`] : [])];
+    const out = execFileSync('docker', ['exec', '-i', ...env, DB_CONTAINER, 'sh', '-c', target], { input: text, encoding: 'utf8' });
+    return out.split('\n').filter(Boolean).map((line) => line.split('\x1f'));
+  }
+  if (!pgClient) {
+    // `pg` is the backend's dependency; resolve it from there.
+    const { Client } = createRequire(resolve(ROOT, 'apps/backend/package.json'))('pg');
+    pgClient = new Client({ connectionString: process.env.DATABASE_URL });
+    await pgClient.connect();
+  }
+  const res = await pgClient.query({ text, rowMode: 'array' });
+  return (Array.isArray(res) ? res.at(-1) : res).rows.map((r) => r.map((v) => (v instanceof Date ? v.toISOString().slice(0, 10) : String(v ?? ''))));
+}
 
 /**
  * The clear token exists only in the emailed URL — it is hashed at rest, so
@@ -104,32 +166,10 @@ async function verifyAndSetPassword(email, password) {
 
 /* ── the data ────────────────────────────────────────────────────────────── */
 
-const CHAPTERS = [
-  { name: 'Texas',      code: 'TX', contactEmail: 'texas@rawla.test',     states: ['TX', 'OK', 'LA', 'AR', 'NM'] },
-  { name: 'East Coast', code: 'EC', contactEmail: 'eastcoast@rawla.test', states: ['NY', 'NJ', 'CT', 'MA', 'PA'] },
-  { name: 'West Coast', code: 'WC', contactEmail: 'westcoast@rawla.test', states: ['CA', 'WA', 'OR', 'NV', 'AZ'] },
-  { name: 'Midwest',    code: 'MW', contactEmail: 'midwest@rawla.test',   states: ['IL', 'MI', 'OH', 'MN', 'WI'] },
-  { name: 'Southeast',  code: 'SE', contactEmail: 'southeast@rawla.test', states: ['GA', 'FL', 'NC', 'SC', 'TN'] },
-];
-
-/**
- * Four lists ship empty from the migration on purpose: `ReferenceDataService`
- * treats an empty list as un-curated and accepts anything, so the customer can
- * supply their own vocabulary before anyone registers. Populating them here is
- * what makes the sample members' values *validated* rather than merely
- * accepted — and it means every value below has to come from these lists.
- */
-const REFERENCE_VALUES = {
-  gotra: ['Rathore', 'Sisodia', 'Kachhwaha', 'Parmar', 'Solanki', 'Tomar', 'Bhati', 'Shekhawat', 'Jadeja', 'Gehlot'],
-  thikana: ['Jodhpur', 'Udaipur', 'Jaipur', 'Bikaner', 'Chittorgarh', 'Bundi', 'Shekhawati', 'Amber', 'Mewar', 'Marwar'],
-  industry: ['Technology', 'Healthcare', 'Finance', 'Education', 'Manufacturing', 'Legal', 'Real Estate', 'Hospitality', 'Construction', 'Retail'],
-  skill: ['Software Engineering', 'Accounting', 'Event Planning', 'Public Speaking', 'Graphic Design', 'Teaching', 'Fundraising', 'Photography', 'Cooking', 'Legal Advice'],
-};
-const slug = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, '_');
-
-// NOTE: `caste` is seeded with exactly four values by the migration
-// (sengar, shaktawat, rathore, chauhan) and is therefore *curated* — every
-// `caste` below must be one of them or the submission is refused.
+// Every gotra, thikana, caste and industry below must be a value the
+// migrations put in its reference list (0001: caste; 0002: gotra, thikana,
+// industry, skill). Those lists are curated, so anything else is refused —
+// requireConfiguration() checks before the first write.
 
 let phone = 4155550100;
 const nextPhone = () => `+1${String(++phone).padStart(10, '0')}`;
@@ -190,13 +230,20 @@ async function reset() {
   // log is for.
   //
   // For a genuinely empty database, recreate it instead:
-  //   stop the backend, rm apps/backend/data/helix_x.db,
-  //   pnpm --filter @helix-x-rawla/backend migration:run, start it, seed.
+  //   stop the backend, rm apps/backend/data/helix_x.db, apply the framework's
+  //   migrations and then this app's (apps/backend/migrations/README.md),
+  //   start it, seed.
   //
-  // Children before parents. `roles`, `permissions`, `portal_settings` and the
-  // migration-seeded reference values are schema, not sample data, and stay.
-  sqlite(`
-PRAGMA foreign_keys = OFF;
+  // Children before parents. Only sample rows go: everything the migrations
+  // own (roles, permissions, settings, chapters, the state map, navigation,
+  // reference values and the two 0001 administrators) stays.
+  await sql(`
+${POSTGRES ? '' : 'PRAGMA foreign_keys = OFF;'}
+DELETE FROM verification_token;
+DELETE FROM credential_ticket;
+DELETE FROM login_lockout;
+DELETE FROM notification_log;
+DELETE FROM dev_mail_outbox;
 DELETE FROM member_status_history;
 DELETE FROM member_reference_contacts;
 DELETE FROM membership_payments;
@@ -206,78 +253,63 @@ DELETE FROM child_profiles;
 DELETE FROM spouse_profiles;
 DELETE FROM members;
 DELETE FROM households;
-DELETE FROM state_chapter_map;
-DELETE FROM chapters;
-DELETE FROM reference_list_values
-  WHERE list_id IN (SELECT id FROM reference_lists WHERE key IN ('gotra','thikana','industry','skill'));
-DELETE FROM user_roles;
-DELETE FROM users;
-DELETE FROM verification_token;
-DELETE FROM credential_ticket;
-DELETE FROM login_lockout;
-DELETE FROM notification_log;
-DELETE FROM dev_mail_outbox;
-PRAGMA foreign_keys = ON;
+DELETE FROM user_roles WHERE user_id NOT IN (SELECT id FROM users WHERE email IN (${BUILT_IN_ADMINS}));
+DELETE FROM users WHERE email NOT IN (${BUILT_IN_ADMINS});
+${POSTGRES ? '' : 'PRAGMA foreign_keys = ON;'}
 `);
-  const kept = Number(sqlite('SELECT COUNT(*) FROM audit_logs;').trim());
+  const kept = Number((await sql('SELECT COUNT(*) FROM audit_logs;'))[0][0]);
   log(`  cleared — ${kept} audit rows retained (append-only by design)`);
 }
 
-async function ensureAdmin() {
+async function signIn() {
   step('Administrator');
-  const reg = await api('/auth/register', {
-    body: { email: ADMIN_EMAIL, password: ADMIN_PASSWORD, firstName: 'Portal', lastName: 'Administrator' },
-  });
-  log(reg.status === 201 || reg.status === 200 ? `  registered ${ADMIN_EMAIL}` : `  ${ADMIN_EMAIL} already exists`);
-
-  // The `admin` role and its grants live in admin-seed.sql, not in a migration.
-  const sqlPath = resolve(ROOT, 'apps/backend/sql/admin-seed.sql');
-  if (!existsSync(sqlPath)) throw new Error(`missing ${sqlPath}`);
-  execFileSync('bash', ['-c', `sqlite3 "${DB}" < "${sqlPath}"`], { stdio: 'ignore' });
-  log('  applied admin-seed.sql');
-
-  // Log in AFTER the grant: permissions are baked into the JWT at login and
-  // there is no refresh flow, so a token minted before it carries none.
-  const { body } = await api('/auth/login', {
-    body: { email: ADMIN_EMAIL, password: ADMIN_PASSWORD },
-    expect: [200, 201],
-  });
-  const claims = JSON.parse(Buffer.from(body.accessToken.split('.')[1], 'base64url').toString());
-  log(`  signed in — ${claims.roles.join(', ')} with ${claims.permissions.length} permissions`);
-  return body.accessToken;
+  // An administrator the migrations created (0001: admin@example.com). This
+  // script never creates accounts or grants roles — that is SQL's job.
+  const res = await api('/auth/login', { body: { email: ADMIN_EMAIL, password: ADMIN_PASSWORD } });
+  if (res.status !== 200 && res.status !== 201) {
+    console.error(`\nCannot sign in as ${ADMIN_EMAIL} (${res.status}). Use an administrator from the migrations:`
+      + ` ADMIN_EMAIL=… ADMIN_PASSWORD=… (see apps/backend/migrations/README.md).`);
+    process.exit(1);
+  }
+  const claims = JSON.parse(Buffer.from(res.body.accessToken.split('.')[1], 'base64url').toString());
+  log(`  signed in as ${ADMIN_EMAIL} — ${claims.roles.join(', ')} with ${claims.permissions.length} permissions`);
+  return res.body.accessToken;
 }
 
-async function seedChapters(token) {
-  step('Chapters and the state map');
-  const byCode = {};
-  for (const c of CHAPTERS) {
-    const { body } = await api('/chapters', {
-      body: { name: c.name, code: c.code, contactEmail: c.contactEmail },
-      token, expect: [200, 201],
-    });
-    byCode[c.code] = body.id;
-    for (const stateCode of c.states) {
-      await api('/chapters/state-map', {
-        method: 'PUT', body: { stateCode, chapterId: body.id }, token, expect: [200, 201],
-      });
-    }
-    log(`  ${c.name.padEnd(11)} ${c.states.join(', ')}`);
-  }
-  return byCode;
-}
+/**
+ * Read-only: the configuration the sample members depend on must already be
+ * there, from the migrations. Checked before the first write, so a database
+ * the migrations have not set up is refused whole rather than half-seeded.
+ */
+async function requireConfiguration(token) {
+  step('Configuration (from the migrations)');
+  const missing = [];
 
-async function seedReferenceData(token) {
-  step('Reference data');
-  for (const [key, values] of Object.entries(REFERENCE_VALUES)) {
-    let n = 0;
-    for (const [i, label] of values.entries()) {
-      const res = await api(`/reference-data/${key}/values`, {
-        body: { value: slug(label), label, sortOrder: (i + 1) * 10 }, token,
-      });
-      if (res.status === 200 || res.status === 201) n++;
-    }
-    log(`  ${key.padEnd(9)} +${n}`);
+  const { body: stateMap } = await api('/chapters/state-map', { token, expect: [200] });
+  const mapped = new Set(stateMap.map((m) => m.stateCode));
+  for (const state of new Set(MEMBERS.map((m) => m.state))) {
+    if (!mapped.has(state)) missing.push(`state ${state} has no chapter`);
   }
+
+  const { body: nav } = await api('/navigation/config', { token, expect: [200] });
+  if (!nav?.document?.routes?.['rawla.registration.join']) missing.push('navigation override for the join form');
+
+  const { body: lists } = await api('/reference-data', { token, expect: [200] });
+  const values = Object.fromEntries(lists.map((l) => [l.key, new Set(l.values.map((v) => v.value))]));
+  const need = (key, value) => {
+    if (value && !values[key]?.has(value)) missing.push(`${key} value '${value}'`);
+  };
+  for (const m of MEMBERS) {
+    need('gotra', m.gotra); need('thikana', m.thikana); need('caste', m.caste); need('industry', m.industry);
+    if (m.spouse) { need('gotra', m.spouse.gotra); need('thikana', m.spouse.thikana); }
+  }
+
+  if (missing.length) {
+    console.error(`\nConfiguration missing — apply the migrations (apps/backend/migrations/README.md):\n  `
+      + [...new Set(missing)].join('\n  '));
+    process.exit(1);
+  }
+  log(`  ${mapped.size} states mapped, navigation override present, reference values present`);
 }
 
 async function submitAll() {
@@ -363,57 +395,43 @@ async function advanceAll(token) {
  * rows — no derived state, no constraint — which is why SQL is acceptable here
  * and nowhere else in this script.
  */
-function seedLifeEvents() {
+async function seedLifeEvents() {
   step('Life events');
-  const rows = sqlite(
-    `SELECT id, weddingDate, dateOfBirth FROM members WHERE isActive = 1 ORDER BY createdAt LIMIT 6;`,
-  ).trim().split('\n').filter(Boolean);
+  const rows = await sql(
+    `SELECT "id", "weddingDate", "dateOfBirth" FROM "members" WHERE "isActive" = true ORDER BY "createdAt" LIMIT 6;`,
+  );
   const types = ['birth', 'wedding', 'anniversary'];
-  let n = 0;
-  const stmts = rows.map((line, i) => {
-    const [id, , dob] = line.split('|');
+  const stmts = rows.map(([id, , dob], i) => {
     const type = types[i % types.length];
     const date = type === 'birth' ? dob : `20${10 + i}-0${(i % 9) + 1}-1${i % 10}`;
-    n++;
-    return `INSERT INTO life_events (id, member_id, type, eventDate, notes, createdAt, updatedAt)
-            VALUES (lower(hex(randomblob(16))), '${id}', '${type}', '${date}',
-                    'Sample ${type} recorded by the seed script', datetime('now'), datetime('now'));`;
+    return `INSERT INTO "life_events" ("id", "member_id", "type", "eventDate", "notes", "createdAt", "updatedAt")
+            VALUES ('${randomUUID()}', '${id}', '${type}', '${date}',
+                    'Sample ${type} recorded by the seed script', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);`;
   });
-  if (stmts.length) sqlite(stmts.join('\n'));
-  log(`  inserted ${n}`);
+  if (stmts.length) await sql(stmts.join('\n'));
+  log(`  inserted ${stmts.length}`);
 }
 
-function summary() {
+async function summary() {
   step('Result');
-  log(sqlite(`
-.mode list
-.separator '  '
-SELECT status, COUNT(*) FROM members GROUP BY status ORDER BY COUNT(*) DESC;
-`).trimEnd());
+  const table = (rows) => rows.map((r) => r.join('  ')).join('\n');
+  log(table(await sql(`SELECT "status", COUNT(*) FROM "members" GROUP BY "status" ORDER BY COUNT(*) DESC;`)));
   log('');
-  log(sqlite(`
-.mode list
-.separator '  '
-SELECT c.name, COUNT(m.id) FROM chapters c LEFT JOIN members m ON m.chapter_id = c.id
-GROUP BY c.name ORDER BY c.name;
-`).trimEnd());
+  log(table(await sql(`SELECT c."name", COUNT(m."id") FROM "chapters" c LEFT JOIN "members" m ON m."chapter_id" = c."id"
+GROUP BY c."name" ORDER BY c."name";`)));
   log('');
-  const counts = sqlite(`
-.mode list
-.separator '  '
-SELECT 'members', COUNT(*) FROM members
-UNION ALL SELECT 'households', COUNT(*) FROM households
-UNION ALL SELECT 'spouses', COUNT(*) FROM spouse_profiles
-UNION ALL SELECT 'children', COUNT(*) FROM child_profiles
-UNION ALL SELECT 'references', COUNT(*) FROM member_reference_contacts
-UNION ALL SELECT 'life_events', COUNT(*) FROM life_events
-UNION ALL SELECT 'status_history', COUNT(*) FROM member_status_history
-UNION ALL SELECT 'audit_logs', COUNT(*) FROM audit_logs
-UNION ALL SELECT 'chapters', COUNT(*) FROM chapters
-UNION ALL SELECT 'reference_values', COUNT(*) FROM reference_list_values
-UNION ALL SELECT 'users', COUNT(*) FROM users;
-`).trimEnd();
-  log(counts);
+  log(table(await sql(`
+SELECT 'members', COUNT(*) FROM "members"
+UNION ALL SELECT 'households', COUNT(*) FROM "households"
+UNION ALL SELECT 'spouses', COUNT(*) FROM "spouse_profiles"
+UNION ALL SELECT 'children', COUNT(*) FROM "child_profiles"
+UNION ALL SELECT 'references', COUNT(*) FROM "member_reference_contacts"
+UNION ALL SELECT 'life_events', COUNT(*) FROM "life_events"
+UNION ALL SELECT 'status_history', COUNT(*) FROM "member_status_history"
+UNION ALL SELECT 'audit_logs', COUNT(*) FROM "audit_logs"
+UNION ALL SELECT 'chapters', COUNT(*) FROM "chapters"
+UNION ALL SELECT 'reference_values', COUNT(*) FROM "reference_list_values"
+UNION ALL SELECT 'users', COUNT(*) FROM "users";`)));
   log(`\n  admin      ${ADMIN_EMAIL} / ${ADMIN_PASSWORD}`);
   log(`  members    <first>.<last>@example.test / ${MEMBER_PASSWORD}`);
   log(`             (only verified members have a password)`);
@@ -426,22 +444,22 @@ if (health?.status !== 200) {
   console.error(`The backend is not answering on ${API}. Start it with: pnpm dev:backend`);
   process.exit(1);
 }
-if (!existsSync(DB)) {
-  console.error(`No database at ${DB}. Run: pnpm --filter @helix-x-rawla/backend migration:run`);
+if (!POSTGRES && !DB_CONTAINER && !existsSync(DB)) {
+  console.error(`No database at ${DB}. Apply apps/backend/migrations/sqlite/*.sql to it first (see apps/backend/migrations/README.md).`);
   process.exit(1);
 }
 
-const existing = Number(sqlite('SELECT COUNT(*) FROM members;').trim());
+const existing = Number((await sql('SELECT COUNT(*) FROM "members";'))[0][0]);
 if (existing > 0 && !RESET) {
   console.error(`\n${existing} members already exist. Re-run with --reset to replace the sample data.`);
   process.exit(1);
 }
-if (RESET) await reset();
 
-const token = await ensureAdmin();
-await seedChapters(token);
-await seedReferenceData(token);
+const token = await signIn();
+await requireConfiguration(token);
+if (RESET) await reset();
 await submitAll();
 await advanceAll(token);
-seedLifeEvents();
-summary();
+await seedLifeEvents();
+await summary();
+await pgClient?.end();

@@ -10,6 +10,7 @@ import {
 } from 'typeorm';
 import { Household } from './household.entity';
 import { Member } from './member.entity';
+import { uuidRef } from '../../../database/db-type';
 
 /**
  * A spouse, as a linked profile rather than an account (`Spouse profile` tab).
@@ -29,7 +30,7 @@ export class SpouseProfile {
   member: Member;
 
   @Index({ unique: true })
-  @Column({ type: 'text', name: 'member_id' })
+  @Column({ type: uuidRef(), name: 'member_id' })
   memberId: string;
 
   @ManyToOne(() => Household, { nullable: false, onDelete: 'CASCADE' })
@@ -37,7 +38,7 @@ export class SpouseProfile {
   household: Household;
 
   @Index()
-  @Column({ type: 'text', name: 'household_id' })
+  @Column({ type: uuidRef(), name: 'household_id' })
   householdId: string;
 
   @Column({ type: 'text' })

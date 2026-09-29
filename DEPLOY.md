@@ -11,7 +11,7 @@ and Render. Every environment variable the application reads is listed in
 2. [Prerequisites](#2-prerequisites)
 3. [The images](#3-the-images)
 4. [Building and publishing](#4-building-and-publishing)
-5. [The sample database](#5-the-sample-database)
+5. [Database setup and test data](#5-database-setup-and-test-data)
 6. [Running with Docker Compose](#6-running-with-docker-compose)
 7. [Running on any other Docker host](#7-running-on-any-other-docker-host)
 8. [Deploying to Render](#8-deploying-to-render)
@@ -33,13 +33,14 @@ browser ──▶ frontend  (nginx: the built app + a same-origin /api proxy)   
                 │
                 ▼
             /data/helix_x.db   (SQLite on a volume, host folder or disk)
+            — or PostgreSQL, with DB_TYPE=postgres (§11.1)
 ```
 
 The portal ships as **two images**:
 
 | Image | Contains | Listens on |
 |---|---|---|
-| `helix-x-rawla-backend` | The compiled API, production `node_modules`, the migrations, and a bundled sample database | `3001` |
+| `helix-x-rawla-backend` | The compiled API, production `node_modules`, both tracks of numbered SQL migrations (`/opt/migrations/{helix-x,rawla}`, applied by hand), and the `sqlite3` CLI | `3001` |
 | `helix-x-rawla-frontend` | The Vite production bundle, served by nginx, which also proxies `/api` to the backend | `$PORT` (default `80`) |
 
 The browser only ever talks to the frontend. The bundle calls `/api` on its own
@@ -52,10 +53,9 @@ backend never needs to be public.
 |---|---|
 | `apps/backend/Dockerfile`, `apps/backend/Dockerfile.dockerignore`, `apps/backend/docker-entrypoint.sh` | Backend image |
 | `apps/frontend/Dockerfile`, `apps/frontend/Dockerfile.dockerignore`, `apps/frontend/nginx/` | Frontend image and nginx config |
-| `apps/backend/seed/` | The bundled sample database and its README |
-| `docker/portal/` | Docker Compose stack: `docker-compose.yml`, `.env.example`, `backend.env.example` |
+| `docker/portal/` | Docker Compose stack: `docker-compose.yml`, and `.env.example`, the single settings template |
 | `render.yaml`, `docs/deploy-render.md` | Render Blueprint and step-by-step guide |
-| `scripts/build-sample-db.mjs` | Generates the sample database |
+| `scripts/seed-sample-data.mjs` | Fills a dev database with test data through the API (`pnpm seed:sample`) |
 
 ---
 
@@ -65,7 +65,11 @@ backend never needs to be public.
   publishing uses a `docker-container` builder, which is created automatically
   (see [§4.3](#43-multi-arch-publishing)).
 - **Node 22 and pnpm 9.12.0.** These are needed for `pnpm build` and
-  `pnpm docker:sample-db`. The image builds install their own toolchains.
+  `pnpm seed:sample`. The image builds install their own toolchains.
+- **`sqlite3` CLI** (preinstalled on macOS) to apply migrations to a SQLite
+  file from the host, or **`psql`** for PostgreSQL. Neither is needed if you
+  run them inside a container: the backend image ships `sqlite3`, and every
+  Postgres image ships `psql`.
 - **The workspace layout.** The images are built from the **helix-x workspace
   root**, not from this repository. The apps reach the framework through
   relative paths into sibling checkouts, so this layout must exist:
@@ -101,7 +105,7 @@ native modules `bcrypt` and `better-sqlite3` ship glibc prebuilds.
 | `manifests` | Copies the framework tarballs, the lockfile and every workspace `package.json` |
 | `build` | Runs `pnpm install --frozen-lockfile`, then `nest build` |
 | `prod-deps` | Installs production dependencies only. The framework tarballs are unpacked here, so the runtime image needs no framework checkout. |
-| `runtime` | Copies `dist`, production `node_modules`, the entrypoint and `/opt/rawla/seed/` |
+| `runtime` | Copies `dist`, production `node_modules`, the entrypoint and both migration tracks: this app's to `/opt/migrations/rawla`, the framework's (from the installed `@helix-x/backend`) to `/opt/migrations/helix-x` |
 
 **Entrypoint order** (`docker-entrypoint.sh`):
 
@@ -109,11 +113,12 @@ native modules `bcrypt` and `better-sqlite3` ship glibc prebuilds.
    A platform disk, a Linux bind mount or a Kubernetes volume can arrive
    root-owned.
 2. **Drop to `node`** with `setpriv`. The application never runs as root.
-3. **Seed, if asked:** when `SEED_SAMPLE_DB=true` and the database file does
-   not exist, copy the bundled sample into place ([§5](#5-the-sample-database)).
-4. **Migrate:** unless `RUN_MIGRATIONS=false`, run pending migrations. This is
-   idempotent.
-5. **Start:** `exec node dist/main`.
+3. **Maintenance, if asked:** with `DB_MAINTENANCE=true`, stop here and idle,
+   so a shell can be opened to apply migrations ([§11](#11-data-migrations-and-backups)).
+4. **Start:** `exec node dist/main`. **It never migrates.** Before serving,
+   the app checks `schema_migrations` against the versions this build needs,
+   for the framework's track and this app's. If the database is behind, it
+   exits and prints the exact migration files and commands to run, in order.
 
 `/data` is a declared volume. A `HEALTHCHECK` polls `/api/health`, and Compose
 uses it to start the frontend only after the backend is ready.
@@ -166,7 +171,6 @@ All run from this repo's root:
 | `pnpm docker:push:backend` | Builds and pushes `${DOCKER_REGISTRY:-docker.allquill.com}/helix-x-rawla-backend:${TAG:-local}` |
 | `pnpm docker:push:frontend` | The same for the frontend |
 | `pnpm docker:builder` | Creates the `rawla-builder` buildx builder if it is missing. The push scripts call it. |
-| `pnpm docker:sample-db` | Regenerates the bundled sample database ([§5](#5-the-sample-database)) |
 | `pnpm docker:up` / `docker:down` / `docker:logs` | Runs the Compose stack in `docker/portal/` ([§6](#6-running-with-docker-compose)) |
 
 Build variables are listed in [§9.5](#95-build-and-publish-variables).
@@ -208,7 +212,6 @@ docker buildx imagetools inspect docker.allquill.com/helix-x-rawla-backend:0.1.0
 
 ```bash
 (cd ../../framework/helix-x-backend && pnpm run pack)   # if the framework changed
-pnpm build && pnpm docker:sample-db                      # if you want a fresh sample
 TAG=0.2.0 pnpm docker:push
 ```
 
@@ -218,41 +221,46 @@ rollbacks guesswork.
 
 ---
 
-## 5. The sample database
+## 5. Database setup and test data
 
-The backend image carries a sample database at
-`/opt/rawla/seed/helix_x.db`. It has 21 members in every status across five
-chapters, with households, spouses, children, references, life events, a full
-audit trail and reference data.
+**The single guide is [`apps/backend/migrations/README.md`](apps/backend/migrations/README.md):**
+creating, migrating and seeding a database by hand, for local SQLite and
+PostgreSQL, Docker Compose (either driver), Render, upgrades and
+troubleshooting. In short:
 
-- **Opt in with `SEED_SAMPLE_DB=true`.** The entrypoint copies the sample into
-  `DB_PATH` **only when no database exists there**, then runs newer migrations
-  over it.
-- **An existing database is never overwritten,** so leaving the flag on is
-  harmless. To re-seed, delete the data folder or volume.
-- **Credentials are published:** `admin@example.com` / `Password!1`, and
-  members `<first>.<last>@example.test` / `Rawla!Demo1`. Use it for **demos
-  only**, and change the admin password on anything public.
+1. **Migrations**, applied by hand: the framework's track, then this app's,
+   each file in order. They create the schema, and everything a working
+   portal needs (see the table below). The backend never migrates, and it
+   refuses to start on a database that is behind.
+2. **Sample data** (`pnpm seed:sample`), development only: members through
+   the API. It never writes what the migrations own.
 
-**Regenerating it** (needs a current `pnpm build`):
+| Owner | Rows |
+|---|---|
+| SQL migrations | users with roles, roles, permissions, grants, settings, chapters and the state map, navigation overrides, reference lists and their values |
+| `pnpm seed:sample` | sample members, households, spouses, children, references, status transitions, life events |
+
+Nothing in the images or migrations is demo data. The migrations (framework
+`0001`, then the app's `0001` and `0002`) give a working, **empty** portal:
+schema, access, chapters, navigation, reference-list values and the two
+administrators. For a local database with realistic content, fill it through
+the API:
 
 ```bash
-pnpm build
-pnpm docker:sample-db           # writes apps/backend/seed/helix_x.db
-pnpm docker:build:backend       # or docker:push — bundles the new copy
+pnpm dev:backend                 # against a migrated dev database
+pnpm seed:sample                 # 21 members in every status, households, an audit trail
+pnpm seed:sample -- --reset      # replace them
 ```
 
-`scripts/build-sample-db.mjs` does the following:
-1. Migrates an empty database.
-2. Serves it from a throwaway backend on `:3399`, with your
-   `apps/backend/.env` ignored.
-3. Fills it through the API with `scripts/seed-sample-data.mjs`, so password
-   hashes, gate states and member IDs are the application's own.
-4. Clears captured mail, links, lockouts and OAuth tokens.
-
-If `apps/backend/seed/helix_x.db` is missing, the image still builds, and
-`SEED_SAMPLE_DB=true` only logs a warning. Commit the file so builds on other
-machines include it.
+It works on either driver (`DB_TYPE=postgres` with `DATABASE_URL`). It adds
+sample members only: it reads the chapters, navigation and reference values
+the migrations created, refuses a database without them, and never writes
+access or configuration. Against a Compose stack, its SQL runs inside a
+container: `API=http://localhost/api DB_CONTAINER=rawla-portal-backend-1 pnpm seed:sample`
+(`DB_TYPE=postgres DB_CONTAINER=rawla-portal-postgres-1` with the postgres
+profile). The members sign in with
+`<first>.<last>@example.test` / `Rawla!Demo1`. **Never run it against a real
+database.**
 
 ---
 
@@ -262,20 +270,42 @@ machines include it.
 
 ```bash
 cd docker/portal
-cp .env.example .env                    # Compose settings: registry, tags, data folder, ports
-cp backend.env.example backend.env      # backend config and secrets — edit it
-docker compose up -d                    # or, from the repo root: pnpm docker:up
+cp .env.example .env                    # ONE file: Compose settings + backend config and secrets — edit it
+cd ../..
+mkdir -p docker/portal/docker-volume/data  # a NEW database: every migration, stack down
+for f in apps/backend/node_modules/@helix-x/backend/migrations/sqlite/*.sql \
+         apps/backend/migrations/sqlite/*.sql; do
+  echo "applying $f"; sqlite3 -bail docker/portal/docker-volume/data/helix_x.db < "$f" || break
+done
+pnpm docker:up                          # = docker compose -f docker/portal/docker-compose.yml up -d
+API=http://localhost/api DB_CONTAINER=rawla-portal-backend-1 pnpm seed:sample   # optional, dev only
 ```
 
-**Two env files, on purpose:**
+The backend refuses to start on an unmigrated database, so the migrations come
+first. For PostgreSQL (`COMPOSE_PROFILES=postgres`) the steps differ; see
+[the guide](apps/backend/migrations/README.md#docker-compose-postgresql).
 
-- **`.env`** is read by Compose itself: images, data folder, network and ports
-  ([§9.1](#91-compose-settings-dockerportalenv)). It never reaches a container.
-- **`backend.env`** is handed to the backend container: app config and secrets
-  ([§9.2](#92-backend-runtime)). It is gitignored.
+**One settings file, `docker/portal/.env`** (gitignored), with two jobs:
 
-Compose pins three backend values itself: `DB_PATH=/data/helix_x.db`,
-`TRUST_PROXY=1` (one nginx hop), and `SEED_SAMPLE_DB` (taken from `.env`).
+- **Compose interpolates it:** images, data folder, network and ports
+  ([§9.1](#91-compose-settings-dockerportalenv)).
+- **The backend receives all of it** (`env_file`): app config, secrets and the
+  database choice ([§9.2](#92-backend-runtime)).
+
+Compose sets only `TRUST_PROXY=1` (one nginx hop) and `DB_PATH` (default
+`/data/helix_x.db`). It never overrides `DB_TYPE` or `DATABASE_URL`, so
+whatever `.env` says reaches the backend. A literal `$` in any value is
+written `$$`, because Compose interpolates the file.
+
+**Database choice:**
+
+| Database | In `.env` |
+|---|---|
+| SQLite (default) | `DB_TYPE=sqlite` |
+| The bundled `postgres` service | `DB_TYPE=postgres`, `COMPOSE_PROFILES=postgres`, `DATABASE_URL=postgres://rawla:rawla@postgres:5432/rawla` |
+| Your own Postgres | `DB_TYPE=postgres`, `DATABASE_URL=postgresql://USER:PASSWORD@host.docker.internal:5432/DB` (a database on the Docker host) or its real hostname, and `DB_SSL` as the server needs |
+
+Inside the container `localhost` is the container itself, never your machine.
 
 | URL | What |
 |---|---|
@@ -290,8 +320,13 @@ your `pnpm docker:build` output.
 
 **Data.** The database lives in a **host folder**,
 `${DOCKER_VOLUME_FOLDER}/data/helix_x.db` (default
-`docker/portal/docker-volume/data/helix_x.db`, gitignored). You can open it with
-`sqlite3`, copy it to back it up, and delete the folder to start over.
+`docker/portal/docker-volume/data/helix_x.db`, gitignored). **Open it from the
+host only with the stack down** (`sqlite3`, a GUI, an editor extension):
+file locks don't cross between the host and Docker's VM, and a host reader
+corrupts a database the container is writing (`SqliteError: disk I/O error`).
+While it runs, use `docker compose exec --user node backend sqlite3 /data/helix_x.db`.
+With the stack down you can copy the file to back it up, or delete the folder
+to start over (then apply the migrations again).
 
 **Making yourself an administrator.** Join through `/join` and verify your
 email, then:
@@ -306,10 +341,10 @@ console.log(r.changes ? 'granted super_admin to ' + process.argv[1] : 'nothing c
 
 `--user node` runs it as the app's own user, since a plain `exec` is root in
 this image. Sign out and back in afterwards, because roles are baked into the
-JWT at login. `super_admin` holds every permission the migrations create. Don't use
-`apps/backend/sql/admin-seed.sql` against a real database: its
-`:seed_sample_users` is `'yes'`, which adds five accounts with published
-passwords.
+JWT at login. `super_admin` holds every permission the migrations create.
+A fresh install already has two administrators from the migrations:
+`admin@example.com` / `Password!1` and `superadmin@example.com` / `ChangeMe!123`.
+The passwords are published, so change both.
 
 **Stopping:**
 
@@ -328,9 +363,15 @@ The same images run anywhere Docker does. Without Compose:
 docker network create rawla-net
 docker volume create rawla-data
 
+# a NEW database: apply every migration with the image's own sqlite3 and files
+docker run --rm -v rawla-data:/data --entrypoint sh \
+  docker.allquill.com/helix-x-rawla-backend:0.1.0 -c \
+  'for f in /opt/migrations/helix-x/sqlite/*.sql /opt/migrations/rawla/sqlite/*.sql; do
+     echo "applying $f"; sqlite3 -bail /data/helix_x.db < "$f" || break; done'
+
 docker run -d --name backend --network rawla-net \
   -v rawla-data:/data \
-  --env-file backend.env \
+  --env-file docker/portal/.env \
   -e TRUST_PROXY=1 \
   docker.allquill.com/helix-x-rawla-backend:0.1.0
 
@@ -346,6 +387,9 @@ docker run -d --name frontend --network rawla-net -p 80:80 \
   This is the Heroku, Cloud Run or Render convention.
 - **Run one backend instance only.** SQLite has one writer
   ([§11](#11-data-migrations-and-backups)).
+- **Migrate before starting,** as above; the backend refuses an unmigrated
+  database. For an upgrade, apply only the newer files in the same way
+  ([guide](apps/backend/migrations/README.md#upgrade-an-existing-database)).
 
 ---
 
@@ -369,7 +413,12 @@ docker run -d --name frontend --network rawla-net -p 80:80 \
 4. Choose **New → Blueprint**, then fill in the prompted secrets: Gmail,
    `CONTACT_TO_EMAIL`, Stripe keys and the public URLs.
    `JWT_SECRET` and `OAUTH_JWT_SECRET` are generated for you.
-5. After the first deploy, set `PORTAL_PUBLIC_URL` and `API_PUBLIC_URL` to the
+5. **The first deploy lands on an empty disk**, so the backend can't start
+   yet. Set `DB_MAINTENANCE=true`, deploy, and apply the migrations from the
+   backend's Shell
+   ([the loop](apps/backend/migrations/README.md#render-or-any-container-platform)),
+   then set it back to `false`.
+6. After the first deploy, set `PORTAL_PUBLIC_URL` and `API_PUBLIC_URL` to the
    frontend URL, and add the Stripe webhook
    `https://<frontend>/api/payments/stripe/webhook`.
 
@@ -388,7 +437,10 @@ Legend:
 
 ### 9.1 Compose settings (`docker/portal/.env`)
 
-Read by Docker Compose only. Every one has a default in the compose file.
+Read by Docker Compose to fill in `docker-compose.yml`. Every one has a
+default in the compose file. The same file also carries the backend
+settings in [§9.2](#92-backend-runtime), and the backend container receives
+all of it.
 
 | Variable | Default | Notes |
 |---|---|---|
@@ -399,17 +451,19 @@ Read by Docker Compose only. Every one has a default in the compose file.
 | `FRONTEND_IMAGE` | `helix-x-rawla-frontend` | Repository name only |
 | `FRONTEND_TAG` | `local` | Image tag |
 | `DOCKER_VOLUME_FOLDER` | `./docker-volume` | Host folder, relative to `docker/portal/`. The database is `<folder>/data/helix_x.db`. |
-| `SEED_SAMPLE_DB` | `false` | `true` seeds an **empty** folder from the bundled sample ([§5](#5-the-sample-database)) |
+| `DB_TYPE`, `DATABASE_URL`, `DB_SSL` | `sqlite` | Backend settings ([§9.2](#92-backend-runtime)) that pick the database. For the bundled service, also set `COMPOSE_PROFILES=postgres` and `DATABASE_URL=postgres://rawla:rawla@postgres:5432/rawla`. For your own Postgres, see the table in [§6](#6-running-with-docker-compose). |
+| `COMPOSE_PROFILES` | *(unset)* | `postgres` starts the optional Postgres service. Its data is in `DOCKER_VOLUME_FOLDER/postgres`. |
+| `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB` | `rawla` | Credentials the bundled `postgres` service is created with. Keep `DATABASE_URL` in step with them. |
+| `POSTGRES_IMAGE` | `postgres:16-alpine` | Postgres image. Use 13 or later, which `gen_random_uuid()` needs. |
 | `RAWLA_NETWORK` | `rawla-net` | Docker network name |
 | `FRONTEND_PORT` | `8080` | Host port for the portal |
 | `BACKEND_PORT` | `3001` | Host port for the API, for `/docs` and debugging |
 | `BACKEND_BIND` | `127.0.0.1` | Interface the API port binds to. `0.0.0.0` exposes it. |
-| `BACKEND_ENV_FILE` | `./backend.env` | The backend's env file. Compose refuses to start if it is missing. |
 
 ### 9.2 Backend runtime
 
-Passed to the backend container: `backend.env` under Compose, the service's env
-on Render, `--env-file` or `-e` elsewhere. For local development the same
+Passed to the backend container: `docker/portal/.env` under Compose (the same
+file as §9.1), the service's env on Render, `--env-file` or `-e` elsewhere. For local development the same
 variables live in `apps/backend/.env` (template: `apps/backend/.env.example`).
 
 **Core**
@@ -420,15 +474,23 @@ variables live in `apps/backend/.env` (template: `apps/backend/.env.example`).
 | `PORT` | `3001` (Image) | | The API's listen port |
 | `TRUST_PROXY` | *(unset)* | ⚠️ | Proxy hops to trust for `X-Forwarded-For` (Express `trust proxy`). Use `1` behind the frontend's nginx (Compose pins it), `2` on Render, and add one per extra proxy. Unset, every visitor counts as the proxy for per-IP limits. Also accepts `true` or a subnet list. |
 
+**Database driver**
+
+| Variable | Default | Req. | Notes |
+|---|---|---|---|
+| `DB_TYPE` | `sqlite` | | `sqlite` (a file at `DB_PATH`) or `postgres` (`DATABASE_URL`). Each has its own numbered SQL migrations, applied by hand ([§11](#11-data-migrations-and-backups)). |
+| `DATABASE_URL` | — | ⚠️ `postgres` | `postgres://user:password@host:5432/db`. From a container, a database on the Docker host is `host.docker.internal`, never `localhost`. |
+| `DB_SSL` | *(unset)* | | `true` requires verified TLS. `no-verify` encrypts without checking the certificate, which some managed providers need. Unset means no TLS, which is fine on a private network. |
+
 **Database**
 
 | Variable | Default | Req. | Notes |
 |---|---|---|---|
-| `DB_PATH` | `/data/helix_x.db` (Image, Compose) | | SQLite file. Keep it on a volume. |
-| `DB_SYNCHRONIZE` | off in `production`, on otherwise | | Leave it `false`: migrations own the schema. `true` rebuilds tables from entities and can drop data. |
+| `DB_PATH` | `/data/helix_x.db` (Image, Compose) | | SQLite file (SQLite only). Keep it on a volume. |
+| `DB_SYNCHRONIZE` | off | | Leave it `false`: migrations own the schema. `true` rebuilds tables from entities and can drop data. |
 | `DB_LOGGING` | on in `development`, off otherwise | | `true`, `false`, `all`, or a list of TypeORM levels (`query,error,schema,warn,info,log`) |
-| `RUN_MIGRATIONS` | `true` (Image) | | The entrypoint runs pending migrations on start. Set `false` if a separate job owns them. |
-| `SEED_SAMPLE_DB` | `false` (Image, Compose) | | `true` seeds an empty `DB_PATH` from the bundled sample ([§5](#5-the-sample-database)) |
+| `DB_MAINTENANCE` | `false` | | `true` keeps the container up **without** starting the app, so you can open a shell and apply migrations by hand, e.g. on a new Render disk. Set it back to `false` afterwards. |
+| `MIGRATIONS_DIR` | `/opt/migrations` (Image) | | Where the startup error message says the migration files are: `<dir>/helix-x/` and `<dir>/rawla/`. Unset, it names the framework's inside `node_modules/@helix-x/backend/migrations` and this app's in `apps/backend/migrations` |
 
 **Authentication**
 
@@ -524,9 +586,8 @@ containers.
 | `TAG` | `local` | `docker:build*`, `docker:push*` | Image tag |
 | `DOCKER_REGISTRY` | `docker.allquill.com` | `docker:push*` | Registry to push to |
 | `DOCKER_PLATFORMS` | `linux/amd64,linux/arm64` | `docker:push*` | Platforms to build |
-| `SAMPLE_DB_PORT` | `3399` | `docker:sample-db` | Port for the throwaway backend |
-| `OUT` | `apps/backend/seed/helix_x.db` | `docker:sample-db` | Where the sample is written |
-| `API`, `DB`, `ADMIN_EMAIL`, `ADMIN_PASSWORD` | `http://localhost:3001/api`, `apps/backend/data/helix_x.db`, `admin@example.com`, `Password!1` | `seed:sample` | Target and admin for the sample-data script |
+| `API`, `DB`, `ADMIN_EMAIL`, `ADMIN_PASSWORD` | `http://localhost:3001/api`, `apps/backend/data/helix_x.db`, `admin@example.com`, `Password!1` | `seed:sample` | Target for the sample-data script, and an **existing** administrator (from the migrations) it signs in as. It creates no accounts. With `DB_TYPE=postgres` it uses `DATABASE_URL` instead of `DB`. |
+| `DB_CONTAINER` | unset | `seed:sample` | A backend container's name (Compose: `rawla-portal-backend-1`). Runs the script's SQL inside it, with `DB` as a path in the container (default `/data/helix_x.db`). Required for a bind-mounted SQLite file: host access corrupts it while the container runs. |
 
 ### 9.6 Read by the framework but not used by this app
 
@@ -553,8 +614,9 @@ effect:
 - [ ] `CONTACT_TO_EMAIL` set
 - [ ] `PORTAL_PUBLIC_URL` and `API_PUBLIC_URL` set to the public HTTPS origin
 - [ ] `TRUST_PROXY` matches the number of proxies in front of the backend
-- [ ] `SEED_SAMPLE_DB=false`, or the sample admin password changed immediately
+- [ ] The two first-install administrators from `0001_baseline.sql` (`admin@example.com`, `superadmin@example.com`) have new passwords
 - [ ] Images pushed multi-arch with a version tag. The deployment pins that tag.
+- [ ] Every numbered migration up to the image's version applied by hand, before the image is deployed
 - [ ] Backend runs **one** instance, with `/data` on persistent storage
 - [ ] Backups of `helix_x.db` scheduled ([§11](#11-data-migrations-and-backups))
 - [ ] TLS terminated in front of the frontend
@@ -571,9 +633,25 @@ effect:
   backend instance. Never scale it horizontally or point two containers at one
   file. On platforms that stop the old instance before starting the new one
   (Render with a disk), each deploy has a few seconds of API downtime.
-- **Migrations.** They run automatically on every start (`RUN_MIGRATIONS`).
-  They are idempotent and forward-only. The schema is never synchronized from
-  entities in production.
+- **Migrations: numbered SQL, applied by hand, in two tracks.** The
+  framework's (`helix-x`: users, roles, OAuth, notifications, navigation)
+  ship inside `@helix-x/backend`; this app's (`rawla`) live in
+  `apps/backend/migrations/{sqlite,postgres}/NNNN_*.sql`. The image carries
+  both, at `/opt/migrations/helix-x/` and `/opt/migrations/rawla/`. **Apply
+  the framework's first.** The backend never migrates. At startup it checks
+  `schema_migrations` and refuses to run against a database where either
+  track is behind, printing what to apply.
+  - SQLite: `sqlite3 -bail <db> < /opt/migrations/<track>/sqlite/NNNN_x.sql`
+  - Postgres: `psql -v ON_ERROR_STOP=1 "$DATABASE_URL" -f /opt/migrations/<track>/postgres/NNNN_x.sql`
+
+  A **new database** gets every file of the framework's track, then every
+  file of this app's, in order (a `for` loop over `*.sql`; name files in full
+  otherwise, because `/bin/sh` doesn't expand a glob in `<`). An **existing**
+  database gets only the newer files. A new image whose `@helix-x/backend`
+  adds a framework migration will not start until it is applied. On a
+  platform where the only shell is inside the backend container (Render),
+  start it with `DB_MAINTENANCE=true`. Every command, per environment, is in
+  [`apps/backend/migrations/README.md`](apps/backend/migrations/README.md).
 - **Backups.** Copy the file while the backend is stopped, or use SQLite's
   online backup:
 
@@ -584,9 +662,47 @@ effect:
   Under Compose the file is on the host (`docker/portal/docker-volume/data/`).
   On Render, disk snapshots are daily.
 - **Restore.** Stop the backend, replace `helix_x.db` (and remove any `-wal`
-  or `-shm` beside it), then start. Pending migrations apply automatically.
+  or `-shm` beside it), then apply any migrations newer than the backup,
+  then start.
 
 ---
+
+### 11.1 PostgreSQL
+
+The backend also runs on PostgreSQL 13+ with `DB_TYPE=postgres` and
+`DATABASE_URL`. The same image serves both drivers. SQLite stays the default,
+and its schema is unchanged.
+
+- **Migrations:** the `postgres/` folder of each track, the twin of the
+  SQLite set with the same numbers, framework's first. Apply them with
+  `psql -v ON_ERROR_STOP=1`. Every schema change is a **pair**, and
+  `.claude/rules/database-migrations.md` holds the checklist.
+- **Compose, bundled service:** set `DB_TYPE=postgres`,
+  `COMPOSE_PROFILES=postgres` and
+  `DATABASE_URL=postgres://rawla:rawla@postgres:5432/rawla` in
+  `docker/portal/.env`. Start only the database (`docker compose up -d
+  postgres`), apply the migrations through `docker compose exec -T postgres
+  psql`, then start the rest. Its port isn't published, so `seed:sample`
+  reaches it with `DB_CONTAINER=rawla-portal-postgres-1`.
+  [Step by step](apps/backend/migrations/README.md#docker-compose-postgresql).
+- **Compose, your own Postgres:** no profile. Set `DB_TYPE=postgres` and
+  `DATABASE_URL=postgresql://USER:PASSWORD@host.docker.internal:5432/DB` in
+  `docker/portal/.env`, migrate it as a
+  [local PostgreSQL](apps/backend/migrations/README.md#local-development-postgresql),
+  then `pnpm docker:up`.
+- **Local or other hosts:** point `DATABASE_URL` at your database. Leave
+  `DB_SSL` **empty** for a local server; set `DB_SSL=true` (or `no-verify`)
+  only for managed providers. Apply both tracks' `postgres/*.sql`, the
+  framework's first, with `psql -v ON_ERROR_STOP=1`.
+  The backend won't start on an empty database.
+  [Step by step](apps/backend/migrations/README.md#local-development-postgresql).
+- **Render:** a Render Postgres database, instead of the disk. Add a
+  `databases:` entry to `render.yaml` and set `DATABASE_URL` from it with
+  `fromDatabase: { name: …, property: connectionString }`, plus
+  `DB_TYPE=postgres`. You can then drop the backend's `disk`, and with it the
+  single-instance and deploy-downtime limits.
+- **Backups:** use `pg_dump` or your provider's snapshots, instead of copying
+  a file.
 
 ## 12. Upgrading and releases
 
@@ -598,7 +714,14 @@ effect:
      then `docker compose pull && docker compose up -d`.
    - Render: bump both `image.url` tags in `render.yaml` and commit.
    - Elsewhere: re-run the containers with the new tag.
-4. **Migrations** apply on the backend's first start.
+4. **Migrations:** if the release adds `NNNN_*.sql` files (in
+   `apps/backend/migrations/`, or in a new `@helix-x/backend`), apply them by
+   hand, framework track first, **before** step 3. Additive changes are safe
+   for the running version.
+   [How](apps/backend/migrations/README.md#upgrade-an-existing-database).
+   Otherwise the new backend refuses to start and lists what's missing. On
+   Render with a disk, apply them in the old instance's Shell, or deploy with
+   `DB_MAINTENANCE=true`, apply, and unset it.
 
 **Rolling back:** point back at the previous tag. Migrations are forward-only,
 so if a release changed the schema, restore the pre-upgrade backup as well.
@@ -621,4 +744,11 @@ so if a release changed the schema, restore the pre-upgrade backup as well.
 | The contact form rate-limits everyone together | `TRUST_PROXY` is unset or too low for the number of proxies |
 | The frontend returns 502 on `/api/*` | The backend is down or unreachable. Check `BACKEND_UPSTREAM`, the shared network, and `docker compose logs backend`. |
 | Links in emails point at `localhost` | Set `PORTAL_PUBLIC_URL` and `API_PUBLIC_URL` to the public origin |
-| `compose up` says `env file … backend.env not found` | `cp backend.env.example backend.env` in `docker/portal/` |
+| `compose up` says `env file … .env not found` | `cp .env.example .env` in `docker/portal/` |
+| Compose backend ignores your Postgres settings / still uses SQLite | Put `DB_TYPE` and `DATABASE_URL` in `docker/portal/.env` (the only file the stack reads), then `pnpm docker:up` to recreate the container. |
+| Compose backend: `ECONNREFUSED 127.0.0.1:5432` / `::1:5432` | `DATABASE_URL` says `localhost`, which inside the container is the container itself. Use `host.docker.internal` for a database on the Docker host. |
+| `DATABASE_URL is required when DB_TYPE=postgres` | Set `DATABASE_URL` in `.env`: for Compose's `postgres` profile, `postgres://rawla:rawla@postgres:5432/rawla` |
+| Backend exits: `Database schema is not ready` | A numbered migration hasn't been applied. The message lists the exact files and commands, in order ([guide](apps/backend/migrations/README.md#troubleshooting)). With Compose's restart policy it retries until you apply them. |
+| `SqliteError: disk I/O error`; `integrity_check` shows broken indexes | Something on the host opened the Compose SQLite file while the stack ran. Stop the stack, recreate the file from the migrations, and access it only through the container from then on. |
+| `The server does not support SSL connections` | `DB_SSL=true`/`no-verify` against a server without SSL (e.g. local Postgres). Set `DB_SSL=` (empty). |
+| On Postgres: `Data type "datetime" … is not supported` | An entity uses `type: 'datetime'`. Use `type: Date` (see `.claude/rules/database-migrations.md`). |

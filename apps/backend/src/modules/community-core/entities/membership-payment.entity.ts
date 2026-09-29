@@ -9,6 +9,7 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { Member } from './member.entity';
+import { uuidRef } from '../../../database/db-type';
 
 export const PAYMENT_STATUSES = [
   'pending',
@@ -38,7 +39,7 @@ export class MembershipPayment {
   member: Member;
 
   @Index()
-  @Column({ type: 'text', name: 'member_id' })
+  @Column({ type: uuidRef(), name: 'member_id' })
   memberId: string;
 
   @Column({ type: 'text' })
@@ -69,7 +70,7 @@ export class MembershipPayment {
   @Column({ type: 'integer', nullable: true })
   recordedByUserId: number | null;
 
-  @Column({ type: 'datetime', nullable: true })
+  @Column({ type: Date, nullable: true })
   settledAt: Date | null;
 
   @CreateDateColumn()

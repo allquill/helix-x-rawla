@@ -10,7 +10,5 @@ data/*.db
 data/*.db-*
 .langgraph_api/
 
-# Compose stack secrets (docker/portal/backend.env.example is the template)
-docker/portal/backend.env
 # Compose stack database (bind-mounted host folder)
 docker/portal/docker-volume/

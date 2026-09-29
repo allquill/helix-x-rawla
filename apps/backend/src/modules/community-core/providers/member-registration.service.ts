@@ -22,6 +22,7 @@ import { AuditService } from './audit.service';
 import { ChapterService } from './chapter.service';
 import { PortalSettingsService } from './portal-settings.service';
 import { ReferenceDataService } from './reference-data.service';
+import { isUniqueViolation } from '../../../database/db-type';
 
 /** Whole years elapsed, evaluated in UTC so the answer is not timezone-dependent. */
 export function ageInYears(isoDate: string, asOf: Date = new Date()): number {
@@ -316,10 +317,7 @@ export class MemberRegistrationService {
     } catch (error) {
       // The pre-check above cannot stop two simultaneous submissions; the unique
       // index can, and does. Report it as the same conflict either way.
-      if (
-        error instanceof QueryFailedError &&
-        /UNIQUE constraint failed/i.test(error.message)
-      ) {
+      if (error instanceof QueryFailedError && isUniqueViolation(error)) {
         throw new ConflictException({
           code: 'EMAIL_ALREADY_REGISTERED',
           message: 'You may already be registered. Try signing in, or reset your password.',

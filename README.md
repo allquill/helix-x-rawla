@@ -56,10 +56,23 @@ cd ../../example/helix-x-rawla && pnpm install
 cp apps/backend/.env.example  apps/backend/.env
 cp apps/frontend/.env.example apps/frontend/.env
 
-pnpm --filter @helix-x-rawla/backend migration:run
+# a new SQLite database: apply every migration by hand, the framework's
+# track first, then this app's (the backend never migrates)
+mkdir -p apps/backend/data
+for f in apps/backend/node_modules/@helix-x/backend/migrations/sqlite/*.sql \
+         apps/backend/migrations/sqlite/*.sql; do
+  echo "applying $f"; sqlite3 -bail apps/backend/data/helix_x.db < "$f" || break
+done
+
 pnpm dev:backend     # :3001
 pnpm dev:frontend    # :5173
+pnpm seed:sample     # optional: sample members (needs the backend running)
 ```
+
+**Database setup**, for PostgreSQL, Docker Compose, Render, upgrades and
+troubleshooting, is in
+[`apps/backend/migrations/README.md`](apps/backend/migrations/README.md). It
+is the single guide for creating, migrating and seeding a database by hand.
 
 `pnpm run pack` — not `pnpm pack`, which is a built-in command that shadows the
 script and exits 0 without repacking.
@@ -87,33 +100,38 @@ Handler names become OpenAPI operationIds and must be unique across the whole
 app — a collision silently drops an endpoint from the client. `pnpm generate:sdk`
 checks this before it writes anything.
 
-## Seeding an administrator
+## Administrators
 
-Register a user, point the seed script at them, run it, then **sign out and back
-in** — roles and permissions are baked into the JWT at login and there is no
-refresh flow, so a live session never sees a new grant.
+The migrations (this app's `0001_baseline.sql`) create two administrators:
+- `admin@example.com` / `Password!1` (the `admin` role)
+- `superadmin@example.com` / `ChangeMe!123` (`super_admin` and `admin`)
 
-```bash
-# edit `.parameter set :admin_email` at the top of the file first
-sqlite3 apps/backend/data/helix_x.db < apps/backend/sql/admin-seed.sql
-```
+The passwords are published, so change both right after installing.
 
-The ten portal roles and their grants arrive automatically with the
-`CommunityCoreSeed` migration; `admin-seed.sql` only adds the `admin` role
-itself and hands it the same permissions.
+Every permission and role the portal checks (17 and 13) comes with the same
+migration. To make another account an administrator, grant it a role in the
+admin UI (`/admin/users`), or use the one-liner in
+[`apps/backend/migrations/README.md`](apps/backend/migrations/README.md). Then
+**sign out and back in**: roles are baked into the JWT at login, and there is
+no refresh flow.
 
 ## Sample data
 
-With the backend running:
+With the backend running, on a fully migrated database:
 
 ```bash
 pnpm seed:sample              # refuses to run over an existing dataset
 pnpm seed:sample -- --reset   # replace it
 ```
 
+For PostgreSQL or a Docker Compose stack, see the command table in
+[`apps/backend/migrations/README.md`](apps/backend/migrations/README.md#add-sample-data).
+
 21 members spread across the five chapters and **all eight statuses**, with
-households, spouses, children, reference contacts, life events, a full audit
-trail and real reference data for the four lists that ship empty.
+households, spouses, children, reference contacts, life events and a full
+audit trail. It adds sample data only: access, chapters, navigation and the
+reference-list values all come from the migrations, which it checks for and
+never writes.
 
 It drives the **HTTP API**, not SQL, and that is the point: members carry
 derived state only the application knows how to produce — bcrypt hashes, the
@@ -124,20 +142,19 @@ queue and the audit log read like a system that has been used.
 
 | Sign in as | Password | Gets |
 | --- | --- | --- |
-| `admin@example.com` | `Password!1` | the `admin` role, all 13 portal permissions |
+| `admin@example.com` | `Password!1` | the `admin` role: every permission (created by `0001_baseline.sql`) |
 | `vikram.singh@example.test` | `Rawla!Demo1` | an active member (household, spouse, two children) |
 | `bhavani.gehlot@example.test` | `Rawla!Demo1` | blocked: `PAYMENT_REQUIRED` |
 | `ajay.parmar@example.test` | `Rawla!Demo1` | blocked: `ACCOUNT_PENDING_APPROVAL` |
 | `uma.shekhawat@example.test` | `Rawla!Demo1` | blocked: `ACCOUNT_ARCHIVED` |
 
-[`apps/backend/sql/README.md`](apps/backend/sql/README.md) has the full picture:
-the three seeding layers, every sample account and the gate code it demonstrates,
-how to read a verification link out of the dev outbox, and the inspection queries.
+It runs on either driver, and uses the chapters and reference values the
+migrations created. Use it on development databases only.
 
-`--reset` clears the sample rows but **not `audit_logs`** — two triggers make
+`--reset` clears the sample rows, keeping the two built-in administrators, but **not `audit_logs`** — two triggers make
 that table append-only, and a convenience script is the last thing that should
 be dropping them. For a genuinely empty database, stop the backend, delete
-`apps/backend/data/helix_x.db`, re-run the migrations and seed again.
+`apps/backend/data/helix_x.db`, re-run the migration loop above and seed again.
 
 ## The three activation gates
 
@@ -305,7 +322,6 @@ pnpm docker:up             # run both via docker/portal (docker:down, docker:log
 
 **[DEPLOY.md](DEPLOY.md) is the full reference.** It covers:
 - building and publishing
-- the bundled sample database
 - Docker Compose, other Docker hosts, and [Render](docs/deploy-render.md)
 - every environment variable
 - a production checklist, backups, upgrades and troubleshooting
@@ -318,9 +334,11 @@ pnpm typecheck
 pnpm test
 pnpm lint
 
-pnpm --filter @helix-x-rawla/backend migration:generate src/database/migrations/<Name>
-pnpm --filter @helix-x-rawla/backend migration:run
+pnpm db:schema:log   # SQL the entities still need — drafts a migration, checks drift
 ```
+
+Schema changes are numbered SQL files in `apps/backend/migrations/`, applied
+by hand. See its README and `.claude/rules/database-migrations.md`.
 
 `apps/frontend/test/plugins.test.ts` is the real regression net: it boots the
 kernel with `permissionMode: 'strict'` and activates every registered plugin.

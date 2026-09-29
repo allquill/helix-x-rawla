@@ -50,12 +50,6 @@
       ],
       "cache": false,
       "persistent": true
-    },
-    "migration:run": {
-      "cache": false
-    },
-    "migration:generate": {
-      "cache": false
     }
   }
 }

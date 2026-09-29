@@ -19,6 +19,7 @@ import type {
 } from '../constants';
 import { Chapter } from './chapter.entity';
 import { Household } from './household.entity';
+import { memberActiveCheck, uuidRef } from '../../../database/db-type';
 
 /**
  * The system of record for a person in the community (module MP).
@@ -41,10 +42,7 @@ import { Household } from './household.entity';
  * Column names are the camelCase ones TypeORM actually emits — a snake_case
  * expression here refers to columns that do not exist and fails at CREATE TABLE.
  */
-@Check(
-  'CHK_member_active_implies_gates',
-  `"isActive" = 0 OR ("isEmailVerified" = 1 AND "isApproved" = 1 AND "status" NOT IN ('rejected','archived'))`,
-)
+@Check('CHK_member_active_implies_gates', memberActiveCheck())
 @Entity('members')
 export class Member {
   @PrimaryGeneratedColumn('uuid')
@@ -145,7 +143,7 @@ export class Member {
   household: Household;
 
   @Index()
-  @Column({ type: 'text', name: 'household_id' })
+  @Column({ type: uuidRef(), name: 'household_id' })
   householdId: string;
 
   @Column({ type: 'text', default: 'head_of_house' })
@@ -157,7 +155,7 @@ export class Member {
 
   /** Auto-derived from the household's state; an admin may override (MP-08). */
   @Index()
-  @Column({ type: 'text', nullable: true, name: 'chapter_id' })
+  @Column({ type: uuidRef(), nullable: true, name: 'chapter_id' })
   chapterId: string | null;
 
   /** True once an admin has overridden the state-derived chapter (MP-08). */
@@ -212,16 +210,16 @@ export class Member {
   @Column({ type: 'text', nullable: true })
   rejectionReason: string | null;
 
-  @Column({ type: 'datetime', nullable: true })
+  @Column({ type: Date, nullable: true })
   rejectedAt: Date | null;
 
   @Column({ type: 'text', nullable: true })
   infoRequestMessage: string | null;
 
-  @Column({ type: 'datetime', nullable: true })
+  @Column({ type: Date, nullable: true })
   infoRequestedAt: Date | null;
 
-  @Column({ type: 'datetime', nullable: true })
+  @Column({ type: Date, nullable: true })
   archivedAt: Date | null;
 
   @Column({ type: 'integer', nullable: true })
@@ -236,14 +234,14 @@ export class Member {
    * no password set" is a distinct state in the admin queue — so the
    * `onPasswordChanged` hook records it here.
    */
-  @Column({ type: 'datetime', nullable: true })
+  @Column({ type: Date, nullable: true })
   passwordSetAt: Date | null;
 
   /** Gate 1. Set only by the verification flow or an admin override (REG-23). */
   @Column({ type: 'boolean', default: false })
   isEmailVerified: boolean;
 
-  @Column({ type: 'datetime', nullable: true })
+  @Column({ type: Date, nullable: true })
   emailVerifiedAt: Date | null;
 
   /** Which flow closed the email gate — the audit row names it (§6.2). */
@@ -256,7 +254,7 @@ export class Member {
   @Column({ type: 'text', nullable: true })
   emailOverrideReason: string | null;
 
-  @Column({ type: 'datetime', nullable: true })
+  @Column({ type: Date, nullable: true })
   emailOverrideAt: Date | null;
 
   /** Gate 2. Set only by an admin approval decision (REG-09). Never self-served. */
@@ -266,7 +264,7 @@ export class Member {
   @Column({ type: 'integer', nullable: true })
   approvedByUserId: number | null;
 
-  @Column({ type: 'datetime', nullable: true })
+  @Column({ type: Date, nullable: true })
   approvedAt: Date | null;
 
   /** Gate 3. Settled dues, or an admin override with a mandatory reason (REG-16). */
@@ -279,10 +277,10 @@ export class Member {
   @Column({ type: 'text', nullable: true })
   paymentOverrideReason: string | null;
 
-  @Column({ type: 'datetime', nullable: true })
+  @Column({ type: Date, nullable: true })
   paymentOverrideAt: Date | null;
 
-  @Column({ type: 'datetime', nullable: true })
+  @Column({ type: Date, nullable: true })
   paymentSettledAt: Date | null;
 
   /**
@@ -299,7 +297,7 @@ export class Member {
   isActive: boolean;
 
   /** Stamped once, on the first false→true edge of `isActive` (REG-10). */
-  @Column({ type: 'datetime', nullable: true })
+  @Column({ type: Date, nullable: true })
   activatedAt: Date | null;
 
   // ─── Vetting ──────────────────────────────────────────────────────────────

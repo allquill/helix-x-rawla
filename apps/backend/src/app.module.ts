@@ -1,9 +1,9 @@
 import { Module } from '@nestjs/common';
-import { join } from 'path';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './controllers/app.controller';
 import { AppService } from './providers/app.service';
+import { connectionOptions } from './database/connection';
 import {
   AuthModule,
   ContactModule,
@@ -21,23 +21,16 @@ import { CommunityCoreModule } from './modules/community-core/community-core.mod
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
-        type: 'better-sqlite3',
-        database: configService.get<string>('DB_PATH', 'data/helix_x.db'),
+        // better-sqlite3 or postgres, chosen by DB_TYPE — see database/connection.ts.
+        ...connectionOptions((key) => configService.get<string>(key)),
         autoLoadEntities: true,
-        // Tables are created/updated from the TypeORM entities on boot.
-        // On by default outside production; set DB_SYNCHRONIZE=false to turn
-        // it off and own the schema with migrations instead
-        // (pnpm --filter @helix-x/demo-backend migration:run).
-        //
-        // Caveat worth knowing: SQLite rebuilds a whole table for a column
-        // change, so a destructive entity edit can drop dev data. Never set
-        // DB_SYNCHRONIZE=true in production.
-        synchronize:
-          configService.get<string>('NODE_ENV') === 'production'
-            ? configService.get<string>('DB_SYNCHRONIZE') === 'true'
-            : configService.get<string>('DB_SYNCHRONIZE', 'true') !== 'false',
-        migrations: [join(__dirname, 'database', 'migrations', '*.{ts,js}')],
-        migrationsTableName: 'migrations',
+        // The schema is owned by the numbered SQL migrations in
+        // apps/backend/migrations/, applied by hand. Synchronize would change
+        // it behind their back, so it is off unless explicitly asked for —
+        // and a synchronized database still needs its schema_migrations rows
+        // (see database/schema-version.ts). Never enable it in production:
+        // SQLite rebuilds a whole table for a column change.
+        synchronize: configService.get<string>('DB_SYNCHRONIZE') === 'true',
         // SQL logging. DB_LOGGING=true|false|all, or a comma-separated list
         // of TypeORM levels (query,error,schema,warn,info,log). Unset keeps
         // the old behaviour — on under NODE_ENV=development, off everywhere

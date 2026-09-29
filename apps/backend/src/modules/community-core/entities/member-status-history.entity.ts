@@ -9,6 +9,7 @@ import {
 } from 'typeorm';
 import type { MemberStatus } from '../constants';
 import { Member } from './member.entity';
+import { uuidRef } from '../../../database/db-type';
 
 /**
  * Every transition of the registration status machine (§5.1).
@@ -28,7 +29,7 @@ export class MemberStatusHistory {
   member: Member;
 
   @Index()
-  @Column({ type: 'text', name: 'member_id' })
+  @Column({ type: uuidRef(), name: 'member_id' })
   memberId: string;
 
   @Column({ type: 'text', nullable: true })

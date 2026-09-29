@@ -9,6 +9,7 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { ReferenceList } from './reference-list.entity';
+import { uuidRef } from '../../../database/db-type';
 
 /**
  * One option within a reference list.
@@ -31,7 +32,7 @@ export class ReferenceListValue {
   list: ReferenceList;
 
   @Index()
-  @Column({ type: 'text', name: 'list_id' })
+  @Column({ type: uuidRef(), name: 'list_id' })
   listId: string;
 
   /** Stable machine value stored on member rows. Never renamed. */

@@ -9,6 +9,7 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { Chapter } from './chapter.entity';
+import { uuidRef } from '../../../database/db-type';
 
 /**
  * State → chapter mapping driving auto-assignment (CHP-02, MP-08).
@@ -31,7 +32,7 @@ export class StateChapterMap {
   chapter: Chapter;
 
   @Index()
-  @Column({ type: 'text', name: 'chapter_id' })
+  @Column({ type: uuidRef(), name: 'chapter_id' })
   chapterId: string;
 
   @CreateDateColumn()

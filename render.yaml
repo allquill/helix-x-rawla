@@ -42,19 +42,18 @@ services:
         value: "3001"
       - key: DB_PATH
         value: /data/helix_x.db
-      # The entrypoint runs pending migrations on every start; migrations own
-      # the schema, so synchronize stays off.
-      - key: RUN_MIGRATIONS
-        value: "true"
+      # The schema comes from the numbered SQL migrations, applied by hand from
+      # the Shell (apps/backend/migrations/README.md); the backend never migrates
+      # and refuses to start on a database that is behind. On a brand-new disk
+      # set DB_MAINTENANCE to "true", deploy, open the Shell and run
+      #   for f in /opt/migrations/helix-x/sqlite/*.sql /opt/migrations/rawla/sqlite/*.sql; do
+      #     sqlite3 -bail /data/helix_x.db < "$f" || break; done
+      # then set it back to "false".
+      - key: DB_MAINTENANCE
+        value: "false"
       - key: DB_SYNCHRONIZE
         value: "false"
       - key: DB_LOGGING
-        value: "false"
-      # "true" starts an empty disk from the sample database bundled in the
-      # image (demo sites only). It signs in as admin@example.com / Password!1,
-      # which is published — change that password immediately if you enable it.
-      # An existing database is never overwritten.
-      - key: SEED_SAMPLE_DB
         value: "false"
       # Two proxies sit in front of the API — Render's edge, then nginx — so
       # the client IP is the second-from-last X-Forwarded-For entry. Without

@@ -1,12 +1,12 @@
 # Rawla portal — the backend and frontend images, together, on their own network.
 #
-#   cp .env.example .env                  # registry, image tags, data folder, ports
-#   cp backend.env.example backend.env    # backend config and secrets — edit it
-#   docker compose up -d                  # from this directory, or `pnpm docker:up`
+#   cp .env.example .env     # ONE file: Compose settings AND the backend's config/secrets
+#   docker compose up -d     # from this directory, or `pnpm docker:up`
 #
-# Images come from DOCKER_REGISTRY when it is set (`docker login` to it once),
-# otherwise from the local builds made by `pnpm docker:build`. Every variable
-# below has a default, so .env only needs what you change. See README.md.
+# .env does two jobs: Compose interpolates it into this file, and the backend
+# container receives all of it (env_file below). Images come from
+# DOCKER_REGISTRY when it is set (`docker login` to it once), otherwise from
+# the local builds made by `pnpm docker:build`. See README.md.
 name: ${COMPOSE_PROJECT_NAME:-rawla-portal}
 
 services:
@@ -15,23 +15,29 @@ services:
     # DOCKER_REGISTRY leaves a bare name, which resolves to the local build.
     image: ${DOCKER_REGISTRY:+${DOCKER_REGISTRY}/}${BACKEND_IMAGE:-helix-x-rawla-backend}:${BACKEND_TAG:-local}
     restart: unless-stopped
-    # App config and secrets (JWT, mail, Stripe, …). Required: the backend
+    # The same .env Compose reads: app config and secrets (JWT, mail, Stripe,
+    # …) and the database choice (DB_TYPE, DATABASE_URL, DB_SSL). The backend
     # refuses to boot without JWT_SECRET, OAUTH_JWT_SECRET and CONTACT_TO_EMAIL.
     env_file:
-      - ${BACKEND_ENV_FILE:-./backend.env}
-    # Fixed by this topology rather than by the operator.
+      - .env
+    # Set by this topology. `environment:` overrides env_file, so only what
+    # the topology decides belongs here — never DB_TYPE or DATABASE_URL, or
+    # the values in .env would be silently ignored.
     environment:
-      DB_PATH: /data/helix_x.db
+      # The SQLite database, in a host folder (relative to this directory) so it
+      # is a visible file: <DOCKER_VOLUME_FOLDER>/data/helix_x.db. It survives
+      # `docker compose down -v`; deleting the folder is what removes it.      
+      DB_PATH: ${DB_PATH:-/data/helix_x.db}
       # Requests arrive through the frontend's nginx; without this every
       # visitor shares the proxy's IP for the per-IP rate limits.
       TRUST_PROXY: "1"
-      # From .env: start an EMPTY data folder from the image's sample database.
-      SEED_SAMPLE_DB: ${SEED_SAMPLE_DB:-false}
-    # The SQLite database, in a host folder (relative to this directory) so it
-    # is a visible file: <DOCKER_VOLUME_FOLDER>/data/helix_x.db. It survives
-    # `docker compose down -v`; deleting the folder is what removes it.
     volumes:
       - ${DOCKER_VOLUME_FOLDER:-./docker-volume}/data:/data
+    depends_on:
+      postgres:
+        condition: service_healthy
+        # Only when the `postgres` profile is active; SQLite needs no service.
+        required: false
     networks:
       - rawla
     # Published for /docs and debugging only — browsers reach the API through
@@ -55,6 +61,30 @@ services:
       - rawla
     ports:
       - "${FRONTEND_PORT:-8080}:80"
+
+  # Optional PostgreSQL, started only with the `postgres` profile. In .env:
+  # COMPOSE_PROFILES=postgres, DB_TYPE=postgres and
+  # DATABASE_URL=postgres://<user>:<password>@postgres:5432/<db>.
+  postgres:
+    image: ${POSTGRES_IMAGE:-postgres:16-alpine}
+    profiles: [postgres]
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-rawla}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-rawla}
+      POSTGRES_DB: ${POSTGRES_DB:-rawla}
+    # A new database is empty: apply the framework's postgres migrations, then
+    # apps/backend/migrations/postgres/*.sql, by hand before the backend's
+    # first start (see apps/backend/migrations/README.md).
+    volumes:
+      - ${DOCKER_VOLUME_FOLDER:-./docker-volume}/postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    networks:
+      - rawla
 
 networks:
   rawla:
