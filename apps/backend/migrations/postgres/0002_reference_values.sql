@@ -16,6 +16,10 @@
 
 BEGIN;
 
+-- Resolve unqualified names in `public` whatever this session did before (a GUI
+-- tab keeps one session across files). LOCAL: reverts at COMMIT.
+SET LOCAL search_path TO public;
+
 INSERT INTO public.schema_migrations (track, version, name) VALUES ('rawla', '0002', 'reference_values');
 
 

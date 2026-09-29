@@ -37,7 +37,10 @@ SET lock_timeout = 0;
 SET idle_in_transaction_session_timeout = 0;
 SET client_encoding = 'UTF8';
 SET standard_conforming_strings = on;
-SELECT pg_catalog.set_config('search_path', '', false);
+-- pg_dump's schema-qualified output runs with an empty search_path. `true` keeps
+-- that LOCAL to this file's transaction: it reverts at COMMIT, so a GUI session
+-- (pgAdmin, DBeaver) that runs the next file in the same tab is unaffected.
+SELECT pg_catalog.set_config('search_path', '', true);
 SET check_function_bodies = false;
 SET xmloption = content;
 SET client_min_messages = warning;
@@ -872,7 +875,10 @@ SET lock_timeout = 0;
 SET idle_in_transaction_session_timeout = 0;
 SET client_encoding = 'UTF8';
 SET standard_conforming_strings = on;
-SELECT pg_catalog.set_config('search_path', '', false);
+-- pg_dump's schema-qualified output runs with an empty search_path. `true` keeps
+-- that LOCAL to this file's transaction: it reverts at COMMIT, so a GUI session
+-- (pgAdmin, DBeaver) that runs the next file in the same tab is unaffected.
+SELECT pg_catalog.set_config('search_path', '', true);
 SET check_function_bodies = false;
 SET xmloption = content;
 SET client_min_messages = warning;

@@ -56,6 +56,7 @@ the author's machine and fails for the next person who deploys it.
   -- What it does and why. Say so here if it is NOT safe for the previous
   -- release to run against (a drop or rename), and how to stage it.
   BEGIN;                                                    -- SQLite: BEGIN TRANSACTION;
+  SET LOCAL search_path TO public;                          -- Postgres only
   INSERT INTO schema_migrations (track, version, name) VALUES ('rawla', '0002', 'add_life_event_venue');  -- FIRST
   ALTER TABLE "life_events" ADD COLUMN "venue" text;
   COMMIT;
@@ -63,6 +64,14 @@ the author's machine and fails for the next person who deploys it.
 
   The bookkeeping insert goes **first**, so a second application fails before
   it changes anything.
+- **Postgres files are session-neutral.** Operators run them in pgAdmin or
+  DBeaver, where one query tab is one session across files. So a file starts
+  with `SET LOCAL search_path TO public;` (it must not depend on what ran
+  before) and never changes session state beyond its transaction (it must
+  not break what runs after). SQL drafted from `pg_dump` carries
+  `set_config('search_path', '', false)`: change it to `true`. Check by
+  feeding the whole track to **one** `psql` session:
+  `cat fw/*.sql app/*.sql | psql -v ON_ERROR_STOP=1 …`.
 - **Draft the DDL with TypeORM, then review it.** Point it at a database at
   the **previous** version (both tracks), one per driver:
 
