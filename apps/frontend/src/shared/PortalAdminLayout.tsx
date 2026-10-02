@@ -11,12 +11,15 @@ export type PortalAdminLayoutProps = {
 };
 
 /**
- * Section shell for the portal administration screens.
+ * Section shell for the portal administration screens — every page behind a
+ * `portal.sectionnav` tab renders through it, whichever plugin owns the page
+ * (`membership-admin`, `chapters`, `events`), so the rail and the title sit in
+ * the same place on all of them. It lives outside `plugins/` because plugins
+ * do not import each other.
  *
  * The rail's links come from `useNavItems('portal.sectionnav')` rather than a
- * local array, so it cannot drift from the routes it links to — and the
- * `chapters` plugin gets a tab simply by contributing to the same slot, without
- * this plugin knowing it exists.
+ * local array, so it cannot drift from the routes it links to — and a plugin
+ * gets a tab simply by contributing to the slot `membership-admin` defines.
  *
  * Access filtering is already applied: `useNavItems` drops items whose `when`
  * clause is false, and that is the same clause gating the route. So a Chapter
@@ -25,7 +28,9 @@ export type PortalAdminLayoutProps = {
  * never renders.
  *
  * There is no shell markup here any more. The route declares `layout: 'app'`
- * and the shell draws the header, sidebar and status bar around this.
+ * and the shell draws the header, sidebar, status bar and content gutter
+ * around this — a page must not add its own outer padding or max width, or
+ * the rail moves between tabs. Constrain the body inside `children` instead.
  */
 export const PortalAdminLayout = forwardRef<HTMLDivElement, PortalAdminLayoutProps>(
   ({ title, description, actions, children, className = '' }, ref) => {

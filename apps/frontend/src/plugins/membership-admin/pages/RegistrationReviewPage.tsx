@@ -10,7 +10,7 @@ import {
   CardHeader,
   DescriptionList,
 } from '@helix-x/design-system';
-import { PortalAdminLayout } from '../components/PortalAdminLayout';
+import { PortalAdminLayout } from '../../../shared/PortalAdminLayout';
 import { GateBadges } from '../components/GateBadges';
 import { ReasonDialog } from '../components/ReasonDialog';
 import { useRegistrationReview } from '../hooks/useRegistrationReview';

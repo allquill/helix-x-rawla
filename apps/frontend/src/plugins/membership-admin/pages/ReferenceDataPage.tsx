@@ -15,7 +15,7 @@ import {
   type ReferenceListDto,
   type ReferenceListValueDto,
 } from '@helix-x-rawla/client-sdk';
-import { PortalAdminLayout } from '../components/PortalAdminLayout';
+import { PortalAdminLayout } from '../../../shared/PortalAdminLayout';
 
 /**
  * The admin-maintained dropdowns (ADM-01).

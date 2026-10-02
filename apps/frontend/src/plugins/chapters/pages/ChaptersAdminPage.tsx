@@ -9,12 +9,12 @@ import {
   DataTable,
   FormField,
   Modal,
-  PageHeader,
   Select,
   Switch,
   type DataTableColumn,
 } from '@helix-x/design-system';
 import type { ChapterDto, StateChapterMappingDto } from '@helix-x-rawla/client-sdk';
+import { PortalAdminLayout } from '../../../shared/PortalAdminLayout';
 import { useChapters } from '../hooks/useChapters';
 
 /**
@@ -116,12 +116,12 @@ export function ChaptersAdminPage() {
   };
 
   return (
-      <div className="mx-auto w-full px-4 py-6 sm:px-6 lg:px-8">
-        <PageHeader
-          title="Chapters"
-          description="US regions, and the states each one covers."
-          actions={<Button onClick={() => setEditing('new')}>New chapter</Button>}
-        />
+      <PortalAdminLayout
+        title="Chapters"
+        description="US regions, and the states each one covers."
+        actions={<Button onClick={() => setEditing('new')}>New chapter</Button>}
+      >
+        <div>
 
         {error && <Alert variant="error" className="mb-4">{error}</Alert>}
 
@@ -195,7 +195,8 @@ export function ChaptersAdminPage() {
             else await create(body);
           }}
         />
-      </div>
+        </div>
+      </PortalAdminLayout>
   );
 }
 

@@ -1,8 +1,8 @@
 import { useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Alert, Badge, Button, DataTable, PageHeader, Pagination, type DataTableColumn } from '@helix-x/design-system';
+import { Alert, Badge, Button, DataTable, Pagination, type DataTableColumn } from '@helix-x/design-system';
 import type { AdminEventDto } from '@helix-x-rawla/client-sdk';
-import { AdminRail } from '../components/AdminRail';
+import { PortalAdminLayout } from '../../../shared/PortalAdminLayout';
 import { useAdminEvents } from '../hooks/useEventAdmin';
 import { useCan } from '../hooks/useCan';
 import { CATEGORY_LABELS, formatAmount, formatWhen } from '../lib/format';
@@ -69,9 +69,7 @@ export function AdminEventsPage() {
   );
 
   return (
-    <div className="mx-auto w-full px-4 py-6 sm:px-6 lg:px-8">
-      <AdminRail />
-      <PageHeader
+    <PortalAdminLayout
         title="Manage events"
         description="Create events, follow registrations and payments, and close them when everything is done."
         actions={
@@ -82,7 +80,8 @@ export function AdminEventsPage() {
             </Link>
           ) : undefined
         }
-      />
+    >
+      <div>
 
       {error && <Alert variant="error" className="mb-4">{error}</Alert>}
 
@@ -97,6 +96,7 @@ export function AdminEventsPage() {
       {total > pageSize && (
         <Pagination className="mt-4" page={page} pageSize={pageSize} total={total} onPageChange={setPage} />
       )}
-    </div>
+      </div>
+    </PortalAdminLayout>
   );
 }

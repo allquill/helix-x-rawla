@@ -9,7 +9,7 @@ import {
   type DataTableColumn,
 } from '@helix-x/design-system';
 import type { MemberSummaryDto } from '@helix-x-rawla/client-sdk';
-import { PortalAdminLayout } from '../components/PortalAdminLayout';
+import { PortalAdminLayout } from '../../../shared/PortalAdminLayout';
 import { GateBadges } from '../components/GateBadges';
 import { useRegistrationQueue } from '../hooks/useRegistrationQueue';
 

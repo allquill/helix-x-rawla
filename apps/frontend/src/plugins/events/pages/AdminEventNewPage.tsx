@@ -1,7 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom';
-import { Button, Card, CardBody, PageHeader } from '@helix-x/design-system';
+import { Button, Card, CardBody } from '@helix-x/design-system';
 import type { CreateEventDto } from '@helix-x-rawla/client-sdk';
-import { AdminRail } from '../components/AdminRail';
+import { PortalAdminLayout } from '../../../shared/PortalAdminLayout';
 import { EventForm } from '../components/EventForm';
 import { createEvent } from '../hooks/useEventAdmin';
 
@@ -14,9 +14,7 @@ export function AdminEventNewPage() {
   const navigate = useNavigate();
 
   return (
-    <div className="mx-auto w-full max-w-4xl px-4 py-6 sm:px-6 lg:px-8">
-      <AdminRail />
-      <PageHeader
+    <PortalAdminLayout
         title="New event"
         description="Saved as a draft. Add tickets and publish it from the next screen."
         actions={
@@ -24,7 +22,8 @@ export function AdminEventNewPage() {
             <Button variant="secondary">Cancel</Button>
           </Link>
         }
-      />
+    >
+      <div className="max-w-4xl">
       <Card>
         <CardBody>
           <EventForm
@@ -36,6 +35,7 @@ export function AdminEventNewPage() {
           />
         </CardBody>
       </Card>
-    </div>
+      </div>
+    </PortalAdminLayout>
   );
 }

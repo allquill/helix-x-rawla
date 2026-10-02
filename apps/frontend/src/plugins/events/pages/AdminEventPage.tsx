@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { RouteViewProps } from '@helix-x/web';
-import { Alert, Badge, Button, PageHeader, Tabs } from '@helix-x/design-system';
-import { AdminRail } from '../components/AdminRail';
+import { Alert, Badge, Button, Tabs } from '@helix-x/design-system';
+import { PortalAdminLayout } from '../../../shared/PortalAdminLayout';
 import { CloseTab } from '../components/admin/CloseTab';
 import { DetailsTab } from '../components/admin/DetailsTab';
 import { CostsTab, DocumentsTab, GoodsTab } from '../components/admin/LedgerTabs';
@@ -64,9 +64,7 @@ export function AdminEventPage({ params }: RouteViewProps) {
   };
 
   return (
-    <div className="mx-auto w-full px-4 py-6 sm:px-6 lg:px-8">
-      <AdminRail />
-      <PageHeader
+    <PortalAdminLayout
         title={event?.title ?? 'Event'}
         description={
           event ? (
@@ -98,7 +96,8 @@ export function AdminEventPage({ params }: RouteViewProps) {
             </Link>
           </div>
         }
-      />
+    >
+      <div>
 
       {loading && <p className="text-sm text-gray-500 dark:text-gray-400" aria-live="polite">Loading…</p>}
       {error && <Alert variant="error">{error}</Alert>}
@@ -163,6 +162,7 @@ export function AdminEventPage({ params }: RouteViewProps) {
           )}
         </>
       )}
-    </div>
+      </div>
+    </PortalAdminLayout>
   );
 }

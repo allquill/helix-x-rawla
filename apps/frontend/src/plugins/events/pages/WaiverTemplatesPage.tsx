@@ -8,11 +8,10 @@ import {
   CardHeader,
   FormField,
   Modal,
-  PageHeader,
   TextareaField,
 } from '@helix-x/design-system';
 import type { WaiverTemplateDto } from '@helix-x-rawla/client-sdk';
-import { AdminRail } from '../components/AdminRail';
+import { PortalAdminLayout } from '../../../shared/PortalAdminLayout';
 import { useWaiverTemplates } from '../hooks/useEventAdmin';
 import { apiMessage } from '../lib/format';
 
@@ -29,13 +28,12 @@ export function WaiverTemplatesPage() {
   const keys = [...new Set(waivers.map((w) => w.key))];
 
   return (
-    <div className="mx-auto w-full max-w-4xl px-4 py-6 sm:px-6 lg:px-8">
-      <AdminRail />
-      <PageHeader
+    <PortalAdminLayout
         title="Waivers"
         description="Liability waivers attendees sign when they register. Attach one to an event from its Details tab."
         actions={<Button onClick={() => setEditing('new')}>New waiver</Button>}
-      />
+    >
+      <div className="max-w-4xl">
 
       {error && <Alert variant="error" className="mb-4">{error}</Alert>}
       {loading && <p className="text-sm text-gray-500 dark:text-gray-400" aria-live="polite">Loading…</p>}
@@ -87,7 +85,8 @@ export function WaiverTemplatesPage() {
           else await create({ key, title, body });
         }}
       />
-    </div>
+      </div>
+    </PortalAdminLayout>
   );
 }
 

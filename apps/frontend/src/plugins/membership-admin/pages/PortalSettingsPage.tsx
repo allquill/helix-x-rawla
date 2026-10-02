@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Alert, Button, Card, CardBody, CardHeader, FormField, Switch } from '@helix-x/design-system';
-import { PortalAdminLayout } from '../components/PortalAdminLayout';
+import { PortalAdminLayout } from '../../../shared/PortalAdminLayout';
 import { usePortalSettings } from '../hooks/usePortalSettings';
 
 /** Human labels for the keys, so the screen is not a raw key/value dump. */

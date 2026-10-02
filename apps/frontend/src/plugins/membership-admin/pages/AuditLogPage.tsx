@@ -7,7 +7,7 @@ import {
   type DataTableColumn,
 } from '@helix-x/design-system';
 import { PortalAdministrationService, type AuditLogEntryDto } from '@helix-x-rawla/client-sdk';
-import { PortalAdminLayout } from '../components/PortalAdminLayout';
+import { PortalAdminLayout } from '../../../shared/PortalAdminLayout';
 
 /** The append-only change log (ADM-02 / AUD §20.1). */
 export function AuditLogPage() {
