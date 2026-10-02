@@ -30,7 +30,9 @@ services:
     plan: starter
     region: oregon
     numInstances: 1
-    # /data holds helix_x.db. Render snapshots disks daily.
+    # /data holds helix_x.db and uploaded documents (/data/documents). Render
+    # snapshots disks daily. 1 GB is shared by both: grow the disk, or move
+    # documents to a bucket with DOCUMENTS_STORAGE_DRIVER=s3.
     disk:
       name: rawla-data
       mountPath: /data
@@ -69,6 +71,15 @@ services:
       - key: OAUTH_JWT_SECRET
         generateValue: true
 
+      # ── Documents: files on the disk, links signed with a generated secret ──
+      # Links are built on API_PUBLIC_URL below. For a bucket instead, set
+      # DOCUMENTS_STORAGE_DRIVER=s3 and the DOCUMENTS_S3_* keys
+      # (apps/backend/.env.example).
+      - key: DOCUMENTS_SIGNING_SECRET
+        generateValue: true
+      - key: DOCUMENTS_LOCAL_ROOT
+        value: /data/documents
+
       # ── Mail: Gmail with an App Password ──
       # https://myaccount.google.com/apppasswords — not the account password.
       - key: MAIL_TRANSPORT
@@ -96,7 +107,7 @@ services:
         sync: false
 
       # ── Public URLs: both are rawla-frontend's URL (https://…onrender.com or
-      #    your custom domain). Emailed links and the Stripe return URL use them.
+      #    your custom domain). Emailed links, the Stripe return URL and document links use them.
       - key: PORTAL_PUBLIC_URL
         sync: false
       - key: API_PUBLIC_URL

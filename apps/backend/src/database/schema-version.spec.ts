@@ -30,7 +30,6 @@ describe('schema-version', () => {
     db.close();
     return new DataSource({ type: 'better-sqlite3', database: path }).initialize();
   }
-  const frameworkBaseline = () => join(framework.dir, 'sqlite', '0001_baseline.sql');
   const appBaseline = () => join(app.dir, 'sqlite', '0001_baseline.sql');
   /** Every file of a track, in order — what "fully migrated" means for it. */
   const allOf = (dir: string) =>
@@ -75,7 +74,7 @@ describe('schema-version', () => {
   });
 
   it('asks only for the app track when the framework is current', async () => {
-    const ds = await database([frameworkBaseline()]);
+    const ds = await database(allOf(framework.dir));
     const states = await readSchemaTracks(ds, tracks);
     await ds.destroy();
     const text = describeSchemaProblem(states, tracks, 'sqlite', 'data/helix_x.db');

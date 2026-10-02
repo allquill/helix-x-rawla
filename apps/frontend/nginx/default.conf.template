@@ -42,6 +42,22 @@ server {
         client_max_body_size 10m;
     }
 
+    # Documents (DocumentsModule). Uploads (POST /api/documents, PUT
+    # /api/documents/:id/content) go up to DOCUMENTS_MAX_FILE_SIZE_MB, 50 MB by
+    # default — raise this with it. Streamed straight through, not spooled here.
+    location /api/documents {
+        set $backend "${BACKEND_UPSTREAM}";
+        proxy_pass $backend;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_request_buffering off;
+        proxy_read_timeout 300s;
+        client_max_body_size 55m;
+    }
+
     # Vite fingerprints everything under /assets, so it can be cached forever.
     location /assets/ {
         try_files $uri =404;

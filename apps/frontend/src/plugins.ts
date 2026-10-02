@@ -7,6 +7,7 @@ import { manifest as adminManifest } from '@helix-x/plugin-admin/manifest';
 import { manifest as oauthManifest } from '@helix-x/plugin-oauth/manifest';
 import { manifest as reportsManifest } from '@helix-x/plugin-reports/manifest';
 import { manifest as contactManifest } from '@helix-x/plugin-contact/manifest';
+import { manifest as documentsManifest } from '@helix-x/plugin-documents/manifest';
 import { manifest as devtoolsManifest } from '@helix-x/plugin-devtools/manifest';
 
 import { manifest as homeManifest } from './plugins/home/manifest';
@@ -66,6 +67,13 @@ export const plugins: PluginRegistration[] = [
     // Public Contact Us form. The recipient is backend configuration
     // (CONTACT_TO_EMAIL); switching the plugin off only removes the form.
     enabled: import.meta.env.VITE_FEATURE_CONTACT !== 'false',
+  },
+  {
+    manifest: documentsManifest,
+    load: () => import('@helix-x/plugin-documents'),
+    // My files and Shared with me. Needs the documents:* grants from the
+    // backend's migration 0003 — and a fresh sign-in, since they ride in the JWT.
+    enabled: import.meta.env.VITE_FEATURE_DOCUMENTS !== 'false',
   },
   // ── Rawla portal ──
   // Owns '/', in place of plugin-dashboard. Public: the landing page is the

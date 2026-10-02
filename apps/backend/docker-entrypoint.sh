@@ -1,7 +1,7 @@
 #!/bin/sh
 # Rawla backend container entrypoint.
 #
-# Starts as root only long enough to make the database directory writable,
+# Starts as root only long enough to make the database and documents directories writable,
 # then re-runs itself as `node`. A platform's persistent disk or a bind mount
 # on a Linux host can arrive owned by root, and SQLite running as `node` would
 # then fail with "unable to open database file". The app itself never runs as
@@ -18,6 +18,15 @@ set -e
 # SQLite-only.
 is_sqlite=true
 [ "${DB_TYPE:-sqlite}" = "postgres" ] && is_sqlite=false
+
+# Uploaded documents, when they are kept on disk (DOCUMENTS_STORAGE_DRIVER=local,
+# the default). Same ownership problem as the database directory, but it applies
+# under PostgreSQL too. Not recursive: everything below it is written as `node`.
+if [ "$(id -u)" = "0" ] && [ "${DOCUMENTS_STORAGE_DRIVER:-local}" = "local" ]; then
+  documents_dir="${DOCUMENTS_LOCAL_ROOT:-data/documents}"
+  mkdir -p "$documents_dir"
+  chown node:node "$documents_dir"
+fi
 
 if [ "$(id -u)" = "0" ] && [ "$is_sqlite" = true ]; then
   db_dir="$(dirname "${DB_PATH:-/data/helix_x.db}")"

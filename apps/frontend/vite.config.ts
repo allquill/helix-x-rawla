@@ -74,6 +74,7 @@ export default defineConfig({
       '@helix-x/plugin-oauth',
       '@helix-x/plugin-reports',
       '@helix-x/plugin-contact',
+      '@helix-x/plugin-documents',
       '@helix-x/plugin-devtools',
     ],
   },

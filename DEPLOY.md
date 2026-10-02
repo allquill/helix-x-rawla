@@ -527,6 +527,22 @@ variables live in `apps/backend/.env` (template: `apps/backend/.env.example`).
 | `CONTACT_SUBJECT_PREFIX` | `[Contact]` | | Prepended to each subject |
 | `CONTACT_RATE_LIMIT_PER_HOUR` | `5` | | Submissions per client IP per hour. Needs a correct `TRUST_PROXY`. |
 
+**Documents** (`/api/documents`: private files, folders and sharing)
+
+| Variable | Default | Req. | Notes |
+|---|---|---|---|
+| `DOCUMENTS_SIGNING_SECRET` | — | ✅ | Signs the short-lived view and download links. At least 32 characters. **Boot fails without it.** |
+| `DOCUMENTS_STORAGE_DRIVER` | `local` | | `local` (a directory) or `s3` (any S3-compatible store) |
+| `DOCUMENTS_LOCAL_ROOT` | `data/documents` | | `local` only. Compose and Render set `/data/documents`, on the same persistent storage as the database. |
+| `DOCUMENTS_STORAGE_NAMING` | `readable` | | `readable` keeps the file name in the stored path; `opaque` stores ids only. Naming, not encryption. New uploads only. |
+| `DOCUMENTS_MAX_FILE_SIZE_MB` | `50` | | Upload limit. The frontend's nginx allows 55 MB on `/api/documents`; raising this means raising that. |
+| `DOCUMENTS_ALLOWED_MIME_TYPES` | *(any)* | | Comma-separated, exact or wildcard (`image/*,application/pdf`) |
+| `DOCUMENTS_LINK_TTL_SECONDS` | `300` | | Lifetime of a view or download link |
+| `DOCUMENTS_PUBLIC_BASE_URL` | `API_PUBLIC_URL` + `/api` | | Absolute API root the links are built on. Set it only when that default is wrong. |
+| `DOCUMENTS_S3_BUCKET` | — | ⚠️ `s3` | Boot fails without it under `s3` |
+| `DOCUMENTS_S3_REGION`, `DOCUMENTS_S3_PREFIX`, `DOCUMENTS_S3_ENDPOINT`, `DOCUMENTS_S3_FORCE_PATH_STYLE` | — | | `s3` only. For MinIO, set the endpoint and `FORCE_PATH_STYLE=true`. |
+| `DOCUMENTS_S3_ACCESS_KEY_ID`, `DOCUMENTS_S3_SECRET_ACCESS_KEY` | — | | `s3` only. Leave both empty to use the AWS default credential chain. |
+
 **Membership dues**
 
 | Variable | Default | Req. | Notes |
@@ -541,7 +557,7 @@ variables live in `apps/backend/.env` (template: `apps/backend/.env.example`).
 | Variable | Default | Req. | Notes |
 |---|---|---|---|
 | `PORTAL_PUBLIC_URL` | `http://localhost:5173` | ✅ | The portal's public origin. Emailed verification, set-password and reset links point here. In Docker it is the **frontend's** URL. |
-| `API_PUBLIC_URL` | `http://localhost:$PORT` | ✅ | Public origin of the API, used for the checkout return URLs. Behind the frontend's proxy it is the **same** as `PORTAL_PUBLIC_URL`. |
+| `API_PUBLIC_URL` | `http://localhost:$PORT` | ✅ | Public origin of the API, used for the checkout return URLs and the document view and download links. Behind the frontend's proxy it is the **same** as `PORTAL_PUBLIC_URL`. |
 
 ### 9.3 Frontend runtime
 
@@ -571,6 +587,7 @@ here.
 | `VITE_FEATURE_OAUTH` | `true` | OAuth client management |
 | `VITE_FEATURE_REPORTS` | `true` | Reports plugin |
 | `VITE_FEATURE_CONTACT` | *(unset)* | Contact Us page. Unset means on. |
+| `VITE_FEATURE_DOCUMENTS` | *(unset)* | My files and Shared with me. Unset means on. |
 | `VITE_FEATURE_DEVTOOLS` | `true` | The plugin inspector. **Opt-in** (`=== 'true'`). Consider `false` for production builds. |
 
 All `VITE_FEATURE_*` flags except `DEVTOOLS` are **opt-out**: a plugin is on
@@ -612,13 +629,14 @@ effect:
 - [ ] `PAYMENT_PROVIDER=stripe` with `STRIPE_SECRET_KEY`, and the webhook
       endpoint created with its `STRIPE_WEBHOOK_SECRET`
 - [ ] `CONTACT_TO_EMAIL` set
+- [ ] `DOCUMENTS_SIGNING_SECRET` set to a third long, random value
 - [ ] `PORTAL_PUBLIC_URL` and `API_PUBLIC_URL` set to the public HTTPS origin
 - [ ] `TRUST_PROXY` matches the number of proxies in front of the backend
 - [ ] The two first-install administrators from `0001_baseline.sql` (`admin@example.com`, `superadmin@example.com`) have new passwords
 - [ ] Images pushed multi-arch with a version tag. The deployment pins that tag.
 - [ ] Every numbered migration up to the image's version applied by hand, before the image is deployed
 - [ ] Backend runs **one** instance, with `/data` on persistent storage
-- [ ] Backups of `helix_x.db` scheduled ([§11](#11-data-migrations-and-backups))
+- [ ] Backups of `helix_x.db` and `/data/documents` scheduled ([§11](#11-data-migrations-and-backups))
 - [ ] TLS terminated in front of the frontend
 - [ ] Consider building with `VITE_FEATURE_DEVTOOLS=false`
 - [ ] An administrator granted ([§6](#6-running-with-docker-compose)), then
@@ -628,7 +646,11 @@ effect:
 
 ## 11. Data, migrations and backups
 
-- **One file.** All state is `DB_PATH` (`/data/helix_x.db`).
+- **One file and one folder.** The database is `DB_PATH`
+  (`/data/helix_x.db`); uploaded documents are the files under
+  `DOCUMENTS_LOCAL_ROOT` (`/data/documents`), unless
+  `DOCUMENTS_STORAGE_DRIVER=s3` puts them in a bucket. The database holds
+  only their metadata, so back up and restore the two together.
 - **Single writer.** SQLite allows one writer at a time, so run **one**
   backend instance. Never scale it horizontally or point two containers at one
   file. On platforms that stop the old instance before starting the new one
@@ -736,6 +758,10 @@ so if a release changed the schema, restore the pre-upgrade backup as well.
 | The container exits immediately on Render or an x86 server (`exec format error`) | The image is arm64-only (built on Apple Silicon). Republish with `pnpm docker:push`. |
 | `Multi-platform build is not supported for the docker driver` | You ran a multi-platform build on the default builder. Use `pnpm docker:push`, which creates `rawla-builder`. |
 | Boot fails: `Configuration key "CONTACT_TO_EMAIL" does not exist` (or `OAUTH_JWT_SECRET`) | A required variable is missing ([§9.2](#92-backend-runtime)) |
+| Boot fails: `Configuration key "DOCUMENTS_SIGNING_SECRET" does not exist`, or `signingSecret must be at least 32 characters` | Set `DOCUMENTS_SIGNING_SECRET` to a random value of 32 or more characters |
+| The Documents section is missing after an upgrade | The `documents:*` grants arrive with migration `0003`, and permissions are baked into the JWT. Sign out and back in. |
+| Document previews and downloads fail or point at the wrong host | The links are built on `API_PUBLIC_URL` + `/api`. Set it to the public origin, or set `DOCUMENTS_PUBLIC_BASE_URL`. |
+| An upload fails with `413` | The file is over nginx's limit on `/api/documents` (55 MB) or `DOCUMENTS_MAX_FILE_SIZE_MB` |
 | Boot fails: `MAIL_TRANSPORT=console` / `PAYMENT_PROVIDER=console is not allowed when NODE_ENV=production` | Configure real mail and Stripe, or use `NODE_ENV=development` for a local stack |
 | `unable to open database file` | The data directory is not writable. The entrypoint fixes ownership when it starts as root, so don't override the user (`--user`) or mount the database read-only. |
 | `Bind for 0.0.0.0:8080 failed: port is already allocated` | Change `FRONTEND_PORT` (or `BACKEND_PORT`) in `.env` |

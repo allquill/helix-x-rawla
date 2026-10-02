@@ -42,6 +42,7 @@
       "@helix-x/backend": "file:../../framework/helix-x-backend/.artifacts/helix-x-backend-0.1.0.tgz",
       "@helix-x/contact": "file:../../framework/helix-x-backend/.artifacts/helix-x-contact-0.1.0.tgz",
       "@helix-x/core-sdk": "link:../../framework/helix-x-core-sdk",
+      "@helix-x/documents": "file:../../framework/helix-x-backend/.artifacts/helix-x-documents-0.1.0.tgz",
       "@helix-x/navigation": "file:../../framework/helix-x-backend/.artifacts/helix-x-navigation-0.1.0.tgz",
       "@helix-x/nest-oauth-provider": "file:../../framework/helix-x-backend/.artifacts/helix-x-nest-oauth-provider-0.1.0.tgz",
       "@helix-x/nestjs-ai": "file:../../framework/helix-x-backend/.artifacts/helix-x-nestjs-ai-0.1.0.tgz",

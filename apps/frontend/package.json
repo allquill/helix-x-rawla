@@ -18,6 +18,7 @@
     "@helix-x/design-system": "link:../../../../framework/helix-x-web/packages/design-system",
     "@helix-x/plugin-contact": "link:../../../../framework/helix-x-web/plugins/plugin-contact",
     "@helix-x/plugin-devtools": "link:../../../../framework/helix-x-web/plugins/plugin-devtools",
+    "@helix-x/plugin-documents": "link:../../../../framework/helix-x-web/plugins/plugin-documents",
     "@helix-x/plugin-admin": "link:../../../../framework/helix-x-web/plugins/plugin-admin",
     "@helix-x/plugin-auth": "link:../../../../framework/helix-x-web/plugins/plugin-auth",
     "@helix-x/plugin-navigation": "link:../../../../framework/helix-x-web/plugins/plugin-navigation",

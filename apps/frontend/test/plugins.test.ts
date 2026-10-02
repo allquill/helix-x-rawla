@@ -180,6 +180,11 @@ describe('route layouts', () => {
     expect(layoutOf('/set-password')).toBe('app.focused');
     expect(layoutOf('/admin/users')).toBe('app');
     expect(layoutOf('/oauth-clients')).toBe('app');
+    // Documents: the two literal paths must outrank `/documents/:id`.
+    expect(app.routes.matchAny('/documents/shared')?.route.id).toBe('documents.shared');
+    expect(app.routes.matchAny('/documents/folders/abc')?.route.id).toBe('documents.folder');
+    expect(app.routes.matchAny('/documents/abc')?.route.id).toBe('documents.detail');
+    expect(layoutOf('/documents')).toBe('app');
     // The root page is full-width with no sidebar, signed in or out. Its nav
     // items move into the header, so the app stays reachable from it. Here that
     // is the Rawla landing page rather than plugin-dashboard, which this host

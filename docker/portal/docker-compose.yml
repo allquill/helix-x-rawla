@@ -17,7 +17,8 @@ services:
     restart: unless-stopped
     # The same .env Compose reads: app config and secrets (JWT, mail, Stripe,
     # …) and the database choice (DB_TYPE, DATABASE_URL, DB_SSL). The backend
-    # refuses to boot without JWT_SECRET, OAUTH_JWT_SECRET and CONTACT_TO_EMAIL.
+    # refuses to boot without JWT_SECRET, OAUTH_JWT_SECRET, CONTACT_TO_EMAIL and
+    # DOCUMENTS_SIGNING_SECRET.
     env_file:
       - .env
     # Set by this topology. `environment:` overrides env_file, so only what
@@ -28,6 +29,10 @@ services:
       # is a visible file: <DOCKER_VOLUME_FOLDER>/data/helix_x.db. It survives
       # `docker compose down -v`; deleting the folder is what removes it.      
       DB_PATH: ${DB_PATH:-/data/helix_x.db}
+      # Uploaded documents, beside the database on the same host folder:
+      # <DOCKER_VOLUME_FOLDER>/data/documents. Unused under
+      # DOCUMENTS_STORAGE_DRIVER=s3.
+      DOCUMENTS_LOCAL_ROOT: ${DOCUMENTS_LOCAL_ROOT:-/data/documents}
       # Requests arrive through the frontend's nginx; without this every
       # visitor shares the proxy's IP for the per-IP rate limits.
       TRUST_PROXY: "1"

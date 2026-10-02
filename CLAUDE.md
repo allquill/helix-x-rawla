@@ -11,7 +11,7 @@ something reusable, it belongs in one of the sibling repos instead:
 | Repo | Holds |
 | --- | --- |
 | [`helix-x-web`](../../framework/helix-x-web) | React plugin kernel, bindings, shell, design system, first-party plugins |
-| [`helix-x-backend`](../../framework/helix-x-backend) | NestJS modules (auth, notifications, navigation, OAuth) |
+| [`helix-x-backend`](../../framework/helix-x-backend) | NestJS modules (auth, notifications, navigation, OAuth, documents) |
 | `helix-x-rawla` (here) | two host apps, five portal plugins, the `community-core` domain module, and the generated client |
 
 Note the client SDK is **not** shared with the other products. Each owns its own
@@ -261,6 +261,11 @@ which is why `plugin-dashboard` is not registered at all. Two enabled plugins
 declaring the same path is a conflict, not a merge. `plugin-chat` is absent for a
 different reason: it proxies a LangGraph agents server this repo does not run.
 
+`plugin-documents` (My files, Shared with me) is registered behind
+`VITE_FEATURE_DOCUMENTS`. Its routes and nav gate on `documents:read`, which
+arrives with this app's migration `0003` — so an account that signed in before
+the migration sees nothing until it signs in again.
+
 `/` declares `layout: 'app.full'`: full width, no sidebar, no content gutter, so
 the hero runs edge to edge. The primary nav moves into the header there, which is
 what keeps the rest of the app reachable from a page with no rail.
@@ -316,7 +321,7 @@ The schema is owned by **numbered SQL files applied by hand**, in two tracks
 of one `schema_migrations` table, always applied in this order:
 
 1. **`helix-x`** — the framework's tables (users, roles, permissions, OAuth,
-   notifications, tokens, navigation config), shipped **inside
+   notifications, tokens, navigation config, documents), shipped **inside
    `@helix-x/backend`** (`node_modules/@helix-x/backend/migrations/`) and
    written in `framework/helix-x-backend`, never here.
 2. **`rawla`** — this app's tables and everything the portal needs to run:
@@ -373,6 +378,29 @@ unique across the whole app, and a `@Permissions()` name does nothing until a
 row exists in `permissions` and a role holds it — until then every caller gets
 403, admins included.
 
+**Documents are the framework's `DocumentsModule`, composed last** in
+`app.module.ts`: private files with folders and sharing behind
+`/api/documents`, whose tables are the framework's `0002` and whose client is
+in `@helix-x/core-sdk` (the controllers carry `@helix-x-core-api`, so
+`pnpm generate:sdk` here never sees them). Bytes go to
+`DOCUMENTS_STORAGE_DRIVER`: `local` (default, `DOCUMENTS_LOCAL_ROOT`, which is
+`/data/documents` in the image) or `s3`. `DOCUMENTS_SIGNING_SECRET` (32+
+characters) signs the short-lived view and download links, and **the app
+refuses to boot without it**. Those links are built on `API_PUBLIC_URL` +
+`/api` unless `DOCUMENTS_PUBLIC_BASE_URL` says otherwise; get it wrong behind
+nginx and every preview is a dead link. Three things that bite:
+
+- `GET /api/document-content/:token` has **no guard on purpose** — the signed
+  token is the credential — so `MemberGateInterceptor` sees no principal and
+  lets it through. Every other document route is gated: a member who is not
+  yet active gets the gate's 403 there, and none is in `FRAMEWORK_GATE_EXEMPT`.
+- The upload limit lives in two places: `DOCUMENTS_MAX_FILE_SIZE_MB` (50) and
+  `client_max_body_size` on `location /api/documents` in the frontend's nginx
+  template (55m). Raise one without the other and uploads fail with 413.
+- `multer` is a direct dependency of `apps/backend` although nothing here
+  imports it: `@helix-x/documents` peers `multer >=2.1.0`, and
+  `@nestjs/platform-express` alone brings 2.0.2.
+
 `MAIL_TRANSPORT` defaults to `console`, which sends nothing over the network and
 captures each message at `GET /api/dev/outbox` — that is where verification,
 password-setup and reset links are read locally.
@@ -390,9 +418,12 @@ tier priced at `$0` (Youth) is recorded as `waived` and closes the gate without
 a checkout.
 
 **Access ships in the migrations.** The framework's `0001` creates the four
-`*:manage` permissions its controllers check and the `user` role; this app's
+`*:manage` permissions its controllers check and the `user` role, and its
+`0002` the four `documents:*` permissions, granted to nobody; this app's
 `0001_baseline.sql` adds the other 13 permissions and 12 roles the code
-checks, every grant, and two administrators with published passwords: `admin@example.com` / `Password!1`
+checks, every grant, and `0003_documents_access.sql` gives `member` and the
+staff roles `documents:read|write|share` (plus `documents:manage` for `admin`
+and `super_admin`). `0001` also creates two administrators with published passwords: `admin@example.com` / `Password!1`
 and `superadmin@example.com` / `ChangeMe!123`. Anything the portal needs to
 work after a first install belongs in a migration, never a script. Only
 **staff** roles (`STAFF_ROLES`) can sign in without a member record, which is
@@ -496,6 +527,8 @@ Two things to know if you touch this:
   two `.env` files; here only `apps/backend/.env` has it, because there is no
   MCP server to keep in step.
 - `OAUTH_JWT_SECRET` signs OAuth tokens and **must differ** from `JWT_SECRET`.
+- `DOCUMENTS_SIGNING_SECRET` signs document view and download links. A third
+  value, at least 32 characters.
 
 ## Test reality
 

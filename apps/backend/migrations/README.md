@@ -30,7 +30,7 @@ One `schema_migrations` table records two independent series of files as
 
 | Order | Track | Owns | Files |
 |---|---|---|---|
-| **1st** | `helix-x` | the framework's tables: users, roles, permissions and their join tables, OAuth, notification log and dev outbox, verification and credential tokens, login lockout, navigation config | shipped **inside `@helix-x/backend`**: `apps/backend/node_modules/@helix-x/backend/migrations/{sqlite,postgres}/`, and `/opt/migrations/helix-x/` in the image |
+| **1st** | `helix-x` | the framework's tables: users, roles, permissions and their join tables, OAuth, notification log and dev outbox, verification and credential tokens, login lockout, navigation config, documents with their folders and shares | shipped **inside `@helix-x/backend`**: `apps/backend/node_modules/@helix-x/backend/migrations/{sqlite,postgres}/`, and `/opt/migrations/helix-x/` in the image |
 | **2nd** | `rawla` | this portal's tables, and the access and configuration it needs to run | **this folder**: `apps/backend/migrations/{sqlite,postgres}/`, and `/opt/migrations/rawla/` in the image |
 
 **Always apply the framework's files first.** The app's files reference
@@ -43,8 +43,10 @@ way round, it fails on its first statement and changes nothing.
 | File | Creates |
 |---|---|
 | framework `0001_baseline.sql` | `schema_migrations`, every framework table and index, the four permissions the framework checks (`users:manage`, `roles:manage`, `permissions:manage`, `navigation:manage`) and the `user` role its sign-up assigns |
+| framework `0002_documents.sql` | `document_folders`, `documents` and `document_shares`, and the four `documents:*` permissions (`read`, `write`, `share`, `manage`), granted to no role |
 | app `0001_baseline.sql` | the community-core tables, and `audit_logs` with its append-only triggers · portal settings and the reference lists · the 13 portal permissions and 12 portal roles, with every grant (`super_admin` and `admin` hold all 17) · the 5 chapters and the state→chapter map · the navigation overrides (framework `/register` off, join form at `/register`) · **two administrators** (below) |
 | app `0002_reference_values.sql` | 10 starter values each for gotra, thikana, industry and skill, so registration works right after boot. A list with values is *curated*: only listed values are accepted, and administrators maintain them under master data. |
+| app `0003_documents_access.sql` | Who may use documents. Grants only: `member` and the eight staff roles hold `documents:read`, `write` and `share`; `admin` and `super_admin` also hold `documents:manage` (list and delete anyone's files, not read them). `youth_member`, `applicant` and `navigation_manager` hold none. Needs the framework's `0002` first. |
 
 The two administrators, both with published passwords, so change them:
 
@@ -94,7 +96,7 @@ mkdir -p apps/backend/data
 for f in $FW/sqlite/*.sql $APP/sqlite/*.sql; do
   echo "applying $f"; sqlite3 -bail "$DB" < "$f" || break
 done
-sqlite3 "$DB" "SELECT track, version FROM schema_migrations"   # helix-x 0001, rawla 0001, rawla 0002
+sqlite3 "$DB" "SELECT track, version FROM schema_migrations"   # helix-x 0001-0002, rawla 0001-0003
 
 pnpm dev:backend        # :3001 — then, optionally, sample data:
 pnpm seed:sample
@@ -300,11 +302,14 @@ ready-to-run command.
 **2. Apply each newer file, framework track first, by its full name:**
 
 ```bash
-sqlite3 -bail apps/backend/data/helix_x.db < apps/backend/migrations/sqlite/0002_reference_values.sql
+sqlite3 -bail apps/backend/data/helix_x.db < apps/backend/node_modules/@helix-x/backend/migrations/sqlite/0002_documents.sql
+sqlite3 -bail apps/backend/data/helix_x.db < apps/backend/migrations/sqlite/0003_documents_access.sql
 # inside the container / Render Shell:
-sqlite3 -bail /data/helix_x.db < /opt/migrations/rawla/sqlite/0002_reference_values.sql
+sqlite3 -bail /data/helix_x.db < /opt/migrations/helix-x/sqlite/0002_documents.sql
+sqlite3 -bail /data/helix_x.db < /opt/migrations/rawla/sqlite/0003_documents_access.sql
 # PostgreSQL:
-psql -q -v ON_ERROR_STOP=1 "$URL" -f apps/backend/migrations/postgres/0002_reference_values.sql
+psql -q -v ON_ERROR_STOP=1 "$URL" -f apps/backend/node_modules/@helix-x/backend/migrations/postgres/0002_documents.sql
+psql -q -v ON_ERROR_STOP=1 "$URL" -f apps/backend/migrations/postgres/0003_documents_access.sql
 ```
 
 Additive changes (new tables, columns, rows) are safe for the running old
@@ -343,6 +348,7 @@ in its header, and describes how to stage it.
 | `The server does not support SSL connections` | `DB_SSL` is `true` or `no-verify` against a local Postgres. Set `DB_SSL=` (empty). |
 | `password authentication failed for user …` | Wrong user or password in `DATABASE_URL`. Check the role name exactly: it's case-sensitive. |
 | `SqliteError: disk I/O error`, `integrity_check` shows broken indexes | Something on the host opened the Compose SQLite file while the stack ran. Stop the stack, recreate the file from the migrations, and use the container for access from then on. |
+| The Documents section is missing, or `/api/documents` answers 403 | The grants are in app `0003`, and permissions are baked into the JWT at login. Apply it, then sign out and back in. |
 | `seed:sample`: *Configuration missing — apply the migrations* | The database isn't fully migrated. Apply the pending files. |
 | `seed:sample`: *N members already exist* | Re-run with `-- --reset`. |
 | `seed:sample`: *Cannot sign in as …* | You changed the admin password. Pass `ADMIN_EMAIL` / `ADMIN_PASSWORD`. |
