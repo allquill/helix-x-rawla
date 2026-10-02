@@ -1,9 +1,9 @@
-import { resolve } from 'node:path';
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './controllers/app.controller';
 import { AppService } from './providers/app.service';
+import { documentsOptions } from './config/documents-options';
 import { connectionOptions } from './database/connection';
 import {
   AuthModule,
@@ -16,6 +16,9 @@ import {
 } from '@helix-x/backend';
 import { CommunityAuthHooksModule } from './modules/community-core/community-auth-hooks.module';
 import { CommunityCoreModule } from './modules/community-core/community-core.module';
+import { EventsModule } from './modules/events/events.module';
+import { PaymentsModule } from './modules/payments/payments.module';
+import { PortalFilesModule } from './modules/portal-files/portal-files.module';
 
 @Module({
   imports: [
@@ -82,10 +85,22 @@ import { CommunityCoreModule } from './modules/community-core/community-core.mod
     // AuthService resolves it. It must never import AuthModule itself: that is a
     // real provider cycle (AuthService -> AUTH_HOOKS -> AuthService).
     CommunityAuthHooksModule,
+    // The shared payment rail: the checkout gateway (PAYMENT_PROVIDER) and the
+    // one webhook that dues and event registrations both settle through.
+    // @Global(), so neither feature module imports the other to reach it.
+    PaymentsModule,
     // The Rawla member domain: registration, vetting, activation gates,
     // households, chapters, master data and audit. It composes @helix-x/backend
     // rather than extending it — see docs/backend/modules.md in helix-x-demo.
     CommunityCoreModule,
+    // Files governed by the DOC security levels rather than by ownership and
+    // sharing: event flyers, statements and bills, certificates. @Global(). It
+    // writes to the same store as DocumentsModule below, under `portal/`.
+    PortalFilesModule,
+    // Events & Ticketing and Volunteer Management, with certificates and the
+    // scheduler that sends invitations and reminders (JOBS_ENABLED=false
+    // switches the timer off).
+    EventsModule,
     NavigationModule,
     OAuthModule.forRootAsync({
       imports: [ConfigModule, AuthModule],
@@ -126,56 +141,7 @@ import { CommunityCoreModule } from './modules/community-core/community-core.mod
     // DOCUMENTS_SIGNING_SECRET, which the app refuses to boot without.
     DocumentsModule.forRootAsync({
       imports: [ConfigModule],
-      useFactory: (config: ConfigService) => {
-        const driver = config.get<string>('DOCUMENTS_STORAGE_DRIVER', 'local');
-        const accessKeyId = config.get<string>('DOCUMENTS_S3_ACCESS_KEY_ID');
-        const allowed = config.get<string>('DOCUMENTS_ALLOWED_MIME_TYPES', '');
-        // Behind nginx the request's own origin is the backend's, so links are
-        // built on the public one: API_PUBLIC_URL is an origin, the API is /api.
-        const apiPublicUrl = config.get<string>('API_PUBLIC_URL');
-        return {
-          storage:
-            driver === 's3'
-              ? {
-                  driver: 's3' as const,
-                  bucket: config.getOrThrow<string>('DOCUMENTS_S3_BUCKET'),
-                  region: config.get<string>('DOCUMENTS_S3_REGION') || undefined,
-                  prefix: config.get<string>('DOCUMENTS_S3_PREFIX', ''),
-                  endpoint: config.get<string>('DOCUMENTS_S3_ENDPOINT') || undefined,
-                  forcePathStyle:
-                    config.get<string>('DOCUMENTS_S3_FORCE_PATH_STYLE') === 'true',
-                  credentials: accessKeyId
-                    ? {
-                        accessKeyId,
-                        secretAccessKey: config.getOrThrow<string>(
-                          'DOCUMENTS_S3_SECRET_ACCESS_KEY',
-                        ),
-                      }
-                    : undefined,
-                }
-              : {
-                  driver: 'local' as const,
-                  root: resolve(
-                    config.get<string>('DOCUMENTS_LOCAL_ROOT', 'data/documents'),
-                  ),
-                },
-          storageKeyNaming: (config.get<string>('DOCUMENTS_STORAGE_NAMING') ||
-            'readable') as 'readable' | 'opaque',
-          signingSecret: config.getOrThrow<string>('DOCUMENTS_SIGNING_SECRET'),
-          maxFileSizeBytes:
-            Number(config.get<string>('DOCUMENTS_MAX_FILE_SIZE_MB', '50')) * 1024 * 1024,
-          allowedMimeTypes: allowed
-            .split(',')
-            .map((type) => type.trim())
-            .filter(Boolean),
-          downloadLinkTtlSeconds: Number(
-            config.get<string>('DOCUMENTS_LINK_TTL_SECONDS', '300'),
-          ),
-          publicBaseUrl:
-            config.get<string>('DOCUMENTS_PUBLIC_BASE_URL') ||
-            (apiPublicUrl ? `${apiPublicUrl.replace(/\/+$/, '')}/api` : undefined),
-        };
-      },
+      useFactory: documentsOptions,
       inject: [ConfigService],
     }),
   ],

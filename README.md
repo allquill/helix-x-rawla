@@ -9,9 +9,22 @@ logic and schema.
 
 | App | Port | What it is |
 | --- | --- | --- |
-| `apps/frontend` | 5173 | React host: `createApplication`, the plugin registry, five portal plugins |
+| `apps/frontend` | 5173 | React host: `createApplication`, the plugin registry, eight portal plugins |
 | `apps/backend` | 3001 | NestJS host: composes `@helix-x/backend` and owns the `community-core` module |
 | `packages/client-sdk` | — | The TypeScript API client, **generated from this backend** |
+
+## Documentation
+
+[`docs/`](docs/) is the guide, a [docsify](https://docsify.js.org) site in two
+parts: a **User Guide** for members and **Setup and Administration** for the
+people who run the portal.
+
+```bash
+pnpm guide           # http://localhost:4000
+```
+
+It also ships with the frontend: a running portal serves it at `/guide/`, and
+the **Help** links in the app open it.
 
 ## Layout — where things live
 
@@ -70,9 +83,9 @@ pnpm seed:sample     # optional: sample members (needs the backend running)
 ```
 
 **Database setup**, for PostgreSQL, Docker Compose, Render, upgrades and
-troubleshooting, is in
-[`apps/backend/migrations/README.md`](apps/backend/migrations/README.md). It
-is the single guide for creating, migrating and seeding a database by hand.
+troubleshooting, is in the guide:
+[`docs/setup/database.md`](docs/setup/database.md). The short version, with the
+commands, is [`apps/backend/migrations/README.md`](apps/backend/migrations/README.md).
 
 `pnpm run pack` — not `pnpm pack`, which is a built-in command that shadows the
 script and exits 0 without repacking.
@@ -125,7 +138,7 @@ pnpm seed:sample -- --reset   # replace it
 ```
 
 For PostgreSQL or a Docker Compose stack, see the command table in
-[`apps/backend/migrations/README.md`](apps/backend/migrations/README.md#add-sample-data).
+[`docs/setup/sample-data.md`](docs/setup/sample-data.md).
 
 21 members spread across the five chapters and **all eight statuses**, with
 households, spouses, children, reference contacts, life events and a full
@@ -320,9 +333,9 @@ TAG=0.1.0 pnpm docker:push # multi-arch (amd64 + arm64), pushed to docker.allqui
 pnpm docker:up             # run both via docker/portal (docker:down, docker:logs)
 ```
 
-**[DEPLOY.md](DEPLOY.md) is the full reference.** It covers:
+**The guide is the full reference**, starting at [`docs/setup/deploy-docker.md`](docs/setup/deploy-docker.md). It covers:
 - building and publishing
-- Docker Compose, other Docker hosts, and [Render](docs/deploy-render.md)
+- Docker Compose, other Docker hosts, and [Render](docs/setup/deploy-render.md)
 - every environment variable
 - a production checklist, backups, upgrades and troubleshooting
 

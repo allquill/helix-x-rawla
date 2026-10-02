@@ -35,6 +35,7 @@ export function PrivacySettingsPage() {
   const { member, loading, error, savePrivacy } = useMyProfile();
   const [optIn, setOptIn] = useState(true);
   const [hidden, setHidden] = useState<Record<string, boolean>>({});
+  const [eventEmails, setEventEmails] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -48,6 +49,7 @@ export function PrivacySettingsPage() {
     );
     const optedIn = (member as unknown as { directoryOptIn?: boolean }).directoryOptIn;
     setOptIn(optedIn !== false);
+    setEventEmails(member.eventEmailOptIn !== false);
   }, [member]);
 
   const submit = async () => {
@@ -57,6 +59,7 @@ export function PrivacySettingsPage() {
     try {
       await savePrivacy({
         directoryOptIn: optIn,
+        eventEmailOptIn: eventEmails,
         fieldVisibility: Object.fromEntries(
           HIDEABLE.map(({ key }) => [key, hidden[key] ? 'hidden' : 'visible']),
         ),
@@ -131,6 +134,33 @@ export function PrivacySettingsPage() {
                       </label>
                     </div>
                   ))}
+                </div>
+              </CardBody>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">
+                  Event emails
+                </h2>
+              </CardHeader>
+              <CardBody>
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex flex-col">
+                    <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                      Email me event invitations and reminders
+                    </span>
+                    <span className="text-xs text-gray-500 dark:text-gray-400">
+                      Turning this off stops invitations to new events and reminders before the
+                      ones you are registered for, for you and your spouse. Payment and
+                      registration confirmations are still sent.
+                    </span>
+                  </div>
+                  <Switch
+                    checked={eventEmails}
+                    onCheckedChange={setEventEmails}
+                    aria-label="Email me event invitations and reminders"
+                  />
                 </div>
               </CardBody>
             </Card>

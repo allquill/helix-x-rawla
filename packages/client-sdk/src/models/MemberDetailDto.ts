@@ -24,6 +24,9 @@ export type MemberDetailDto = {
     thikana: string;
     passwordSetAt?: string;
     createdAt: string;
+    directoryOptIn?: boolean;
+    fieldVisibility?: Record<string, any>;
+    eventEmailOptIn?: boolean;
     middleName?: string;
     honorific?: string;
     gender: string;

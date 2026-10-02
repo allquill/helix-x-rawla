@@ -86,6 +86,8 @@ export const REFERENCE_LIST_KEYS = [
   'industry',
   'skill',
   'volunteer_interest',
+  'dietary_preference',
+  'tshirt_size',
 ] as const;
 
 export type ReferenceListKey = (typeof REFERENCE_LIST_KEYS)[number];

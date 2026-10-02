@@ -2,7 +2,7 @@
 #
 #   internet → rawla-frontend (web, nginx) ──/api──▶ rawla-backend (private, SQLite on a disk)
 #
-# One-time prerequisites (docs/deploy-render.md walks through them):
+# One-time prerequisites (docs/setup/deploy-render.md walks through them):
 #   1. Push multi-arch images:  docker login docker.allquill.com && TAG=0.1.0 pnpm docker:push
 #      Render runs linux/amd64; an image built only on Apple Silicon will not start.
 #   2. In Render: Settings → Registry Credentials → add `allquill` for docker.allquill.com.

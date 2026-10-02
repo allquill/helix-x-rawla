@@ -97,4 +97,8 @@ export class UpdateMemberPrivacyDto {
   @ApiPropertyOptional({ type: Object, example: { phone: 'hidden' } })
   @IsOptional() @IsObject()
   fieldVisibility?: Record<string, 'visible' | 'hidden'>;
+
+  @ApiPropertyOptional({ description: 'Receive event invitations and reminders by email (EVT-22).' })
+  @IsOptional() @IsBoolean()
+  eventEmailOptIn?: boolean;
 }

@@ -10,7 +10,7 @@ import { PORTAL_TEMPLATES } from '../constants';
  * only when the name is still free.
  */
 
-const esc = (value: unknown): string =>
+export const esc = (value: unknown): string =>
   String(value ?? '').replace(
     /[&<>"']/g,
     (c) =>
@@ -38,7 +38,7 @@ const layout = (
   }
 </div>`;
 
-const simple = (
+export const simple = (
   name: string,
   subject: (v: Record<string, unknown>) => string,
   heading: (v: Record<string, unknown>) => string,

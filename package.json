@@ -20,6 +20,7 @@
     "generate:sdk": "pnpm --filter @helix-x-rawla/client-sdk generate",
     "db:schema:log": "pnpm --filter @helix-x-rawla/backend schema:log",
     "seed:sample": "node scripts/seed-sample-data.mjs",
+    "guide": "python3 scripts/serve-docs.py",
     "docker:build": "pnpm docker:build:backend && pnpm docker:build:frontend",
     "docker:build:backend": "docker build -f apps/backend/Dockerfile -t helix-x-rawla-backend:${TAG:-local} ../..",
     "docker:build:frontend": "docker build -f apps/frontend/Dockerfile -t helix-x-rawla-frontend:${TAG:-local} ../..",

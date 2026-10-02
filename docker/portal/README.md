@@ -1,6 +1,6 @@
 # portal
 
-> Full reference, including every environment variable: [DEPLOY.md](../../DEPLOY.md).
+> Full reference, including every environment variable: [`docs/setup/deploy-docker.md`](../../docs/setup/deploy-docker.md).
 
 The Rawla backend and frontend images, run together on their own network.
 
@@ -86,7 +86,7 @@ Pointing at an existing folder reuses its database. After upgrading the
 images, apply any new migration files the same way (each by its full name).
 The backend refuses to start until you do, and tells you which ones.
 PostgreSQL (`COMPOSE_PROFILES=postgres`), upgrades and troubleshooting:
-[`apps/backend/migrations/README.md`](../../apps/backend/migrations/README.md#set-up-a-database).
+[`docs/setup/database.md`](../../docs/setup/database.md).
 
 **Never open that file from the host while the stack is running**: not
 `sqlite3`, not a GUI, and not an editor extension such as VS Code's SQLite
@@ -128,7 +128,7 @@ Sign out and back in, because roles are baked into the JWT at login. A fresh
 database already has two administrators from the migrations
 (`admin@example.com` / `Password!1`, `superadmin@example.com` /
 `ChangeMe!123`). The passwords are published, so change them. See
-[DEPLOY.md §6](../../DEPLOY.md#6-running-with-docker-compose).
+[`docs/setup/deploy-docker.md`](../../docs/setup/deploy-docker.md).
 
 ## Stopping
 

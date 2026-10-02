@@ -318,6 +318,14 @@ export class Member {
   @Column({ type: 'boolean', default: true })
   directoryOptIn: boolean;
 
+  /**
+   * Whether event invitations and reminders may be emailed to this member
+   * (EVT-22). The minimal form of COM-04 until the communications module
+   * exists; it never affects transactional mail such as a payment receipt.
+   */
+  @Column({ type: 'boolean', default: true })
+  eventEmailOptIn: boolean;
+
   /** Per-field overrides, e.g. `{ "phone": "hidden" }` (MP-19). */
   @Column({ type: 'simple-json', nullable: true })
   fieldVisibility: Record<string, 'visible' | 'hidden'> | null;

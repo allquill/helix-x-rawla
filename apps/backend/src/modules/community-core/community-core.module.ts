@@ -1,7 +1,6 @@
 import { Module, OnModuleInit } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { MemberController } from './controllers/member.controller';
-import { PaymentWebhookController } from './controllers/payment-webhook.controller';
 import { PortalAdminController } from './controllers/portal-admin.controller';
 import { PublicRegistrationController } from './controllers/public-registration.controller';
 import { RegistrationAdminController } from './controllers/registration-admin.controller';
@@ -68,7 +67,6 @@ import { AuthModule, Role, TemplateRegistryService, User } from '@helix-x/backen
     RegistrationAdminController,
     MemberController,
     PortalAdminController,
-    PaymentWebhookController,
   ],
   providers: [
     MemberRegistrationService,
@@ -81,7 +79,7 @@ import { AuthModule, Role, TemplateRegistryService, User } from '@helix-x/backen
     DuesPaymentService,
     HouseholdService,
   ],
-  exports: [MemberService, ReferenceDataService, ChapterService],
+  exports: [MemberService, ReferenceDataService, ChapterService, ProfileVisibilityService],
 })
 export class CommunityCoreModule implements OnModuleInit {
   constructor(private readonly templates: TemplateRegistryService) {}

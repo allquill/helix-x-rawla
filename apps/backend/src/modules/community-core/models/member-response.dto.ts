@@ -66,6 +66,11 @@ export class MemberChildDto {
 }
 
 export class MemberDetailDto extends MemberSummaryDto {
+  // The member's own privacy settings. Present only on their own profile —
+  // nobody else has any use for them.
+  @ApiPropertyOptional() directoryOptIn?: boolean;
+  @ApiPropertyOptional({ type: Object }) fieldVisibility?: Record<string, string> | null;
+  @ApiPropertyOptional() eventEmailOptIn?: boolean;
   @ApiPropertyOptional() middleName?: string | null;
   @ApiPropertyOptional() honorific?: string | null;
   @ApiProperty() gender: string;

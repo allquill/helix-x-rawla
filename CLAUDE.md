@@ -12,7 +12,7 @@ something reusable, it belongs in one of the sibling repos instead:
 | --- | --- |
 | [`helix-x-web`](../../framework/helix-x-web) | React plugin kernel, bindings, shell, design system, first-party plugins |
 | [`helix-x-backend`](../../framework/helix-x-backend) | NestJS modules (auth, notifications, navigation, OAuth, documents) |
-| `helix-x-rawla` (here) | two host apps, five portal plugins, the `community-core` domain module, and the generated client |
+| `helix-x-rawla` (here) | two host apps, eight portal plugins, the `community-core`, `events`, `payments` and `portal-files` backend modules, and the generated client |
 
 Note the client SDK is **not** shared with the other products. Each owns its own
 at `packages/client-sdk`, generated from its own backend; only the framework half,
@@ -22,6 +22,15 @@ cannot affect anyone else — which was not true of the single shared SDK this
 replaced.
 
 `.claude/rules/*.md` are path-scoped and attach automatically.
+
+[`docs/`](docs/) is the reader-facing guide — a docsify site in two parts, a
+**User Guide** for members and **Setup and Administration**. `pnpm guide`
+serves it on :4000 (not `pnpm docs`, a built-in npm command); the frontend
+ships the same folder at `/guide/` (a small plugin in `vite.config.ts` serves
+it in dev and copies it at build; nginx has a `location /guide/`), and the
+`help` plugin links to it. `.claude/rules/docs-upkeep.md` maps each kind of
+change to the page that covers it. It is static and readable without signing
+in, so nothing secret goes in it.
 
 ## What this product is
 
@@ -270,7 +279,7 @@ the migration sees nothing until it signs in again.
 the hero runs edge to edge. The primary nav moves into the header there, which is
 what keeps the rest of the app reachable from a page with no rail.
 
-**The five portal plugins** live in `apps/frontend/src/plugins/`: `home`,
+**The eight portal plugins** live in `apps/frontend/src/plugins/`: `events`, `volunteers`, `help` (manifest-only: links to the guide), `home`,
 `registration`, `members`, `chapters`, `membership-admin`. Each is `manifest.ts`
 (plain data) plus `index.tsx` (`activate()`).
 
@@ -334,7 +343,7 @@ start** unless both tracks have reached what this build needs
 `src/database/schema-version.ts`), and prints the exact `sqlite3` / `psql`
 commands, with full file names, in order. So a new `@helix-x/backend`
 tarball that adds a framework migration stops the app until it is applied —
-deliberately. `apps/backend/migrations/README.md` covers applying them.
+deliberately. `docs/setup/database.md` covers applying them (the short form, with the commands, is `apps/backend/migrations/README.md`).
 
 - The **running app** uses `autoLoadEntities: true`: entities describe the
   schema to TypeORM but never create it.
@@ -400,6 +409,36 @@ nginx and every preview is a dead link. Three things that bite:
 - `multer` is a direct dependency of `apps/backend` although nothing here
   imports it: `@helix-x/documents` peers `multer >=2.1.0`, and
   `@nestjs/platform-express` alone brings 2.0.2.
+
+**Events and volunteers are `src/modules/events/`** (EVT, VOL, certificates),
+on two small `@Global()` modules: `payments/` (the checkout gateway and the one
+webhook, shared with dues) and `portal-files/` (files governed by the DOC
+security levels, not by ownership). Schema and access are migration `0004`.
+Things that look tidyable but are not:
+
+- **A closed event takes no write, and there is no reopen** (EVT-26). Every
+  mutating service method starts with `assertEventWritable` and the write is
+  itself conditional on the status. The one exception is a payment webhook that
+  arrives after close: the money was taken, so it settles and is audited.
+- **`events:create` is not held by `admin`** — only the three Secretaries and
+  `super_admin` (EVT-16). `PermissionsGuard` has no admin bypass; do not "fix"
+  the 403.
+- **An event document has no level of its own.** `eventDocumentLevel()` reads
+  the event's status: level 4 while open, level 5 (Finance and General
+  Secretaries, `super_admin`) once closed. `events:documents.read` only opens
+  the route; `doc-level-rules.ts` decides.
+- **Seats and slots move by conditional `UPDATE`**, not row locks (SQLite has
+  none). Zero rows affected is `EVENT_FULL` / `SLOT_FULL`.
+- **Prices are locked on the attendee row at registration**; editing a ticket
+  never reprices an existing registration. `paidCents` is recomputed from
+  settled `event_payments`, never incremented.
+- **The scheduler is safe on two instances because of the unique index on
+  `event_notification_log`**, not the timer: a row is claimed before the send.
+  Delivery is at-most-once. `JOBS_ENABLED=false` turns the timer off.
+- **Path ids go through `IdPipe`.** Postgres rejects a non-uuid outright, so
+  `/events/new` would otherwise be a 500 rather than a 404.
+- The frontend paths `/events/:id` and `/events/:id/registration` are written
+  into the backend's mail templates and checkout return URL.
 
 `MAIL_TRANSPORT` defaults to `console`, which sends nothing over the network and
 captures each message at `GET /api/dev/outbox` — that is where verification,

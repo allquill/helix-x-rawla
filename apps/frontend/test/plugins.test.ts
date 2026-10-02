@@ -199,6 +199,17 @@ describe('route layouts', () => {
     expect(layoutOf('/members/1')).toBe('app');
     expect(layoutOf('/admin/registrations')).toBe('app');
     expect(layoutOf('/admin/chapters')).toBe('app');
+    // Events and volunteers. The literal `/admin/events/new` must outrank
+    // `/admin/events/:id`, and the two registration screens `/events/:id`.
+    expect(layoutOf('/events')).toBe('app');
+    expect(layoutOf('/volunteers')).toBe('app');
+    expect(layoutOf('/admin/waivers')).toBe('app');
+    expect(app.routes.matchAny('/events/abc')?.route.id).toBe('rawla.events.detail');
+    expect(app.routes.matchAny('/events/abc/register')?.route.id).toBe('rawla.events.register');
+    expect(app.routes.matchAny('/events/abc/registration')?.route.id).toBe('rawla.events.registration');
+    expect(app.routes.matchAny('/admin/events')?.route.id).toBe('rawla.events.admin');
+    expect(app.routes.matchAny('/admin/events/new')?.route.id).toBe('rawla.events.admin.new');
+    expect(app.routes.matchAny('/admin/events/abc')?.route.id).toBe('rawla.events.admin.detail');
     app.dispose();
   });
 
@@ -236,6 +247,73 @@ describe('route layouts', () => {
 
     expect(visible('/verify-email')).toBe(true);
     expect(visible('/set-password')).toBe(true);
+
+    app.dispose();
+  });
+
+  /*
+   * EVT-16: only the three Secretaries (and super_admin) create events, and
+   * that is one permission — `events:create` — which `admin` does not hold.
+   * The "New event" route is gated on it alone, so somebody who can otherwise
+   * administer events is not offered a form whose submit would answer 403.
+   */
+  test('event screens follow their own permissions', async () => {
+    const app = createApplication({
+      app: { id: 'test', name: 'Test', version: '0.0.0', environment: 'test' },
+      plugins,
+      storage: createMemoryStorage(),
+      router: { mode: 'memory' },
+      logLevel: 'silent',
+      pluginManager: { permissionMode: 'strict' },
+      settingsDefaults: { 'helix.auth.apiBaseUrl': 'http://localhost:3001' },
+    });
+    await app.start();
+
+    const manifestNav = plugins.flatMap((plugin) => plugin.manifest.contributes?.navItems ?? []);
+    const visible = (path: string) =>
+      Boolean(app.routes.match(path, (when) => app.context.evaluate(when)));
+    const as = (permissions: string[]) =>
+      app.user.setUser({ id: '1', name: 'Someone', roles: [], permissions });
+
+    // Signed in with nothing: no event screen at all.
+    as([]);
+    expect(visible('/events')).toBe(false);
+    expect(visible('/volunteers')).toBe(false);
+
+    // A member: read and register, never administer.
+    as(['events:read', 'events:register', 'volunteers:read']);
+    expect(visible('/events')).toBe(true);
+    expect(visible('/events/abc/register')).toBe(true);
+    expect(visible('/volunteers')).toBe(true);
+    expect(visible('/admin/events')).toBe(false);
+    expect(visible('/admin/events/new')).toBe(false);
+
+    const routeFor = (path: string) =>
+      app.routes.match(path, (when) => app.context.evaluate(when))?.route.id;
+
+    // An Admin: runs events, but cannot create one. With the form's route
+    // closed to them, `/admin/events/new` reads as an event called "new" —
+    // which does not exist — rather than as the form.
+    as(['events:read', 'events:registrations.read', 'events:write']);
+    expect(visible('/admin/events')).toBe(true);
+    expect(visible('/admin/events/abc')).toBe(true);
+    expect(routeFor('/admin/events/new')).toBe('rawla.events.admin.detail');
+    expect(visible('/admin/waivers')).toBe(false);
+
+    // The guide links: Help for everyone, the admin guide for staff only.
+    const offered = (id: string) => {
+      const item = manifestNav.find((nav) => nav.id === id);
+      return item !== undefined && (!item.when || app.context.evaluate(item.when));
+    };
+    expect(offered('rawla.help.nav.header')).toBe(true);
+    expect(offered('rawla.help.nav.admin')).toBe(false);
+    as(['registration:read']);
+    expect(offered('rawla.help.nav.admin')).toBe(true);
+
+    // A Secretary: both.
+    as(['events:read', 'events:registrations.read', 'events:create', 'events:waivers.manage']);
+    expect(routeFor('/admin/events/new')).toBe('rawla.events.admin.new');
+    expect(visible('/admin/waivers')).toBe(true);
 
     app.dispose();
   });

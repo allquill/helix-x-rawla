@@ -8,6 +8,7 @@ import {
   CardBody,
   CardHeader,
 } from '@helix-x/design-system';
+import { CertificatesSection } from '../components/CertificatesSection';
 import { MemberProfileFields } from '../components/MemberProfileFields';
 import { useMember } from '../hooks/useMembers';
 
@@ -47,14 +48,18 @@ export function MemberDetailPage({ params }: RouteViewProps) {
         {error && <Alert variant="error">{error}</Alert>}
 
         {member && (
-          <Card>
-            <CardHeader>
-              <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">Profile</h2>
-            </CardHeader>
-            <CardBody>
-              <MemberProfileFields member={member} />
-            </CardBody>
-          </Card>
+          <div className="flex flex-col gap-6">
+            <Card>
+              <CardHeader>
+                <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">Profile</h2>
+              </CardHeader>
+              <CardBody>
+                <MemberProfileFields member={member} />
+              </CardBody>
+            </Card>
+            {/* REC-07. Renders only for someone who may upload certificates. */}
+            <CertificatesSection memberId={member.id} childProfiles={member.children ?? []} />
+          </div>
         )}
       </div>
   );

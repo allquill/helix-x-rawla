@@ -66,6 +66,15 @@ server {
         access_log off;
     }
 
+    # The guide: the docsify site copied from docs/ at build time. A page that
+    # does not exist must be a 404 — falling through to the app shell would
+    # have docsify render index.html as Markdown. Not cached, so an edited
+    # page is picked up on the next deploy without a hard reload.
+    location /guide/ {
+        try_files $uri $uri/ =404;
+        add_header Cache-Control "no-cache";
+    }
+
     # Client-side routes (/join, /members/me, …) all serve the app shell.
     # index.html itself is never cached, so a deploy is picked up on reload.
     location / {

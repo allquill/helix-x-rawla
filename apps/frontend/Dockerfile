@@ -52,6 +52,8 @@ RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
 COPY example/helix-x-rawla/tsconfig.base.json ./
 COPY example/helix-x-rawla/packages/client-sdk/ packages/client-sdk/
 COPY example/helix-x-rawla/apps/frontend/ apps/frontend/
+# The guide (docsify). `vite build` copies it to dist/guide/, served at /guide/.
+COPY example/helix-x-rawla/docs/ docs/
 
 # `vite build` runs in production mode and reads the committed .env.production:
 # VITE_API_SERVER is empty, so the bundle calls /api on its own origin.

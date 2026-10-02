@@ -8,6 +8,7 @@ import {
   Textarea,
 } from '@helix-x/design-system';
 import type { MemberDetailDto, UpdateMemberDto } from '@helix-x-rawla/client-sdk';
+import { CertificatesSection } from '../components/CertificatesSection';
 import { HouseholdSection } from '../components/HouseholdSection';
 import { EditDialog, Label, ProfileSection, orDash } from '../components/ProfileEditing';
 import { useMyProfile } from '../hooks/useMembers';
@@ -179,6 +180,8 @@ export function MyProfilePage() {
             onSaveChild={saveChild}
             onRemoveChild={removeChild}
           />
+
+          <CertificatesSection />
 
           <FieldsDialog
             open={editing === 'contact'}

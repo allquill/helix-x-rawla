@@ -72,6 +72,39 @@ export class ProfileVisibilityService {
     return member.fieldVisibility?.[field] !== 'hidden';
   }
 
+  /**
+   * How a person appears in a member-wide listing — an event's participant
+   * list, Top Volunteers (§3.2, Revision 9).
+   *
+   * These listings are Tier 2 and carry a name and nothing else, so the only
+   * question is whether the name may be shown. It may when the viewer is in
+   * the same household, is staff, or the member whose settings govern the
+   * person has not opted out of the directory. A spouse or child has no
+   * settings of their own and inherits the member's. With no governing member
+   * left on file the name is withheld: unclear means more private (DOC-04).
+   *
+   * A private person is still returned, anonymised, so a listing's totals stay
+   * honest.
+   */
+  toListingIdentity(
+    viewer: AuthenticatedUser,
+    viewerHouseholdId: string | null,
+    owner: Pick<Member, 'userId' | 'householdId' | 'directoryOptIn'> | null,
+    fullName: string,
+    privateLabel = 'Private member',
+  ): { displayName: string; isPrivate: boolean } {
+    const visible =
+      owner !== null &&
+      (viewer.id === owner.userId ||
+        (viewerHouseholdId !== null && viewerHouseholdId === owner.householdId) ||
+        viewer.permissions?.includes(PORTAL_PERMISSIONS.MEMBERS_WRITE) === true ||
+        viewer.permissions?.includes(PORTAL_PERMISSIONS.REGISTRATION_READ) === true ||
+        owner.directoryOptIn);
+    return visible
+      ? { displayName: fullName, isPrivate: false }
+      : { displayName: privateLabel, isPrivate: true };
+  }
+
   toSummary(member: Member, email: string): MemberSummaryDto {
     return {
       id: member.id,
@@ -144,6 +177,12 @@ export class ProfileVisibilityService {
       paymentOverrideReason: member.paymentOverrideReason,
       totalDonationsCents: extras.totalDonationsCents,
     };
+
+    if (viewer.id === member.userId) {
+      detail.directoryOptIn = member.directoryOptIn;
+      detail.fieldVisibility = member.fieldVisibility;
+      detail.eventEmailOptIn = member.eventEmailOptIn;
+    }
 
     // One mutable view of the payload; `MemberDetailDto` has no index
     // signature, so the cast goes through `unknown`.

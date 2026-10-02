@@ -13,10 +13,11 @@ import {
 } from '@nestjs/common';
 import { ApiExcludeController } from '@nestjs/swagger';
 import type { Request, Response } from 'express';
-import { DuesPaymentService } from '../providers/dues-payment.service';
+import { CheckoutGatewayService } from './checkout-gateway.service';
+import { PaymentSettlementRegistry } from './payment-settlement.registry';
 
 /**
- * The payment provider's side of dues settlement.
+ * The payment provider's side of settlement, for dues and event registrations.
  *
  * Public by omission, like `PublicRegistrationController`: no `@UseGuards`, so
  * no principal, so the gate interceptor never engages. Stripe authenticates
@@ -29,7 +30,10 @@ import { DuesPaymentService } from '../providers/dues-payment.service';
 @ApiExcludeController()
 @Controller()
 export class PaymentWebhookController {
-  constructor(private readonly duesPayment: DuesPaymentService) {}
+  constructor(
+    private readonly gateway: CheckoutGatewayService,
+    private readonly settlements: PaymentSettlementRegistry,
+  ) {}
 
   @Post('payments/stripe/webhook')
   @HttpCode(HttpStatus.OK)
@@ -37,21 +41,24 @@ export class PaymentWebhookController {
     @Req() request: RawBodyRequest<Request>,
     @Headers('stripe-signature') signature: string | undefined,
   ): Promise<{ received: true }> {
-    await this.duesPayment.handleStripeEvent(request.rawBody, signature);
+    const paid = this.gateway.verifyStripeEvent(request.rawBody, signature);
+    if (paid) await this.settlements.settle(paid.sessionId, paid.kind);
     return { received: true };
   }
 
   /**
    * `PAYMENT_PROVIDER=console` stands in for the hosted checkout page: visiting
    * the URL is "paying". 404 under any other provider and in production, so it
-   * cannot settle real dues.
+   * cannot settle a real payment.
    */
   @Get('dev/payments/:ref/complete')
   async completeConsoleCheckout(@Param('ref') ref: string, @Res() res: Response): Promise<void> {
-    if (!this.duesPayment.consoleEnabled || !ref.startsWith('console_')) {
+    if (!this.gateway.consoleEnabled || !ref.startsWith('console_')) {
       throw new NotFoundException();
     }
-    await this.duesPayment.settle(ref);
-    res.redirect(this.duesPayment.statusUrl('success'));
+    const handler = this.settlements.get(this.settlements.kindOfConsoleRef(ref));
+    if (!handler) throw new NotFoundException();
+    await handler.settle(ref);
+    res.redirect(await handler.returnUrl(ref, 'success'));
   }
 }

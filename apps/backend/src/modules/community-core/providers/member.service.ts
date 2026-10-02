@@ -261,11 +261,16 @@ export class MemberService {
   /** Self-service privacy controls (MP-19). */
   async updatePrivacy(
     viewer: AuthenticatedUser,
-    input: { directoryOptIn?: boolean; fieldVisibility?: Record<string, 'visible' | 'hidden'> },
+    input: {
+      directoryOptIn?: boolean;
+      fieldVisibility?: Record<string, 'visible' | 'hidden'>;
+      eventEmailOptIn?: boolean;
+    },
   ): Promise<MemberStatusDto> {
     const member = await this.byUserId(viewer.id);
     if (input.directoryOptIn !== undefined) member.directoryOptIn = input.directoryOptIn;
     if (input.fieldVisibility) member.fieldVisibility = input.fieldVisibility;
+    if (input.eventEmailOptIn !== undefined) member.eventEmailOptIn = input.eventEmailOptIn;
     await this.memberRepo.save(member);
     return this.statusFor(viewer);
   }

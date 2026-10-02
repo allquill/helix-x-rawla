@@ -1,9 +1,9 @@
 # Deploying to Render
 
-> Full reference, including every environment variable: [DEPLOY.md](../DEPLOY.md).
+> Every environment variable is in [Configuration](/setup/configuration.md); the images are described in [Deploying with Docker](/setup/deploy-docker.md).
 
 The portal runs on [Render](https://render.com) as two services, declared in
-[`render.yaml`](../render.yaml). The topology is the same as the local compose
+`render.yaml`. The topology is the same as the local compose
 stack in `docker/portal/`:
 
 ```
@@ -99,7 +99,7 @@ The new portal then has the two administrators, the chapters and the
 navigation config and the reference values from the migrations, and no
 members. Don't run `seed:sample` against it: sample data is for development
 databases only. The full guide, including upgrades and troubleshooting, is
-[`apps/backend/migrations/README.md`](../apps/backend/migrations/README.md).
+[Database and migrations](/setup/database.md).
 
 The frontend's health check passes once nginx is serving.
 
@@ -161,7 +161,7 @@ migration counts: apply that one the same way first.
   the two together. The 1 GB disk fills quickly with uploads of up to 50 MB
   each: grow it under **rawla-backend → Disks**, or move the files to a
   bucket with `DOCUMENTS_STORAGE_DRIVER=s3` and the `DOCUMENTS_S3_*` keys
-  ([DEPLOY.md §9.2](../DEPLOY.md#92-backend-runtime)).
+  ([Backend runtime](/setup/configuration.md#backend-runtime)).
 - **Never delete the disk.** Deleting the disk, or the `rawla-backend`
   service, deletes the database and every uploaded document.
 

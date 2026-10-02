@@ -31,6 +31,8 @@
 # This app's own client and the frontend.
 !example/helix-x-rawla/packages/client-sdk
 !example/helix-x-rawla/apps/frontend
+# The guide, copied into dist/guide/ by `vite build`.
+!example/helix-x-rawla/docs
 
 # …minus installs, build output, local env and anything not needed to build.
 **/node_modules

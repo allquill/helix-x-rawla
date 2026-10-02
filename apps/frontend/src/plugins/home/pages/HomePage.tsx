@@ -6,6 +6,7 @@ import { JoinPathSection } from '../components/JoinPathSection';
 import { LeadershipSection } from '../components/LeadershipSection';
 import { MemberBenefitsSection } from '../components/MemberBenefitsSection';
 import { PillarsSection } from '../components/PillarsSection';
+import { UpcomingEventCard } from '../components/UpcomingEventCard';
 
 export type HomePageProps = RouteViewProps & { className?: string };
 
@@ -21,6 +22,8 @@ export const HomePage = forwardRef<HTMLDivElement, HomePageProps>(
     <div ref={ref} className={className || undefined}>
         <main>
           <HeroSection />
+          {/* Signed-in members only, and only when something is coming up (HOM-02). */}
+          <UpcomingEventCard />
           <PillarsSection />
           <JoinPathSection />
           <MemberBenefitsSection />

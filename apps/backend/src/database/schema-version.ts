@@ -25,7 +25,7 @@ import {
  * clear refusal at startup instead of a missing-column error mid-request.
  */
 export const SCHEMA_TRACK = 'rawla';
-export const SCHEMA_VERSION = '0003';
+export const SCHEMA_VERSION = '0004';
 
 /** apps/backend — the same two levels up from src/database/ and dist/database/. */
 const APP_ROOT = resolve(__dirname, '..', '..');

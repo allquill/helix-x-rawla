@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Rajputana Rawla portal — guide</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0">
+  <meta name="description" content="Setting up, administering and using the Rajputana Rawla of America member portal.">
+  <link rel="icon" href="data:,">
+  <!--
+    docsify 5. The `sidebar-chevron-right` / `sidebar-group-box` body classes
+    below are defined only in v5's `dist/themes/core.css` — v4's
+    `lib/themes/vue.css` has no rule for either, which is why they did nothing.
+    core.css is the theme; addons/vue.css is a variable overlay on top of it,
+    so both are required and in this order.
+  -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/docsify@5/dist/themes/core.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/docsify@5/dist/themes/addons/vue.css">
+  <!--
+    The dark addon is a bare `:root` block — no media query, no attribute guard —
+    so loading it plainly would make the site permanently dark. `media` is the
+    switch: the browser applies the sheet only while the query matches, and the
+    script below rewrites that one attribute. It must come after vue.css, which
+    sets a light `--color-text` of its own.
+  -->
+  <link rel="stylesheet" id="theme-dark-css" media="(prefers-color-scheme: dark)"
+        href="https://cdn.jsdelivr.net/npm/docsify@5/dist/themes/addons/core-dark.css">
+  <script>
+    /*
+      Runs in <head>, before the body paints, so a reader who chose dark never
+      sees a light flash. It only rewrites `media` on the link above — the sheet
+      is already parsed, so the switch costs no request.
+    */
+    (function () {
+      var KEY = 'helix-x-rawla:docs-theme';
+      var MODES = ['auto', 'light', 'dark'];
+      var MEDIA = {
+        auto: '(prefers-color-scheme: dark)',
+        light: 'not all',   // never matches
+        dark: 'all'         // always matches
+      };
+      var LABEL = {
+        auto: 'Theme: system — switch to light',
+        light: 'Theme: light — switch to dark',
+        dark: 'Theme: dark — follow the system'
+      };
+
+      var root = document.documentElement;
+      var link = document.getElementById('theme-dark-css');
+      var stored;
+
+      try { stored = localStorage.getItem(KEY); } catch (e) { /* private mode */ }
+      var mode = MODES.indexOf(stored) > -1 ? stored : 'auto';
+
+      function render() {
+        root.setAttribute('data-theme', mode);
+        link.media = MEDIA[mode];
+        var button = document.getElementById('theme-switch');
+        if (button) {
+          button.title = LABEL[mode];
+          button.setAttribute('aria-label', LABEL[mode]);
+        }
+      }
+
+      render();
+      document.addEventListener('DOMContentLoaded', render);
+
+      // Delegated, so it does not matter that the button is parsed later — and
+      // docsify replaces #app wholesale, which this listener is unaffected by.
+      document.addEventListener('click', function (event) {
+        var button = event.target.closest && event.target.closest('#theme-switch');
+        if (!button) { return; }
+        mode = MODES[(MODES.indexOf(mode) + 1) % MODES.length];
+        try { localStorage.setItem(KEY, mode); } catch (e) { /* private mode */ }
+        render();
+      });
+    })();
+  </script>
+  <style>
+    /* Overrides go after all three theme sheets: same `:root` specificity, later wins. */
+    :root {
+      --theme-color: #b45309;
+      --sidebar-width: 17rem;
+      /* v5 sizes the content column with a variable rather than a max-width. */
+      --content-max-width: 56rem;
+    }
+    /* Amber 700 is too dark on the dark background — links, the active
+       sidebar entry and the chevrons all read from --theme-color, so lift it.
+       These mirror the `media` values the script sets on #theme-dark-css; the
+       attribute selector also outranks the dark addon's bare `:root`. */
+    :root[data-theme="dark"] { --theme-color: #fbbf24; }
+    @media (prefers-color-scheme: dark) {
+      :root[data-theme="auto"] { --theme-color: #fbbf24; }
+    }
+    /* Native widgets — scrollbars, the search field, form controls — follow
+       this, and a forced choice has to override the OS preference. */
+    :root { color-scheme: light dark; }
+    :root[data-theme="light"] { color-scheme: light; }
+    :root[data-theme="dark"] { color-scheme: dark; }
+
+    /* Theme switch: lives outside #app, which docsify replaces on every render. */
+    #theme-switch {
+      position: fixed;
+      z-index: var(--z-app-nav);   /* under the sidebar and its mobile overlay */
+      top: 8px;
+      right: 8px;
+      display: grid;
+      place-items: center;
+      width: 30px;
+      height: 30px;
+      /* core.css styles `button[type]` with a `margin-block: 0.35em`, which
+         otherwise shifts a fixed element off its own `top`. */
+      margin: 0;
+      padding: 0;
+      border: 1px solid var(--border-color);
+      border-radius: 50%;
+      background: var(--color-bg);
+      color: var(--color-mono-5);
+      cursor: pointer;
+    }
+    #theme-switch:hover { color: var(--theme-color); border-color: var(--theme-color); }
+    #theme-switch svg {
+      grid-area: 1 / 1;            /* all three stack; one is shown at a time */
+      display: none;
+      width: 16px;
+      height: 16px;
+    }
+    :root[data-theme="auto"] #theme-switch [data-icon="auto"],
+    :root[data-theme="light"] #theme-switch [data-icon="light"],
+    :root[data-theme="dark"] #theme-switch [data-icon="dark"] { display: block; }
+    @media print { #theme-switch { display: none; } }
+    /* The `**Bold**` entries in _sidebar.md. v5's own `--sidebar-group-title-*`
+       variables reach only a `.group-title`, which it assigns with
+       `p:not(:has(> *))` — our titles wrap their text in `<strong>` (and two in
+       `<code>`), so that never matches. Style the group's `<p>` directly. */
+    .sidebar-nav li.group > p { font-size: 13px; letter-spacing: .02em; }
+    .markdown-section table { display: table; width: 100%; }
+    .markdown-section table td:first-child { white-space: normal; }
+    /* The architecture diagram is box-drawing art — never reflow it. A fence
+       with no language renders as data-lang="markup", so name it explicitly. */
+    .markdown-section pre[data-lang="markup"] > code,
+    .markdown-section pre[data-lang="text"] > code { white-space: pre; }
+  </style>
+</head>
+<body class="sidebar-chevron-right sidebar-group-box">
+  <button id="theme-switch" type="button" title="Theme" aria-label="Theme">
+    <svg data-icon="auto" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+      <circle cx="12" cy="12" r="9"/>
+      <path d="M12 3a9 9 0 0 0 0 18z" fill="currentColor" stroke="none"/>
+    </svg>
+    <svg data-icon="light" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+      <circle cx="12" cy="12" r="4.5"/>
+      <path d="M12 1.8v2.4M12 19.8v2.4M4.6 4.6l1.7 1.7M17.7 17.7l1.7 1.7M1.8 12h2.4M19.8 12h2.4M4.6 19.4l1.7-1.7M17.7 6.3l1.7-1.7"/>
+    </svg>
+    <svg data-icon="dark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true">
+      <path d="M20.7 14.6A8.6 8.6 0 0 1 9.4 3.3a8.6 8.6 0 1 0 11.3 11.3z"/>
+    </svg>
+  </button>
+  <div id="app">Loading documentation…</div>
+  <script>
+    window.$docsify = {
+      name: 'Rajputana Rawla portal',
+      nameLink: '/',
+      loadSidebar: true,
+      // Nested pages request `<dir>/_sidebar.md`; serve the single root one.
+      alias: {
+        '/.*/_sidebar.md': '/_sidebar.md'
+      },
+      subMaxLevel: 3,
+      auto2top: true,
+      maxLevel: 4,
+      notFoundPage: true,
+      search: {
+        depth: 3,
+        placeholder: 'Search the docs',
+        noData: 'Nothing found.',
+        pathNamespaces: []
+      },
+      pagination: {
+        crossChapter: true,
+        crossChapterText: true
+      },
+      copyCode: {
+        buttonText: 'Copy',
+        successText: 'Copied'
+      }
+    };
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/docsify@5/dist/docsify.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/docsify@5/dist/plugins/search.min.js"></script>
+  <!-- No v5 equivalents ship for these two; they use the unchanged plugin/hook API. -->
+  <script src="https://cdn.jsdelivr.net/npm/docsify-copy-code@3/dist/docsify-copy-code.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/docsify-pagination@2/dist/docsify-pagination.min.js"></script>
+  <!-- docsify bundles only markup/clike/javascript; the rest load onto window.Prism. -->
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1/components/prism-bash.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1/components/prism-typescript.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1/components/prism-json.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1/components/prism-sql.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1/components/prism-jsx.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1/components/prism-tsx.min.js"></script>
+</body>
+</html>

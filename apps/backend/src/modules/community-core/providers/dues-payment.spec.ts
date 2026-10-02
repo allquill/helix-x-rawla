@@ -31,10 +31,12 @@ describe('DuesPaymentService.settle', () => {
     const dataSource = { transaction: jest.fn(async (fn: (m: typeof em) => unknown) => fn(em)) };
     const activation = { recompute: jest.fn(async () => ({ member: {}, justActivated: true })) };
     const audit = { record: jest.fn(async () => ({})) };
-    const config = { get: jest.fn((_key: string, fallback?: unknown) => fallback) };
+    const gateway = { portalUrl: 'http://localhost:5173' };
+    const settlements = { register: jest.fn() };
 
     const service = new DuesPaymentService(
-      config as never,
+      gateway as never,
+      settlements as never,
       dataSource as never,
       {} as never,
       {} as never,

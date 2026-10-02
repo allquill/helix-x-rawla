@@ -16,6 +16,23 @@ import {
   SpouseProfile,
   StateChapterMap,
 } from '../modules/community-core/entities';
+import {
+  EventAttendee,
+  EventCostEntry,
+  EventDocument,
+  EventDonatedGood,
+  EventNotificationLog,
+  EventPayment,
+  EventRegistration,
+  EventSlotBooking,
+  EventTicketType,
+  EventTimeSlot,
+  EventWaiverSignature,
+  MemberCertificate,
+  PortalEvent,
+  WaiverTemplate,
+} from '../modules/events/entities';
+import { PortalFile } from '../modules/portal-files/entities/portal-file.entity';
 
 /**
  * Every entity in the application, in one list.
@@ -35,8 +52,8 @@ export const ALL_ENTITIES = [
   // The framework's tables (the 'helix-x' migration track).
   ...HELIX_ENTITIES,
 
-  // This app's own entities (the 'rawla' track) — the CLI cannot see
-  // CommunityCoreModule's forFeature([...]).
+  // This app's own entities (the 'rawla' track) — the CLI cannot see any
+  // module's forFeature([...]).
   Chapter,
   StateChapterMap,
   Household,
@@ -52,4 +69,21 @@ export const ALL_ENTITIES = [
   ReferenceListValue,
   PortalSetting,
   AuditLog,
+
+  // PortalFilesModule and EventsModule.
+  PortalFile,
+  WaiverTemplate,
+  PortalEvent,
+  EventTicketType,
+  EventTimeSlot,
+  EventRegistration,
+  EventAttendee,
+  EventSlotBooking,
+  EventWaiverSignature,
+  EventPayment,
+  EventDocument,
+  EventDonatedGood,
+  EventCostEntry,
+  EventNotificationLog,
+  MemberCertificate,
 ];

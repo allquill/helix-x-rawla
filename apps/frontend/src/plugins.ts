@@ -15,6 +15,9 @@ import { manifest as registrationManifest } from './plugins/registration/manifes
 import { manifest as membersManifest } from './plugins/members/manifest';
 import { manifest as membershipAdminManifest } from './plugins/membership-admin/manifest';
 import { manifest as chaptersManifest } from './plugins/chapters/manifest';
+import { manifest as eventsManifest } from './plugins/events/manifest';
+import { manifest as volunteersManifest } from './plugins/volunteers/manifest';
+import { manifest as helpManifest } from './plugins/help/manifest';
 
 
 /**
@@ -105,6 +108,27 @@ export const plugins: PluginRegistration[] = [
     manifest: chaptersManifest,
     load: () => import('./plugins/chapters'),
     enabled: import.meta.env.VITE_FEATURE_CHAPTERS !== 'false',
+  },
+  // Events and their registrations, for members and for the people running
+  // them. Needs the events:* and volunteers:* grants from the backend's
+  // migration 0004 — and a fresh sign-in, since they ride in the JWT. Its
+  // admin tabs contribute into `portal.sectionnav`, like chapters.
+  {
+    manifest: eventsManifest,
+    load: () => import('./plugins/events'),
+    enabled: import.meta.env.VITE_FEATURE_EVENTS !== 'false',
+  },
+  // The Volunteer page: Top Volunteers.
+  {
+    manifest: volunteersManifest,
+    load: () => import('./plugins/volunteers'),
+    enabled: import.meta.env.VITE_FEATURE_VOLUNTEERS !== 'false',
+  },
+  // Nav links to the guide served at /guide/ (the docsify site in docs/).
+  {
+    manifest: helpManifest,
+    load: () => import('./plugins/help'),
+    enabled: import.meta.env.VITE_FEATURE_HELP !== 'false',
   },
   {
     manifest: devtoolsManifest,

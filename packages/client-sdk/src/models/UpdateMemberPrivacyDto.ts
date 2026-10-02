@@ -8,5 +8,9 @@ export type UpdateMemberPrivacyDto = {
      */
     directoryOptIn?: boolean;
     fieldVisibility?: Record<string, any>;
+    /**
+     * Receive event invitations and reminders by email (EVT-22).
+     */
+    eventEmailOptIn?: boolean;
 };
 

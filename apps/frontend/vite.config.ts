@@ -1,9 +1,64 @@
-import { defineConfig } from 'vite';
+import { cpSync, createReadStream, existsSync, statSync } from 'node:fs';
+import { extname, join, normalize, resolve } from 'node:path';
+import { defineConfig, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 
+/**
+ * Serve the guide — the docsify site in the repository's `docs/` — at
+ * `/guide/`, beside the app.
+ *
+ * One copy of the pages: `pnpm guide` reads the same folder on :4000. In dev
+ * a middleware streams the files; at build they are copied to `dist/guide/`.
+ * A page that does not exist must answer 404 rather than fall through to the
+ * app shell, or docsify renders the app's `index.html` as Markdown.
+ */
+function guide(): Plugin {
+  const docs = resolve(__dirname, '../../docs');
+  const types: Record<string, string> = {
+    '.html': 'text/html; charset=utf-8',
+    '.md': 'text/markdown; charset=utf-8',
+    '.svg': 'image/svg+xml',
+    '.png': 'image/png',
+    '.jpg': 'image/jpeg',
+  };
+  let outDir = 'dist';
+  return {
+    name: 'rawla-guide',
+    configResolved(config) {
+      outDir = resolve(config.root, config.build.outDir);
+    },
+    configureServer(server) {
+      server.middlewares.use('/guide', (req, res) => {
+        const path = decodeURIComponent((req.url ?? '/').split('?')[0] ?? '/');
+        // docsify fetches its pages relative to the address, so `/guide` must
+        // become `/guide/`. The mount strips the prefix; `originalUrl` keeps it.
+        const requested = (req as { originalUrl?: string }).originalUrl?.split('?')[0];
+        if (requested === '/guide') {
+          res.statusCode = 302;
+          res.setHeader('Location', '/guide/');
+          return res.end();
+        }
+        const file = normalize(join(docs, path.endsWith('/') ? `${path}index.html` : path));
+        if (!file.startsWith(docs) || !existsSync(file) || !statSync(file).isFile()) {
+          res.statusCode = 404;
+          return res.end('Not found');
+        }
+        res.setHeader('Content-Type', types[extname(file)] ?? 'application/octet-stream');
+        // Pages are fetched by XHR; without this an edit shows only after a hard reload.
+        res.setHeader('Cache-Control', 'no-store');
+        createReadStream(file).pipe(res);
+        return undefined;
+      });
+    },
+    closeBundle() {
+      if (existsSync(docs)) cpSync(docs, join(outDir, 'guide'), { recursive: true });
+    },
+  };
+}
+
 export default defineConfig({
-  plugins: [react(), tailwindcss()],
+  plugins: [react(), tailwindcss(), guide()],
   server: { port: 5173 },
   resolve: {
     /*
