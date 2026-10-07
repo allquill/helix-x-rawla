@@ -50,8 +50,8 @@ bootstrap, and `GET /health` is all `src/controllers/` should ever hold.
 
 The framework arrives as three Nexus packages — `@helix-x/web`,
 `@helix-x/backend`, `@helix-x/core-sdk` — pinned exactly. A framework change
-reaches this app by being **released** there and **bumped** here (all three
-versions together). To try one before it is released, use local mode
+reaches this app by being **released** there and **bumped** here (each of the
+three is versioned on its own). To try one before it is released, use local mode
 (`CLAUDE.md`, "Working against unreleased framework code"), and never commit
 the lockfile it writes.
 

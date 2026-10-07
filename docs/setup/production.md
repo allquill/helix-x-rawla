@@ -111,9 +111,9 @@ and its schema is unchanged.
 
 ## Upgrading and releases
 
-1. **Framework changed?** Bump `@helix-x/web`, `@helix-x/backend` and
-   `@helix-x/core-sdk` to the new release, run `pnpm install`, and commit the
-   lockfile.
+1. **Framework changed?** Bump whichever of `@helix-x/web`, `@helix-x/backend`
+   and `@helix-x/core-sdk` was released to its new version, run `pnpm install`,
+   and commit the lockfile.
 2. **Publish:** `TAG=<version> pnpm docker:push`.
 3. **Point the deployment at it:**
    - Compose: set `BACKEND_TAG` and `FRONTEND_TAG` in `docker/portal/.env`,

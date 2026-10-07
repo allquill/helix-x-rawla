@@ -90,7 +90,7 @@ cache and does not notice the change.
 | Boot fails: `MAIL_TRANSPORT=console` / `PAYMENT_PROVIDER=console is not allowed when NODE_ENV=production` | Configure real mail and Stripe, or use `NODE_ENV=development` for a local stack |
 | `unable to open database file` | The data directory is not writable. The entrypoint fixes ownership when it starts as root, so don't override the user (`--user`) or mount the database read-only. |
 | `Bind for 0.0.0.0:8080 failed: port is already allocated` | Change `FRONTEND_PORT` (or `BACKEND_PORT`) in `.env` |
-| A framework change has no effect in the image | The image installs the framework version in the lockfile. Bump `@helix-x/web`, `@helix-x/backend` and `@helix-x/core-sdk` to the new release, run `pnpm install`, then rebuild. |
+| A framework change has no effect in the image | The image installs the framework version in the lockfile. Bump the released package(s) to the new version, run `pnpm install`, then rebuild. |
 | `pnpm install` or the image build fails with `401` / `ERR_PNPM_FETCH_401` on `@helix-x/…` | The Nexus credentials are missing or wrong. Check the `.npmrc` at the repo root (see [Prerequisites](/setup/deploy-docker.md#prerequisites)); the image build reads it through `NPMRC`. |
 | The image build fails: `secret npmrc: not found` | Build through `pnpm docker:build`, which passes the `.npmrc` as a secret, or add `--secret id=npmrc,src=.npmrc` yourself. |
 | CI fails at "Lockfile resolves the framework from the registry" | `pnpm-lock.yaml` was committed from local mode. Run `pnpm fw:registry` and commit the result. |

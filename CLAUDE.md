@@ -134,7 +134,7 @@ Each is the whole of one framework repo, assembled by that repo's
 `scripts/assemble.mjs`; the internal packages (`@helix-x/plugin-auth`,
 `@helix-x/authentication`, …) are private to the framework and never installed
 here. Versions are `0.0.x`, where a caret matches exactly one version, so
-**every framework release is a version bump here** — all three, together.
+**every framework release is a version bump here** — of whichever of the three was released; each is versioned on its own.
 
 `.npmrc` (git-ignored) maps `@helix-x` to Nexus and carries your credentials;
 CI writes its own, and the Docker builds take it as a BuildKit secret.
