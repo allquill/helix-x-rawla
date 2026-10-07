@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Button } from '@helix-x/design-system';
+import { Button } from '@helix-x/web/design-system';
 import { downloadPortalFile, fetchPortalBlob } from '../lib/files';
 
 export type EventFlyerProps = {

@@ -1,6 +1,6 @@
 import { forwardRef } from 'react';
 import { Link } from 'react-router-dom';
-import { Button, SectionHeading, StepList } from '@helix-x/design-system';
+import { Button, SectionHeading, StepList } from '@helix-x/web/design-system';
 
 export type JoinPathSectionProps = { className?: string };
 

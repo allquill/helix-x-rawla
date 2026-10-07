@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { RouteViewProps } from '@helix-x/web';
-import { Alert, Badge, Button, Card, CardBody, CardHeader, Modal } from '@helix-x/design-system';
+import { Alert, Badge, Button, Card, CardBody, CardHeader, Modal } from '@helix-x/web/design-system';
 import { useEvent, useMyRegistration } from '../hooks/useEvents';
 import {
   PAYMENT_METHOD_LABELS,

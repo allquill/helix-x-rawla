@@ -9,7 +9,7 @@ import {
   FormField,
   Modal,
   TextareaField,
-} from '@helix-x/design-system';
+} from '@helix-x/web/design-system';
 import type { WaiverTemplateDto } from '@helix-x-rawla/client-sdk';
 import { PortalAdminLayout } from '../../../shared/PortalAdminLayout';
 import { useWaiverTemplates } from '../hooks/useEventAdmin';

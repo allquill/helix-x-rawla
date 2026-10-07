@@ -7,7 +7,7 @@ import {
   CardHeader,
   PageHeader,
   Switch,
-} from '@helix-x/design-system';
+} from '@helix-x/web/design-system';
 import { useMyProfile } from '../hooks/useMembers';
 
 /** Fields a member may hide from the directory (MP-19, §3.2). */

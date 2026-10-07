@@ -72,7 +72,7 @@ asymmetry is the security property; do not "simplify" it.
 Node ≥ 22, pnpm 9.12.0. Everything runs through Turborepo from the repo root.
 
 ```bash
-pnpm install
+pnpm install          # needs .npmrc with Nexus credentials (see below)
 pnpm build            # the repo-wide gate
 pnpm typecheck
 pnpm test
@@ -82,6 +82,9 @@ pnpm dev:frontend     # :5173   pnpm dev:backend  # :3001
 pnpm dev:agents       # :2024   pnpm dev:mcp      # :3002
 
 pnpm generate:sdk   # regenerate the API client
+
+pnpm fw:local         # framework from the sibling checkout (see "How the framework arrives")
+pnpm fw:registry      # …and back to the Nexus versions
 
 # a new SQLite DB: every migration by hand, framework track first
 # (apps/backend/migrations/README.md: PostgreSQL, Compose, upgrades, seeding)
@@ -113,33 +116,65 @@ it when a change touches an app turbo would otherwise not visit.
 `turbo.json` gives `typecheck` and `test` a `^build` dependency, because the
 NestJS apps resolve their libraries from `dist/`.
 
-## How the libraries arrive, and why the three differ
+## How the framework arrives
 
 This is the thing to understand before debugging anything that looks like a
 module-resolution problem.
 
-**`@helix-x/web` is linked from source.** Those packages point `main` at `src/`,
-so `apps/frontend` links them from the sibling checkout and editing a plugin
-there is live here — no build, no reinstall.
+**The framework is three ordinary dependencies from Nexus**
+(`packages.allquill.com`), pinned exactly:
+
+| Package | In | Imported as |
+| --- | --- | --- |
+| `@helix-x/web` | `apps/frontend` | `@helix-x/web` (kernel, React, shell), `@helix-x/web/design-system`, `@helix-x/web/react-router`, `@helix-x/web/plugin-auth`, `@helix-x/web/plugin-auth/manifest`, … |
+| `@helix-x/backend` | `apps/backend` | `@helix-x/backend` (every module), or one: `@helix-x/backend/authentication`, `@helix-x/backend/documents`, … |
+| `@helix-x/core-sdk` | `apps/frontend`, `packages/client-sdk` | `@helix-x/core-sdk` |
+
+Each is the whole of one framework repo, assembled by that repo's
+`scripts/assemble.mjs`; the internal packages (`@helix-x/plugin-auth`,
+`@helix-x/authentication`, …) are private to the framework and never installed
+here. Versions are `0.0.x`, where a caret matches exactly one version, so
+**every framework release is a version bump here** — all three, together.
+
+`.npmrc` (git-ignored) maps `@helix-x` to Nexus and carries your credentials;
+CI writes its own, and the Docker builds take it as a BuildKit secret.
+
+**`@helix-x/web` peers everything that must exist once** — `react`,
+`react-dom`, `react-router-dom`, `axios`, `zod`, `react-hook-form`,
+`@hookform/resolvers`, `@helix-x/core-sdk`, `tailwindcss` — so pnpm resolves
+each from `apps/frontend`, and the page has one React, one axios global and one
+`OpenAPI` singleton. That is why those are direct dependencies of
+`apps/frontend`.
 
 **The API client is two packages, and both resolve `dist/`.**
-`@helix-x/core-sdk` is the framework's half, linked from `framework/`, and the six
-`helix-x-web` plugins import it. This repo owns the other half in
-`packages/client-sdk`, whose `src/core/*.ts` re-export `@helix-x/core-sdk` so the
-two share one `OpenAPI` singleton — the root `pnpm.overrides` pins that package to
-one directory so every resolution, the linked plugins included, lands on it.
-`apps/frontend` depends on both. Because they point `main` at `dist/`, a
-regeneration is not live: see [The generated client](#the-generated-client).
+`@helix-x/core-sdk` is the framework's half, and the `@helix-x/web` plugins
+import it. This repo owns the other half in `packages/client-sdk`, whose
+`src/core/*.ts` re-export `@helix-x/core-sdk` so the two share one `OpenAPI`
+singleton. `apps/frontend` depends on both. A regeneration is not live: see
+[The generated client](#the-generated-client).
 
-**`@helix-x/backend` is installed from tarballs.** `pnpm run pack` in that repo
-writes `.artifacts/*.tgz`, which `apps/backend` installs as
-`file:` dependencies, with root `pnpm.overrides` catching the transitive
-`@helix-x/*` deps the umbrella declares.
+### Working against unreleased framework code
 
-The reason is NestJS DI. A symlinked package resolves its `@nestjs/*` **peer**
-dependencies from the library repo, not from here — so the graph gets two
-`TypeOrmModule` classes, `forRoot()` registers into one DI context and a library
-module's `forFeature()` into the other, and the app dies on startup with:
+`.pnpmfile.cjs` points the three packages at the sibling `framework/` checkout,
+and does nothing unless `HELIX_FRAMEWORK` is set:
+
+```bash
+pnpm fw:local      # web + core-sdk linked from source (plugin edits are live),
+                   # backend from its .artifacts tarball
+pnpm fw:packed     # all three from .artifacts tarballs — exactly what a release publishes
+pnpm fw:registry   # back to Nexus: restores the committed lockfile, reinstalls
+```
+
+Both modes need `pnpm run pack` in the framework repo first (in local mode,
+only `helix-x-backend`), and both rewrite `pnpm-lock.yaml` with paths into
+`framework/`. **Never commit that lockfile** — `pnpm check:lockfile` fails on
+it, and so does CI; `pnpm fw:registry` restores the committed one.
+
+**The backend is never linked, even locally.** A symlinked NestJS package
+resolves its `@nestjs/*` **peer** dependencies from the library repo, not from
+here — so the graph gets two `TypeOrmModule` classes, `forRoot()` registers
+into one DI context and a library module's `forFeature()` into the other, and
+the app dies on startup with:
 
 ```
 Nest can't resolve dependencies of the NotificationLogRepository (?).
@@ -149,12 +184,10 @@ in the TypeOrmModule context.
 
 That error means *duplication*, not a missing import. A tarball extracts into
 this repo's own `node_modules`, so peers resolve from here — as a registry
-install will.
-
-**After changing a backend package: `pnpm run pack` there, `pnpm install` here.**
-Skipping it silently keeps running the previous build. (`pnpm run pack`, not
-`pnpm pack` — `pack` is a built-in pnpm command and shadows the script, exiting 0
-without repacking anything.)
+install does. **After changing a backend package in local mode: `pnpm run pack`
+there, `pnpm fw:local` here.** Skipping it silently keeps running the previous
+build. (`pnpm run pack`, not `pnpm pack` — `pack` is a built-in pnpm command
+and shadows the script, exiting 0 without repacking anything.)
 
 ## The generated client
 
@@ -189,8 +222,11 @@ its own checkout for that reason.
 
 ### Deduplication in the frontend
 
-Linking has the same duplication problem in a different costume, and
-`apps/frontend` handles it in four places that must stay in step:
+A registry install resolves every peer of `@helix-x/web` from this app, so
+there is one copy of each by construction. **Local mode** (`pnpm fw:local`)
+links the framework checkout, whose files resolve their imports from *its*
+`node_modules` — the duplication problem in a different costume — and
+`apps/frontend` guards against it in four places that must stay in step:
 
 - `vite.config.ts` → `resolve.dedupe` for `react`, `react-dom`,
   `react-router-dom`, **`axios`**, **`@helix-x-rawla/client-sdk`** and the form
@@ -201,12 +237,12 @@ Linking has the same duplication problem in a different costume, and
 - `tsconfig.json` → `paths` for the type-level half: `react`, `react-dom` and
   `@helix-x-rawla/client-sdk` (`react-router-dom` ships its own types, so it needs no
   entry).
-- `vite.config.ts` → `optimizeDeps.exclude`, which lists every linked
-  `@helix-x/*` package by name so Vite serves its source instead of pre-bundling
-  it. **Adding a plugin to `src/plugins.ts` means adding it here too**, or edits
-  in `helix-x-web` stop being live and you debug a stale bundle.
-  `@helix-x-rawla/client-sdk` is deliberately absent: Vite already declines to
-  pre-bundle a linked package, so listing it would change nothing.
+- `vite.config.ts` → `optimizeDeps.exclude: ['@helix-x/web']`, so Vite serves
+  the framework as-is instead of pre-bundling it. Its plugins load through
+  dynamic `import()`, which the optimizer would discover one at a time and
+  re-bundle mid-session; and in local mode it is what keeps an edit to the
+  linked source live. One entry covers every plugin — a new plugin in
+  `src/plugins.ts` needs no change here.
 
 **Everything in `resolve.dedupe` must be a direct dependency of
 `apps/frontend`.** Dedupe resolves the package from the app root, so deduping
@@ -218,14 +254,14 @@ Duplicate React breaks every hook with "invalid hook call", which says nothing
 about duplication. A duplicate SDK is worse because it fails quietly: the SDK
 exports a mutable `OpenAPI` singleton, so `plugin-auth` sets the base URL and
 bearer token on one copy while every request reads the other — calls go out
-unauthenticated to a relative URL. Since both this app and the `helix-x-web`
-plugins now link the same `helix-x-core-sdk` directory, that duplication cannot
-happen; the entry stays because the failure is silent if it ever does.
+unauthenticated to a relative URL. `@helix-x/web` peers `@helix-x/core-sdk`,
+so a registry install cannot duplicate it; the entry stays because the failure
+is silent if it ever does.
 
 `axios` is the same failure one layer down. `core/request.ts` in the SDK issues
 every call through the **global** axios instance, and `plugin-auth` installs its
-401 → sign-out interceptor on the **global** axios instance — but they resolve
-axios from different checkouts, so without deduping they are two different
+401 → sign-out interceptor on the **global** axios instance — but linked, they
+resolve axios from different checkouts, so without deduping they are two different
 globals and the interceptor is installed on one nobody uses. The symptom is a
 session that expires server-side and never signs the user out: calls just start
 failing.
@@ -244,7 +280,8 @@ Duplicate `@types/react` produces the same class of confusion at compile time:
 identical versions from two pnpm stores are *not* the same type, so library
 source that typechecks in its own repo fails here. Hence the tsconfig `paths`.
 
-All of this is development scaffolding. Published packages need none of it.
+All of this is local-mode scaffolding: a registry install needs none of it,
+and it costs nothing there.
 
 ## The two apps
 
@@ -342,7 +379,7 @@ start** unless both tracks have reached what this build needs
 (`HELIX_SCHEMA_VERSION` from the package, `SCHEMA_VERSION` in
 `src/database/schema-version.ts`), and prints the exact `sqlite3` / `psql`
 commands, with full file names, in order. So a new `@helix-x/backend`
-tarball that adds a framework migration stops the app until it is applied —
+release that adds a framework migration stops the app until it is applied —
 deliberately. `docs/setup/database.md` covers applying them (the short form, with the commands, is `apps/backend/migrations/README.md`).
 
 - The **running app** uses `autoLoadEntities: true`: entities describe the

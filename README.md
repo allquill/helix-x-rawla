@@ -47,24 +47,19 @@ nothing else in the app changes.
 
 ## Quick start
 
-The three library repos must be checked out **beside** this one, and the backend
-packed at least once. Every `@helix-x/*` dependency is a relative path, so the
-directory layout is load-bearing:
+The framework is three ordinary dependencies from Nexus — `@helix-x/web`,
+`@helix-x/backend`, `@helix-x/core-sdk` — so this repo builds on its own. Put
+the registry and your credentials in an `.npmrc` at the repo root (git ignores
+it):
 
 ```
-Work/helix-x/
-  helix-x-web/          React kernel, shell, design system, first-party plugins
-  helix-x-backend/      NestJS modules  (needs `pnpm run pack`)
-  helix-x-core-sdk/   the demo's client — not used here
-  helix-x-rawla/        this repo
+@helix-x:registry=https://packages.allquill.com/repository/allquill-npm/
+//packages.allquill.com/repository/allquill-npm/:_auth=<base64 of user:password>
+always-auth=true
 ```
 
 ```bash
-# from the helix-x/ root
-cd framework/helix-x-backend  && pnpm install && pnpm run pack
-cd ../helix-x-web             && pnpm install
-cd ../helix-x-core-sdk        && pnpm install && pnpm build
-cd ../../example/helix-x-rawla && pnpm install
+pnpm install
 
 cp apps/backend/.env.example  apps/backend/.env
 cp apps/frontend/.env.example apps/frontend/.env
@@ -87,8 +82,11 @@ troubleshooting, is in the guide:
 [`docs/setup/database.md`](docs/setup/database.md). The short version, with the
 commands, is [`apps/backend/migrations/README.md`](apps/backend/migrations/README.md).
 
-`pnpm run pack` — not `pnpm pack`, which is a built-in command that shadows the
-script and exits 0 without repacking.
+**Unreleased framework changes:** check the framework out beside this repo
+(`helix-x/framework/…` next to `helix-x/example/helix-x-rawla`) and run
+`pnpm fw:local`; `pnpm fw:registry` goes back. Never commit the lockfile local
+mode writes — `pnpm check:lockfile` and CI reject it. `CLAUDE.md` has the
+details.
 
 ## Generating the client
 

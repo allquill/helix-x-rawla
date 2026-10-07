@@ -8,7 +8,7 @@ import {
   Modal,
   Switch,
   type DataTableColumn,
-} from '@helix-x/design-system';
+} from '@helix-x/web/design-system';
 import type { AdminEventDto, SlotDto, TicketTypeDto, UpsertSlotDto, UpsertTicketTypeDto } from '@helix-x-rawla/client-sdk';
 import { useEventSlots } from '../../hooks/useEventAdmin';
 import { apiMessage, formatMoney, formatTime, fromLocalInput, toLocalInput } from '../../lib/format';

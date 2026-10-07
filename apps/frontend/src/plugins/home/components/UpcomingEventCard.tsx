@@ -1,6 +1,6 @@
 import { forwardRef } from 'react';
 import { Link } from 'react-router-dom';
-import { Badge, Button } from '@helix-x/design-system';
+import { Badge, Button } from '@helix-x/web/design-system';
 import { useUser } from '@helix-x/web';
 import { useUpcomingEvent } from '../hooks/useUpcomingEvent';
 

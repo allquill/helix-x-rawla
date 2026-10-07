@@ -7,7 +7,7 @@ import {
   FormField,
   RadioGroup,
   Select,
-} from '@helix-x/design-system';
+} from '@helix-x/web/design-system';
 import {
   PortalRegistrationService,
   UpsertChildDto,

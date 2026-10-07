@@ -48,15 +48,22 @@ bootstrap, and `GET /health` is all `src/controllers/` should ever hold.
 
 ## Changing a library while working here
 
+The framework arrives as three Nexus packages — `@helix-x/web`,
+`@helix-x/backend`, `@helix-x/core-sdk` — pinned exactly. A framework change
+reaches this app by being **released** there and **bumped** here (all three
+versions together). To try one before it is released, use local mode
+(`CLAUDE.md`, "Working against unreleased framework code"), and never commit
+the lockfile it writes.
+
 The four sides propagate differently:
 
-- **`helix-x-web`** is linked from source. Edits are live; no build, no
-  reinstall.
-- **`helix-x-backend`** is installed from tarballs. After editing it:
-  `pnpm run pack` there, then `pnpm install` here. **Skipping this silently keeps
-  running the previous build** — the symptom is a change that appears to have no
-  effect. It is `pnpm run pack`: `pack` is a built-in pnpm command that shadows
-  the script and exits 0 without repacking.
+- **`helix-x-web`**, in local mode (`pnpm fw:local`), is linked from source.
+  Edits are live; no build, no reinstall.
+- **`helix-x-backend`**, even in local mode, is installed from a tarball. After
+  editing it: `pnpm run pack` there, then `pnpm fw:local` here. **Skipping this
+  silently keeps running the previous build** — the symptom is a change that
+  appears to have no effect. It is `pnpm run pack`: `pack` is a built-in pnpm
+  command that shadows the script and exits 0 without repacking.
 - **`packages/client-sdk`** (`@helix-x-rawla/client-sdk`) is this app's own half
   of the API client. After adding or changing an endpoint **in this repo**:
   `pnpm generate:sdk` with the backend up on :3001, then restart Vite.
@@ -77,10 +84,12 @@ from both clients — codegen here subtracts it, and core-sdk never saw it.
 ## Module-resolution failures usually mean duplication
 
 Three symptoms, one cause — a package resolved twice, once from a sibling
-checkout and once from here:
+checkout and once from here. A registry install cannot do this (the framework
+peers every such package); local mode can:
 
 - `Nest can't resolve dependencies of the …Repository (?)` — two
-  `TypeOrmModule` classes. The fix is the tarball install, not an import change.
+  `TypeOrmModule` classes: the backend was linked instead of installed from a
+  tarball. The fix is the install, not an import change.
 - "Invalid hook call", or requests going out unauthenticated to a relative URL —
   duplicate `react` or `@helix-x-rawla/client-sdk`. The fix is `resolve.dedupe` in
   `apps/frontend/vite.config.ts` plus the matching tsconfig `paths`.

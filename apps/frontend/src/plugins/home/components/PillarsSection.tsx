@@ -1,5 +1,5 @@
 import { forwardRef } from 'react';
-import { FeatureCard, SectionHeading } from '@helix-x/design-system';
+import { FeatureCard, SectionHeading } from '@helix-x/web/design-system';
 
 export type PillarsSectionProps = { className?: string };
 

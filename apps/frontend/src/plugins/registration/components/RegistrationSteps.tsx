@@ -8,7 +8,7 @@ import {
   RadioGroup,
   Select,
   Textarea,
-} from '@helix-x/design-system';
+} from '@helix-x/web/design-system';
 import { useFieldArray, type UseFormReturn } from 'react-hook-form';
 import { MAX_CHILDREN_AT_JOIN, type RegistrationFields } from '../hooks/useSubmitRegistration';
 

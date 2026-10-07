@@ -12,3 +12,6 @@ data/*.db-*
 
 # Compose stack database (bind-mounted host folder)
 docker/portal/docker-volume/
+
+# Registry credentials (Nexus _auth). Keep tokens in ~/.npmrc or env, never in git.
+.npmrc

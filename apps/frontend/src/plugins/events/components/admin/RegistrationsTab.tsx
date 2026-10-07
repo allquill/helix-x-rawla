@@ -10,7 +10,7 @@ import {
   SearchInput,
   Select,
   type DataTableColumn,
-} from '@helix-x/design-system';
+} from '@helix-x/web/design-system';
 import type { AdminEventDto, AdminEventRegistrationDto, RecordEventPaymentDto } from '@helix-x-rawla/client-sdk';
 import { useEventRegistrations } from '../../hooks/useEventAdmin';
 import {

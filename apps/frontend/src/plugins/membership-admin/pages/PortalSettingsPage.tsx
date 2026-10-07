@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Alert, Button, Card, CardBody, CardHeader, FormField, Switch } from '@helix-x/design-system';
+import { Alert, Button, Card, CardBody, CardHeader, FormField, Switch } from '@helix-x/web/design-system';
 import { PortalAdminLayout } from '../../../shared/PortalAdminLayout';
 import { usePortalSettings } from '../hooks/usePortalSettings';
 

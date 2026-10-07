@@ -7,7 +7,7 @@ import {
   Select,
   Switch,
   TextareaField,
-} from '@helix-x/design-system';
+} from '@helix-x/web/design-system';
 import type { AdminEventDto } from '@helix-x-rawla/client-sdk';
 import { useEventFormOptions } from '../hooks/useEventAdmin';
 import { CATEGORY_OPTIONS, apiMessage, fromLocalInput, toLocalInput } from '../lib/format';

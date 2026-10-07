@@ -1,5 +1,5 @@
 import { forwardRef } from 'react';
-import { Badge } from '@helix-x/design-system';
+import { Badge } from '@helix-x/web/design-system';
 
 export type GateBadgesProps = {
   isEmailVerified: boolean;

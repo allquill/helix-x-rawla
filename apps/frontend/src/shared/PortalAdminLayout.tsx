@@ -1,5 +1,5 @@
 import { forwardRef, type ReactNode } from 'react';
-import { cn, Icon, PageHeader } from '@helix-x/design-system';
+import { cn, Icon, PageHeader } from '@helix-x/web/design-system';
 import { useNavAction, useNavItems } from '@helix-x/web';
 
 export type PortalAdminLayoutProps = {

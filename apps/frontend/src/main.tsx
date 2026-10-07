@@ -1,7 +1,7 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { AppShell, HelixProvider, createApplication } from '@helix-x/web';
-import { createReactRouterAdapter } from '@helix-x/react-router';
+import { createReactRouterAdapter } from '@helix-x/web/react-router';
 
 import { plugins } from './plugins';
 import { registerHostContributions } from './host-contributions';

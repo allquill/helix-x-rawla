@@ -1,6 +1,6 @@
 import { forwardRef } from 'react';
 import { Link } from 'react-router-dom';
-import { DescriptionList, SectionHeading } from '@helix-x/design-system';
+import { DescriptionList, SectionHeading } from '@helix-x/web/design-system';
 import { useUser } from '@helix-x/web';
 
 export type LeadershipSectionProps = { className?: string };

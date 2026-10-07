@@ -1,5 +1,5 @@
 import { forwardRef } from 'react';
-import { DescriptionList, MaskedAsset, SectionHeading } from '@helix-x/design-system';
+import { DescriptionList, MaskedAsset, SectionHeading } from '@helix-x/web/design-system';
 
 export type MemberBenefitsSectionProps = { className?: string };
 

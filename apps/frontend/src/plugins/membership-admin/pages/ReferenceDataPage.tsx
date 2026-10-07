@@ -9,7 +9,7 @@ import {
   Switch,
   Tabs,
   type DataTableColumn,
-} from '@helix-x/design-system';
+} from '@helix-x/web/design-system';
 import {
   PortalAdministrationService,
   type ReferenceListDto,

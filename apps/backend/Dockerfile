@@ -2,18 +2,18 @@
 #
 # Rawla portal API.
 #
-# Build from the rawla repo root (`pnpm docker:build:backend`). The build
-# context is the helix-x WORKSPACE ROOT (../..), not this repo: the backend
-# installs @helix-x/* from ../../framework/helix-x-backend/.artifacts/*.tgz,
-# and those relative paths only resolve if the image mirrors the workspace
-# layout — /ws/framework beside /ws/example/helix-x-rawla.
+# Build from the rawla repo root (`pnpm docker:build:backend`); the build
+# context is this repo and nothing outside it. @helix-x/backend is installed
+# from Nexus like every other dependency, so the image needs no framework
+# checkout.
+#
+# The registry credentials arrive as a BuildKit secret (`--secret id=npmrc`),
+# mounted only for the install steps — never in a layer, never in the image.
+# The secret is a complete .npmrc: the `@helix-x:registry=` line and its auth.
 #
 # Ignore rules live in Dockerfile.dockerignore beside this file: BuildKit reads
 # `<Dockerfile>.dockerignore` in preference to a `.dockerignore` at the context
-# root, which here would be outside this repo.
-#
-# The image bakes whatever tarballs are in .artifacts/ — run `pnpm run pack` in
-# helix-x-backend first, or it ships the previous framework build.
+# root, so the frontend and backend images keep separate allow-lists.
 
 ARG NODE_VERSION=22
 
@@ -26,31 +26,36 @@ RUN apt-get update \
  && rm -rf /var/lib/apt/lists/*
 ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
 RUN corepack enable
-WORKDIR /ws/example/helix-x-rawla
+WORKDIR /app
 
 # Everything pnpm needs to resolve the backend's graph from the lockfile.
 # Every workspace package.json is copied, not just the backend's, so the
 # lockfile's importers match the workspace and --frozen-lockfile holds.
 FROM base AS manifests
-COPY framework/helix-x-backend/.artifacts/ /ws/framework/helix-x-backend/.artifacts/
-COPY example/helix-x-rawla/package.json example/helix-x-rawla/pnpm-lock.yaml example/helix-x-rawla/pnpm-workspace.yaml ./
-COPY example/helix-x-rawla/apps/backend/package.json apps/backend/
-COPY example/helix-x-rawla/apps/frontend/package.json apps/frontend/
-COPY example/helix-x-rawla/packages/client-sdk/package.json packages/client-sdk/
+# .pnpmfile.cjs is a no-op here (HELIX_FRAMEWORK is unset), but the lockfile
+# records its checksum, so --frozen-lockfile needs it present.
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .pnpmfile.cjs ./
+# A lockfile written by `pnpm fw:local` / `fw:packed` points at a framework
+# checkout the image does not have; say so instead of ERR_PNPM_OUTDATED_LOCKFILE.
+COPY scripts/check-lockfile.mjs scripts/
+RUN node scripts/check-lockfile.mjs
+COPY apps/backend/package.json apps/backend/
+COPY apps/frontend/package.json apps/frontend/
+COPY packages/client-sdk/package.json packages/client-sdk/
 
 # ── build: full install, compile ───────────────────────────────────────────
 FROM manifests AS build
 RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
+    --mount=type=secret,id=npmrc,target=/root/.npmrc,required=true \
     pnpm install --frozen-lockfile --filter @helix-x-rawla/backend...
-COPY example/helix-x-rawla/tsconfig.base.json ./
-COPY example/helix-x-rawla/apps/backend/ apps/backend/
+COPY tsconfig.base.json ./
+COPY apps/backend/ apps/backend/
 RUN pnpm --filter @helix-x-rawla/backend build
 
 # ── prod-deps: runtime dependencies only ───────────────────────────────────
-# The framework tarballs are unpacked into node_modules/.pnpm here, so the
-# runtime image needs nothing from /ws/framework.
 FROM manifests AS prod-deps
 RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
+    --mount=type=secret,id=npmrc,target=/root/.npmrc,required=true \
     pnpm install --prod --frozen-lockfile --filter @helix-x-rawla/backend...
 
 # ── runtime ────────────────────────────────────────────────────────────────
@@ -68,12 +73,12 @@ RUN apt-get update \
 
 # Same paths as the build: pnpm's node_modules are relative symlinks into the
 # root store, so the layout has to survive the copy.
-WORKDIR /ws/example/helix-x-rawla/apps/backend
-COPY --from=prod-deps /ws/example/helix-x-rawla/node_modules /ws/example/helix-x-rawla/node_modules
-COPY --from=prod-deps /ws/example/helix-x-rawla/apps/backend/node_modules ./node_modules
-COPY --from=build /ws/example/helix-x-rawla/apps/backend/dist ./dist
-COPY example/helix-x-rawla/apps/backend/package.json ./
-COPY --chmod=0755 example/helix-x-rawla/apps/backend/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+WORKDIR /app/apps/backend
+COPY --from=prod-deps /app/node_modules /app/node_modules
+COPY --from=prod-deps /app/apps/backend/node_modules ./node_modules
+COPY --from=build /app/apps/backend/dist ./dist
+COPY apps/backend/package.json ./
+COPY --chmod=0755 apps/backend/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 
 # The numbered SQL migrations, for applying by hand from inside the container —
 # both tracks, the framework's first:
@@ -81,7 +86,7 @@ COPY --chmod=0755 example/helix-x-rawla/apps/backend/docker-entrypoint.sh /usr/l
 #   sqlite3 -bail /data/helix_x.db < /opt/migrations/rawla/sqlite/000N_*.sql
 # The framework's ship inside @helix-x/backend; -L copies them out of the pnpm
 # store rather than as a symlink into it.
-COPY example/helix-x-rawla/apps/backend/migrations/ /opt/migrations/rawla/
+COPY apps/backend/migrations/ /opt/migrations/rawla/
 RUN cp -rL node_modules/@helix-x/backend/migrations /opt/migrations/helix-x
 
 # SQLite lives on a volume, so the database outlives the container.

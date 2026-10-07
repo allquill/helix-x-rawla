@@ -7,7 +7,7 @@ import {
   Card,
   CardBody,
   CardHeader,
-} from '@helix-x/design-system';
+} from '@helix-x/web/design-system';
 import { CertificatesSection } from '../components/CertificatesSection';
 import { MemberProfileFields } from '../components/MemberProfileFields';
 import { useMember } from '../hooks/useMembers';

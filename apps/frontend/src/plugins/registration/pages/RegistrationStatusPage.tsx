@@ -7,7 +7,7 @@ import {
   Card,
   CardBody,
   CardHeader,
-} from '@helix-x/design-system';
+} from '@helix-x/web/design-system';
 import { GateChecklist } from '../components/GateChecklist';
 import { useDuesCheckout } from '../hooks/useDuesCheckout';
 import { useMembershipStatus } from '../hooks/useMembershipStatus';

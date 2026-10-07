@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Alert, Badge, Button, DataTable, Pagination, type DataTableColumn } from '@helix-x/design-system';
+import { Alert, Badge, Button, DataTable, Pagination, type DataTableColumn } from '@helix-x/web/design-system';
 import type { AdminEventDto } from '@helix-x-rawla/client-sdk';
 import { PortalAdminLayout } from '../../../shared/PortalAdminLayout';
 import { useAdminEvents } from '../hooks/useEventAdmin';

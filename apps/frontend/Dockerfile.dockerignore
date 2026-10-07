@@ -1,53 +1,43 @@
 # Ignore rules for apps/frontend/Dockerfile.
 #
-# Named `Dockerfile.dockerignore` on purpose: the build context is the helix-x
-# workspace root (so ../../framework resolves), and BuildKit reads this file
-# instead of a `.dockerignore` at that root. Paths are relative to the
-# workspace root.
+# Named `Dockerfile.dockerignore` on purpose: BuildKit reads it instead of a
+# `.dockerignore` at the context root, so the frontend and backend images keep
+# separate allow-lists. Paths are relative to this repo's root, the context.
 #
 # Allow-list: exclude everything, then re-include only what the frontend image
-# needs. Local .env files stay out; only the committed .env.production (public
-# VITE_* values, no secrets) goes in.
+# needs. Local .env files and the .npmrc credentials stay out; only the
+# committed .env.production (public VITE_* values, no secrets) goes in.
+# (Registry auth arrives as a BuildKit secret instead.)
 
 *
 
-# helix-x-web: linked from source, installed in the image.
-!framework/helix-x-web
-
-# helix-x-core-sdk: built in the image.
-!framework/helix-x-core-sdk/package.json
-!framework/helix-x-core-sdk/pnpm-lock.yaml
-!framework/helix-x-core-sdk/tsconfig.json
-!framework/helix-x-core-sdk/tsup.config.ts
-!framework/helix-x-core-sdk/src
-
-# Workspace manifests: the lockfile resolves every importer.
-!example/helix-x-rawla/package.json
-!example/helix-x-rawla/pnpm-lock.yaml
-!example/helix-x-rawla/pnpm-workspace.yaml
-!example/helix-x-rawla/tsconfig.base.json
-!example/helix-x-rawla/apps/backend/package.json
+# Workspace manifests: the lockfile resolves every importer. .pnpmfile.cjs is
+# a no-op in the image, but the lockfile records its checksum.
+!package.json
+!pnpm-lock.yaml
+!pnpm-workspace.yaml
+!.pnpmfile.cjs
+!scripts/check-lockfile.mjs
+!tsconfig.base.json
+!apps/backend/package.json
 
 # This app's own client and the frontend.
-!example/helix-x-rawla/packages/client-sdk
-!example/helix-x-rawla/apps/frontend
+!packages/client-sdk
+!apps/frontend
 # The guide, copied into dist/guide/ by `vite build`.
-!example/helix-x-rawla/docs
+!docs
 
 # …minus installs, build output, local env and anything not needed to build.
 **/node_modules
 **/dist
 **/.turbo
 **/coverage
-**/storybook-static
 **/*.tsbuildinfo
 **/.DS_Store
-framework/helix-x-web/docs
-framework/helix-x-web/.claude
-example/helix-x-rawla/apps/frontend/.env
-example/helix-x-rawla/apps/frontend/.env.local
-example/helix-x-rawla/apps/frontend/.env.*.local
-example/helix-x-rawla/apps/frontend/.env.development
-example/helix-x-rawla/apps/frontend/.env.staging
-example/helix-x-rawla/apps/frontend/test
-example/helix-x-rawla/apps/frontend/Dockerfile*
+apps/frontend/.env
+apps/frontend/.env.local
+apps/frontend/.env.*.local
+apps/frontend/.env.development
+apps/frontend/.env.staging
+apps/frontend/test
+apps/frontend/Dockerfile*

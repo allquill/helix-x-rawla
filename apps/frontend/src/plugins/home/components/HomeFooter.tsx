@@ -1,6 +1,6 @@
 import { forwardRef } from 'react';
 import { Link } from 'react-router-dom';
-import { MaskedAsset, SiteFooter } from '@helix-x/design-system';
+import { MaskedAsset, SiteFooter } from '@helix-x/web/design-system';
 
 export type HomeFooterProps = { className?: string };
 

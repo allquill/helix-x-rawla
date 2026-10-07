@@ -13,7 +13,7 @@ import {
   Select,
   Stepper,
   TextareaField,
-} from '@helix-x/design-system';
+} from '@helix-x/web/design-system';
 import type { RegistrationOptionsDto, RegistrationPersonDto } from '@helix-x-rawla/client-sdk';
 import { useRegistrationOptions } from '../hooks/useEvents';
 import { apiMessage, formatAmount, formatMoney, formatTime, formatWhen } from '../lib/format';

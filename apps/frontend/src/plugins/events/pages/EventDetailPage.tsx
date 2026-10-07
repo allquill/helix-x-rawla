@@ -8,7 +8,7 @@ import {
   CardBody,
   CardHeader,
   DescriptionList,
-} from '@helix-x/design-system';
+} from '@helix-x/web/design-system';
 import type { EventDetailDto, EventParticipantDto, EventRegistrationDto } from '@helix-x-rawla/client-sdk';
 import { EventFlyer } from '../components/EventFlyer';
 import { useEvent, useMyRegistration } from '../hooks/useEvents';

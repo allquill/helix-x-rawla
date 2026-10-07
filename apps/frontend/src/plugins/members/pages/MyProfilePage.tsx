@@ -6,7 +6,7 @@ import {
   FormField,
   PageHeader,
   Textarea,
-} from '@helix-x/design-system';
+} from '@helix-x/web/design-system';
 import type { MemberDetailDto, UpdateMemberDto } from '@helix-x-rawla/client-sdk';
 import { CertificatesSection } from '../components/CertificatesSection';
 import { HouseholdSection } from '../components/HouseholdSection';

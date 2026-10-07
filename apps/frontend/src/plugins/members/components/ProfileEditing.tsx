@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Alert, Button, Card, CardBody, CardHeader, Modal } from '@helix-x/design-system';
+import { Alert, Button, Card, CardBody, CardHeader, Modal } from '@helix-x/web/design-system';
 
 /**
  * The one editing pattern on My Profile: every section is read-only, and its

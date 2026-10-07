@@ -7,7 +7,7 @@ import {
   PageHeader,
   Pagination,
   Tabs,
-} from '@helix-x/design-system';
+} from '@helix-x/web/design-system';
 import type { EventSummaryDto } from '@helix-x-rawla/client-sdk';
 import { EventThumbnail, THUMBNAIL_FRAME } from '../components/EventThumbnail';
 import { useEvents, type EventScope } from '../hooks/useEvents';

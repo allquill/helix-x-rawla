@@ -1,6 +1,6 @@
 import { forwardRef, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Button, MaskedAsset, PageHero } from '@helix-x/design-system';
+import { Button, MaskedAsset, PageHero } from '@helix-x/web/design-system';
 import { useUser } from '@helix-x/web';
 import { PortalMembersService } from '@helix-x-rawla/client-sdk';
 

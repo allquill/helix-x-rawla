@@ -1,38 +1,38 @@
 # Ignore rules for apps/backend/Dockerfile.
 #
-# Named `Dockerfile.dockerignore` on purpose: the build context is the helix-x
-# workspace root (so ../../framework resolves), and BuildKit reads this file
-# instead of a `.dockerignore` at that root. Paths are relative to the
-# workspace root.
+# Named `Dockerfile.dockerignore` on purpose: BuildKit reads it instead of a
+# `.dockerignore` at the context root, so the frontend and backend images keep
+# separate allow-lists. Paths are relative to this repo's root, the context.
 #
 # Allow-list: exclude everything, then re-include only what the backend image
 # needs. Anything new has to be added here deliberately — which is how local
-# .env secrets and the SQLite database stay out of the image.
+# .env secrets, the .npmrc credentials and the SQLite database stay out of the
+# image. (Registry auth arrives as a BuildKit secret instead.)
 
 *
 
-# Framework packages, as packed tarballs (`pnpm run pack` in helix-x-backend).
-!framework/helix-x-backend/.artifacts/*.tgz
-
-# Workspace manifests: the lockfile resolves every importer.
-!example/helix-x-rawla/package.json
-!example/helix-x-rawla/pnpm-lock.yaml
-!example/helix-x-rawla/pnpm-workspace.yaml
-!example/helix-x-rawla/tsconfig.base.json
-!example/helix-x-rawla/apps/frontend/package.json
-!example/helix-x-rawla/packages/client-sdk/package.json
+# Workspace manifests: the lockfile resolves every importer. .pnpmfile.cjs is
+# a no-op in the image, but the lockfile records its checksum.
+!package.json
+!pnpm-lock.yaml
+!pnpm-workspace.yaml
+!.pnpmfile.cjs
+!scripts/check-lockfile.mjs
+!tsconfig.base.json
+!apps/frontend/package.json
+!packages/client-sdk/package.json
 
 # The backend itself.
-!example/helix-x-rawla/apps/backend
+!apps/backend
 
 # …minus local state, build output and anything that is not source.
-example/helix-x-rawla/apps/backend/node_modules
-example/helix-x-rawla/apps/backend/dist
-example/helix-x-rawla/apps/backend/data
-example/helix-x-rawla/apps/backend/coverage
-example/helix-x-rawla/apps/backend/.turbo
-example/helix-x-rawla/apps/backend/.env
-example/helix-x-rawla/apps/backend/.env.*
-example/helix-x-rawla/apps/backend/**/*.tsbuildinfo
-example/helix-x-rawla/apps/backend/**/*.spec.ts
+apps/backend/node_modules
+apps/backend/dist
+apps/backend/data
+apps/backend/coverage
+apps/backend/.turbo
+apps/backend/.env
+apps/backend/.env.*
+apps/backend/**/*.tsbuildinfo
+apps/backend/**/*.spec.ts
 **/.DS_Store

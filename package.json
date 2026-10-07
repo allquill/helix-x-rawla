@@ -22,33 +22,26 @@
     "seed:sample": "node scripts/seed-sample-data.mjs",
     "guide": "python3 scripts/serve-docs.py",
     "docker:build": "pnpm docker:build:backend && pnpm docker:build:frontend",
-    "docker:build:backend": "docker build -f apps/backend/Dockerfile -t helix-x-rawla-backend:${TAG:-local} ../..",
-    "docker:build:frontend": "docker build -f apps/frontend/Dockerfile -t helix-x-rawla-frontend:${TAG:-local} ../..",
+    "docker:build:backend": "node scripts/check-lockfile.mjs && docker build --secret id=npmrc,src=${NPMRC:-.npmrc} -f apps/backend/Dockerfile -t helix-x-rawla-backend:${TAG:-local} .",
+    "docker:build:frontend": "node scripts/check-lockfile.mjs && docker build --secret id=npmrc,src=${NPMRC:-.npmrc} -f apps/frontend/Dockerfile -t helix-x-rawla-frontend:${TAG:-local} .",
     "docker:builder": "docker buildx inspect rawla-builder >/dev/null 2>&1 || docker buildx create --name rawla-builder --driver docker-container",
     "docker:push": "pnpm docker:push:backend && pnpm docker:push:frontend",
-    "docker:push:backend": "pnpm docker:builder && docker buildx build --builder rawla-builder --platform ${DOCKER_PLATFORMS:-linux/amd64,linux/arm64} -f apps/backend/Dockerfile -t ${DOCKER_REGISTRY:-docker.allquill.com}/helix-x-rawla-backend:${TAG:-local} --push ../..",
-    "docker:push:frontend": "pnpm docker:builder && docker buildx build --builder rawla-builder --platform ${DOCKER_PLATFORMS:-linux/amd64,linux/arm64} -f apps/frontend/Dockerfile -t ${DOCKER_REGISTRY:-docker.allquill.com}/helix-x-rawla-frontend:${TAG:-local} --push ../..",
+    "docker:push:backend": "node scripts/check-lockfile.mjs && pnpm docker:builder && docker buildx build --builder rawla-builder --platform ${DOCKER_PLATFORMS:-linux/amd64,linux/arm64} --secret id=npmrc,src=${NPMRC:-.npmrc} -f apps/backend/Dockerfile -t ${DOCKER_REGISTRY:-docker.allquill.com}/helix-x-rawla-backend:${TAG:-local} --push .",
+    "docker:push:frontend": "node scripts/check-lockfile.mjs && pnpm docker:builder && docker buildx build --builder rawla-builder --platform ${DOCKER_PLATFORMS:-linux/amd64,linux/arm64} --secret id=npmrc,src=${NPMRC:-.npmrc} -f apps/frontend/Dockerfile -t ${DOCKER_REGISTRY:-docker.allquill.com}/helix-x-rawla-frontend:${TAG:-local} --push .",
     "docker:up": "docker compose -f docker/portal/docker-compose.yml up -d",
     "docker:down": "docker compose -f docker/portal/docker-compose.yml down",
     "docker:logs": "docker compose -f docker/portal/docker-compose.yml logs -f",
-    "clean": "rm -rf node_modules **/node_modules **/dist **/*.tsbuildinfo .turbo **/.turbo"
+    "clean": "rm -rf node_modules **/node_modules **/dist **/*.tsbuildinfo .turbo **/.turbo",
+    "fw:local": "HELIX_FRAMEWORK=local pnpm install --no-frozen-lockfile",
+    "fw:packed": "HELIX_FRAMEWORK=packed pnpm install --no-frozen-lockfile",
+    "fw:registry": "git checkout -- pnpm-lock.yaml && pnpm install",
+    "check:lockfile": "node scripts/check-lockfile.mjs"
   },
   "devDependencies": {
     "turbo": "^2.10.12",
     "typescript": "^5.7.3"
   },
   "pnpm": {
-    "overrides": {
-      "@helix-x/authentication": "file:../../framework/helix-x-backend/.artifacts/helix-x-authentication-0.1.0.tgz",
-      "@helix-x/backend": "file:../../framework/helix-x-backend/.artifacts/helix-x-backend-0.1.0.tgz",
-      "@helix-x/contact": "file:../../framework/helix-x-backend/.artifacts/helix-x-contact-0.1.0.tgz",
-      "@helix-x/core-sdk": "link:../../framework/helix-x-core-sdk",
-      "@helix-x/documents": "file:../../framework/helix-x-backend/.artifacts/helix-x-documents-0.1.0.tgz",
-      "@helix-x/navigation": "file:../../framework/helix-x-backend/.artifacts/helix-x-navigation-0.1.0.tgz",
-      "@helix-x/nest-oauth-provider": "file:../../framework/helix-x-backend/.artifacts/helix-x-nest-oauth-provider-0.1.0.tgz",
-      "@helix-x/nestjs-ai": "file:../../framework/helix-x-backend/.artifacts/helix-x-nestjs-ai-0.1.0.tgz",
-      "@helix-x/notifications": "file:../../framework/helix-x-backend/.artifacts/helix-x-notifications-0.1.0.tgz"
-    },
     "allowedDeprecatedVersions": {
       "glob": "10.5.0"
     },

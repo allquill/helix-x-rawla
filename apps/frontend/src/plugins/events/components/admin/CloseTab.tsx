@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Alert, Badge, Button, Card, CardBody, CardHeader, Checkbox, FormField, Modal } from '@helix-x/design-system';
+import { Alert, Badge, Button, Card, CardBody, CardHeader, Checkbox, FormField, Modal } from '@helix-x/web/design-system';
 import type { AdminEventDto, VolunteerHoursEntryDto } from '@helix-x-rawla/client-sdk';
 import { useEventClose } from '../../hooks/useEventAdmin';
 import { apiMessage, formatAmount, formatHours } from '../../lib/format';

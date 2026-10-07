@@ -49,25 +49,25 @@ backend never needs to be public.
   file from the host, or **`psql`** for PostgreSQL. Neither is needed if you
   run them inside a container: the backend image ships `sqlite3`, and every
   Postgres image ships `psql`.
-- **The workspace layout.** The images are built from the **helix-x workspace
-  root**, not from this repository. The apps reach the framework through
-  relative paths into sibling checkouts, so this layout must exist:
+- **Access to the Nexus npm registry.** The framework (`@helix-x/web`,
+  `@helix-x/backend`, `@helix-x/core-sdk`) is installed from
+  `packages.allquill.com` like any other dependency, so the image build needs
+  credentials. They go in an `.npmrc` at the repo root, which git ignores:
 
   ```
-  helix-x/
-    framework/helix-x-backend    (packed tarballs in .artifacts/)
-    framework/helix-x-web        (linked from source)
-    framework/helix-x-core-sdk   (built inside the image)
-    example/helix-x-rawla        ← this repo; run every command here
+  @helix-x:registry=https://packages.allquill.com/repository/allquill-npm/
+  //packages.allquill.com/repository/allquill-npm/:_auth=<base64 of user:password>
+  always-auth=true
   ```
 
-- **Fresh framework tarballs.** The backend image installs `@helix-x/*` from
-  `framework/helix-x-backend/.artifacts/*.tgz`. After any change there, run
-  `pnpm run pack` in `framework/helix-x-backend`, or the image ships the
-  previous framework build. Use `pnpm run pack`, not `pnpm pack`: the built-in
-  command shadows the script and repacks nothing.
-- **Registry access** when you publish or pull:
+  `pnpm docker:build` hands that file to the build as a BuildKit secret, which
+  is mounted only while dependencies install. It never ends up in an image
+  layer. To use a different file, set `NPMRC=/path/to/.npmrc`.
+- **Image registry access** when you publish or pull:
   `docker login docker.allquill.com`.
+
+Everything else comes from this repository: it is the whole build context,
+and no other checkout needs to exist.
 
 ---
 
@@ -81,9 +81,9 @@ native modules `bcrypt` and `better-sqlite3` ship glibc prebuilds.
 | Stage | Does |
 |---|---|
 | `base` | Adds a toolchain (`python3 make g++`) for native-module fallbacks, and enables corepack (`COREPACK_ENABLE_DOWNLOAD_PROMPT=0`, so the pinned pnpm installs unattended) |
-| `manifests` | Copies the framework tarballs, the lockfile and every workspace `package.json` |
-| `build` | Runs `pnpm install --frozen-lockfile`, then `nest build` |
-| `prod-deps` | Installs production dependencies only. The framework tarballs are unpacked here, so the runtime image needs no framework checkout. |
+| `manifests` | Copies the lockfile, `.pnpmfile.cjs` and every workspace `package.json` |
+| `build` | Runs `pnpm install --frozen-lockfile` (registry credentials from the `npmrc` secret), then `nest build` |
+| `prod-deps` | Installs production dependencies only |
 | `runtime` | Copies `dist`, production `node_modules`, the entrypoint and both migration tracks: this app's to `/opt/migrations/rawla`, the framework's (from the installed `@helix-x/backend`) to `/opt/migrations/helix-x` |
 
 **Entrypoint order** (`docker-entrypoint.sh`):
@@ -105,11 +105,11 @@ uses it to start the frontend only after the backend is ready.
 ### Frontend (`apps/frontend/Dockerfile`)
 
 - **Build stage:**
-  - Installs `framework/helix-x-web`, which has its own pnpm version and
-    lockfile. The linked plugins resolve their dependencies, and the design
-    system's Tailwind, from there.
-  - Builds `@helix-x/core-sdk` and this repo's `client-sdk`, then runs
-    `vite build` in production mode.
+  - Installs dependencies from the lockfile, the framework included
+    (registry credentials from the `npmrc` secret).
+  - Builds this repo's `client-sdk`, then runs `vite build` in production
+    mode. The framework's Tailwind classes come from the theme it imports
+    from `@helix-x/web`.
 - **Runtime:** `nginx:1.27-alpine`, which provides:
   - `listen ${PORT}` (default 80)
   - an SPA fallback, so `/join` and `/members/me` serve `index.html`
@@ -122,15 +122,15 @@ uses it to start the frontend only after the backend is ready.
 
 ### Build context and ignore files
 
-Both builds use the workspace root (`../..`) as the context. A plain
-`.dockerignore` would have to sit at that root, outside this repo. BuildKit
-instead reads **`<Dockerfile>.dockerignore` next to each Dockerfile**:
+Both builds use this repo's root as the context. Rather than one shared
+`.dockerignore` there, BuildKit reads **`<Dockerfile>.dockerignore` next to
+each Dockerfile**, so each image keeps its own list:
 `apps/backend/Dockerfile.dockerignore` and
 `apps/frontend/Dockerfile.dockerignore`.
 
 Both are **allow-lists**: they ignore `*`, then re-include only what that
-image needs. Local `.env` files, `data/`, `node_modules` and `dist` never enter
-a build. The only env file in the frontend image is the committed
+image needs. Local `.env` files, the `.npmrc` credentials, `data/`,
+`node_modules` and `dist` never enter a build. The only env file in the frontend image is the committed
 `.env.production`, which holds public `VITE_*` values only.
 
 ---
@@ -190,7 +190,6 @@ docker buildx imagetools inspect docker.allquill.com/helix-x-rawla-backend:0.1.0
 ### Release flow
 
 ```bash
-(cd ../../framework/helix-x-backend && pnpm run pack)   # if the framework changed
 TAG=0.2.0 pnpm docker:push
 ```
 

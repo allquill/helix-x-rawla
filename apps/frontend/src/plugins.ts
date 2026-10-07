@@ -1,14 +1,14 @@
 import type { PluginRegistration } from '@helix-x/web';
 
-import { manifest as themeManifest } from '@helix-x/plugin-theme/manifest';
-import { manifest as authManifest } from '@helix-x/plugin-auth/manifest';
-import { manifest as navigationManifest } from '@helix-x/plugin-navigation/manifest';
-import { manifest as adminManifest } from '@helix-x/plugin-admin/manifest';
-import { manifest as oauthManifest } from '@helix-x/plugin-oauth/manifest';
-import { manifest as reportsManifest } from '@helix-x/plugin-reports/manifest';
-import { manifest as contactManifest } from '@helix-x/plugin-contact/manifest';
-import { manifest as documentsManifest } from '@helix-x/plugin-documents/manifest';
-import { manifest as devtoolsManifest } from '@helix-x/plugin-devtools/manifest';
+import { manifest as themeManifest } from '@helix-x/web/plugin-theme/manifest';
+import { manifest as authManifest } from '@helix-x/web/plugin-auth/manifest';
+import { manifest as navigationManifest } from '@helix-x/web/plugin-navigation/manifest';
+import { manifest as adminManifest } from '@helix-x/web/plugin-admin/manifest';
+import { manifest as oauthManifest } from '@helix-x/web/plugin-oauth/manifest';
+import { manifest as reportsManifest } from '@helix-x/web/plugin-reports/manifest';
+import { manifest as contactManifest } from '@helix-x/web/plugin-contact/manifest';
+import { manifest as documentsManifest } from '@helix-x/web/plugin-documents/manifest';
+import { manifest as devtoolsManifest } from '@helix-x/web/plugin-devtools/manifest';
 
 import { manifest as homeManifest } from './plugins/home/manifest';
 import { manifest as registrationManifest } from './plugins/registration/manifest';
@@ -36,44 +36,44 @@ export const plugins: PluginRegistration[] = [
   // Infrastructure. `onStartup`, so it settles before the shell paints.
   {
     manifest: themeManifest,
-    load: () => import('@helix-x/plugin-theme'),
+    load: () => import('@helix-x/web/plugin-theme'),
   },
   {
     manifest: authManifest,
-    load: () => import('@helix-x/plugin-auth'),
+    load: () => import('@helix-x/web/plugin-auth'),
   },
   // Depends on helix.auth via manifest.dependencies, so registration order here
   // is documentation rather than sequencing.
   {
     manifest: navigationManifest,
-    load: () => import('@helix-x/plugin-navigation'),
+    load: () => import('@helix-x/web/plugin-navigation'),
   },
   {
     manifest: adminManifest,
-    load: () => import('@helix-x/plugin-admin'),
+    load: () => import('@helix-x/web/plugin-admin'),
   },
   {
     manifest: oauthManifest,
-    load: () => import('@helix-x/plugin-oauth'),
+    load: () => import('@helix-x/web/plugin-oauth'),
     // Feature flags are `enabled`, not a separate registry. A disabled plugin
     // is parked in the `disabled` state and never loads.
     enabled: import.meta.env.VITE_FEATURE_OAUTH !== 'false',
   },
   {
     manifest: reportsManifest,
-    load: () => import('@helix-x/plugin-reports'),
+    load: () => import('@helix-x/web/plugin-reports'),
     enabled: import.meta.env.VITE_FEATURE_REPORTS !== 'false',
   },
   {
     manifest: contactManifest,
-    load: () => import('@helix-x/plugin-contact'),
+    load: () => import('@helix-x/web/plugin-contact'),
     // Public Contact Us form. The recipient is backend configuration
     // (CONTACT_TO_EMAIL); switching the plugin off only removes the form.
     enabled: import.meta.env.VITE_FEATURE_CONTACT !== 'false',
   },
   {
     manifest: documentsManifest,
-    load: () => import('@helix-x/plugin-documents'),
+    load: () => import('@helix-x/web/plugin-documents'),
     // My files and Shared with me. Needs the documents:* grants from the
     // backend's migration 0003 — and a fresh sign-in, since they ride in the JWT.
     enabled: import.meta.env.VITE_FEATURE_DOCUMENTS !== 'false',
@@ -132,7 +132,7 @@ export const plugins: PluginRegistration[] = [
   },
   {
     manifest: devtoolsManifest,
-    load: () => import('@helix-x/plugin-devtools'),
+    load: () => import('@helix-x/web/plugin-devtools'),
     // Dev mode: the inspector that says which plugin contributed what.
     //
     // Opt-*in* (`=== 'true'`), unlike every flag above, which are opt-out. It

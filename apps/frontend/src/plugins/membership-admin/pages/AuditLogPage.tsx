@@ -5,7 +5,7 @@ import {
   Pagination,
   SearchInput,
   type DataTableColumn,
-} from '@helix-x/design-system';
+} from '@helix-x/web/design-system';
 import { PortalAdministrationService, type AuditLogEntryDto } from '@helix-x-rawla/client-sdk';
 import { PortalAdminLayout } from '../../../shared/PortalAdminLayout';
 

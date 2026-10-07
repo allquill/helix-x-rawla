@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Alert, Button, FileDropzone, FormField, Modal, Select } from '@helix-x/design-system';
+import { Alert, Button, FileDropzone, FormField, Modal, Select } from '@helix-x/web/design-system';
 import { useUser } from '@helix-x/web';
 import { PortalCertificatesService, type CertificateDto } from '@helix-x-rawla/client-sdk';
 import { downloadPortalFile } from '../lib/files';

@@ -12,7 +12,7 @@ import {
   Select,
   Switch,
   type DataTableColumn,
-} from '@helix-x/design-system';
+} from '@helix-x/web/design-system';
 import type { ChapterDto, StateChapterMappingDto } from '@helix-x-rawla/client-sdk';
 import { PortalAdminLayout } from '../../../shared/PortalAdminLayout';
 import { useChapters } from '../hooks/useChapters';

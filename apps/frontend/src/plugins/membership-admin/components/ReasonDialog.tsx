@@ -1,5 +1,5 @@
 import { forwardRef, useEffect, useState } from 'react';
-import { Alert, Button, Modal, Textarea } from '@helix-x/design-system';
+import { Alert, Button, Modal, Textarea } from '@helix-x/web/design-system';
 
 export type ReasonDialogProps = {
   open: boolean;

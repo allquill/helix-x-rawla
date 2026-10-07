@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { MaskedAsset } from '@helix-x/design-system';
+import { MaskedAsset } from '@helix-x/web/design-system';
 import { fetchPortalBlob } from '../lib/files';
 import { CATEGORY_LABELS } from '../lib/format';
 

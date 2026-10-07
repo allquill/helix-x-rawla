@@ -90,7 +90,11 @@ cache and does not notice the change.
 | Boot fails: `MAIL_TRANSPORT=console` / `PAYMENT_PROVIDER=console is not allowed when NODE_ENV=production` | Configure real mail and Stripe, or use `NODE_ENV=development` for a local stack |
 | `unable to open database file` | The data directory is not writable. The entrypoint fixes ownership when it starts as root, so don't override the user (`--user`) or mount the database read-only. |
 | `Bind for 0.0.0.0:8080 failed: port is already allocated` | Change `FRONTEND_PORT` (or `BACKEND_PORT`) in `.env` |
-| A framework change has no effect in the image | The `.artifacts/` tarballs are stale. Run `pnpm run pack` in `framework/helix-x-backend`, then rebuild. |
+| A framework change has no effect in the image | The image installs the framework version in the lockfile. Bump `@helix-x/web`, `@helix-x/backend` and `@helix-x/core-sdk` to the new release, run `pnpm install`, then rebuild. |
+| `pnpm install` or the image build fails with `401` / `ERR_PNPM_FETCH_401` on `@helix-x/…` | The Nexus credentials are missing or wrong. Check the `.npmrc` at the repo root (see [Prerequisites](/setup/deploy-docker.md#prerequisites)); the image build reads it through `NPMRC`. |
+| The image build fails: `secret npmrc: not found` | Build through `pnpm docker:build`, which passes the `.npmrc` as a secret, or add `--secret id=npmrc,src=.npmrc` yourself. |
+| CI fails at "Lockfile resolves the framework from the registry" | `pnpm-lock.yaml` was committed from local mode. Run `pnpm fw:registry` and commit the result. |
+| `pnpm docker:build` stops with "pnpm-lock.yaml points @helix-x/* at a local checkout", or the image build fails with `ERR_PNPM_OUTDATED_LOCKFILE` | The lockfile was written in local mode (`pnpm fw:local` / `fw:packed`), which the image cannot use. Run `pnpm fw:registry` (the framework version must be on Nexus), then build again. |
 | A newly granted role has no effect | Roles are baked into the JWT at login. Sign out and back in. |
 | The contact form rate-limits everyone together | `TRUST_PROXY` is unset or too low for the number of proxies |
 | The frontend returns 502 on `/api/*` | The backend is down or unreachable. Check `BACKEND_UPSTREAM`, the shared network, and `docker compose logs backend`. |
@@ -99,6 +103,7 @@ cache and does not notice the change.
 | Compose backend ignores your Postgres settings / still uses SQLite | Put `DB_TYPE` and `DATABASE_URL` in `docker/portal/.env` (the only file the stack reads), then `pnpm docker:up` to recreate the container. |
 | Compose backend: `ECONNREFUSED 127.0.0.1:5432` / `::1:5432` | `DATABASE_URL` says `localhost`, which inside the container is the container itself. Use `host.docker.internal` for a database on the Docker host. |
 | `DATABASE_URL is required when DB_TYPE=postgres` | Set `DATABASE_URL` in `.env`: for Compose's `postgres` profile, `postgres://rawla:rawla@postgres:5432/rawla` |
+| Compose backend: `Database schema is not ready … has never been migrated`, although `docker-volume/data/helix_x.db` is migrated, and the printed path is relative (`"data/helix_x.db"`) | `DB_PATH` in `docker/portal/.env` is a relative path, so the database is created inside the container instead of on the `/data` volume, and is lost on every recreate. Delete the line; Compose sets `/data/helix_x.db`. Then `docker compose up -d`. **Don't apply the migrations it lists** — they would go into that throwaway file. |
 | Backend exits: `Database schema is not ready` | A numbered migration hasn't been applied. The message lists the exact files and commands, in order ([Database and migrations](/setup/database.md)). With Compose's restart policy it retries until you apply them. |
 | `SqliteError: disk I/O error`; `integrity_check` shows broken indexes | Something on the host opened the Compose SQLite file while the stack ran. Stop the stack, recreate the file from the migrations, and access it only through the container from then on. |
 | `The server does not support SSL connections` | `DB_SSL=true`/`no-verify` against a server without SSL (e.g. local Postgres). Set `DB_SSL=` (empty). |

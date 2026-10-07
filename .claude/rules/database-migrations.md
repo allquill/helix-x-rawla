@@ -29,7 +29,7 @@ describe the schema but no longer create it.
 
 | The change | Where it goes |
 |---|---|
-| A column, index or entity in `framework/helix-x-backend` | **the framework's track**: a migration pair and `HELIX_SCHEMA_VERSION` bump there, `pnpm run pack`, reinstall here. Never a file in this folder. |
+| A column, index or entity in `framework/helix-x-backend` | **the framework's track**: a migration pair and `HELIX_SCHEMA_VERSION` bump there, then a release and a version bump here. Never a file in this folder. |
 | A community-core entity, `audit_logs` | **here** |
 | A portal permission, role or grant, even though `roles`/`permissions` are framework tables | **here**, rows keyed by name |
 | Chapters, state map, navigation overrides, portal settings, reference lists **and their values**, the first-install accounts | **here** |
@@ -83,7 +83,7 @@ the author's machine and fails for the next person who deploys it.
   It prints the SQL that would make that database match the entities (the
   framework's `HELIX_ENTITIES` and this app's, via `src/database/entities.ts`).
   Copy what belongs to your change. If it shows framework tables, the
-  installed tarball is ahead of the database: apply the framework's pending
+  installed `@helix-x/backend` is ahead of the database: apply the framework's pending
   files first rather than copying their DDL here. On SQLite a column change is often a whole
   table rebuild (`CREATE TABLE "temporary_…"`, copy, drop, rename), so keep
   that exact sequence.
@@ -123,8 +123,8 @@ One entity serves both drivers:
   cannot see them and silently drafts nothing.
 - **Framework entities** (`framework/helix-x-backend`) follow the same rules,
   but their migration pair lives in that repo (`packages/backend/migrations/`,
-  checked by its `pnpm db:check`), not here. Change them there,
-  `pnpm run pack`, reinstall here, then apply the new framework file to your
+  checked by its `pnpm db:check`), not here. Change them there, release,
+  bump `@helix-x/backend` here, then apply the new framework file to your
   databases.
 
 ## 4. Configuration and access ship in migrations; test data never does

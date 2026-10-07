@@ -7,7 +7,7 @@ import {
   CardHeader,
   FileDropzone,
   FormField,
-} from '@helix-x/design-system';
+} from '@helix-x/web/design-system';
 import type { AdminEventDto, UpdateEventDto } from '@helix-x-rawla/client-sdk';
 import { useEventNotifications } from '../../hooks/useEventAdmin';
 import { apiMessage } from '../../lib/format';

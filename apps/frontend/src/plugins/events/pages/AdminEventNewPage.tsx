@@ -1,5 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom';
-import { Button, Card, CardBody } from '@helix-x/design-system';
+import { Button, Card, CardBody } from '@helix-x/web/design-system';
 import type { CreateEventDto } from '@helix-x-rawla/client-sdk';
 import { PortalAdminLayout } from '../../../shared/PortalAdminLayout';
 import { EventForm } from '../components/EventForm';

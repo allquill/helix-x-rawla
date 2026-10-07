@@ -7,7 +7,7 @@ import {
   Select,
   Tabs,
   type DataTableColumn,
-} from '@helix-x/design-system';
+} from '@helix-x/web/design-system';
 import type { TopVolunteerDto } from '@helix-x-rawla/client-sdk';
 import { useTopVolunteers, type VolunteerGroup, type VolunteerMetric } from '../hooks/useTopVolunteers';
 

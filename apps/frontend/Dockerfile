@@ -3,13 +3,15 @@
 # Rawla portal frontend: the Vite bundle, served by nginx, which also proxies
 # /api to the backend (BACKEND_UPSTREAM).
 #
-# Build from the rawla repo root (`pnpm docker:build:frontend`). The build
-# context is the helix-x WORKSPACE ROOT (../..), not this repo: the app links
-# @helix-x/* from ../../framework/helix-x-web (source) and
-# ../../framework/helix-x-core-sdk, and styles.css points Tailwind at
-# ../../../../../framework/helix-x-web. The image mirrors the workspace layout —
-# /ws/framework beside /ws/example/helix-x-rawla — so every one of those
-# relative paths resolves unchanged.
+# Build from the rawla repo root (`pnpm docker:build:frontend`); the build
+# context is this repo and nothing outside it. @helix-x/web and
+# @helix-x/core-sdk are installed from Nexus like every other dependency, and
+# Tailwind finds the framework's classes through the theme it imports from
+# @helix-x/web, so the image needs no framework checkout.
+#
+# The registry credentials arrive as a BuildKit secret (`--secret id=npmrc`),
+# mounted only for the install step — never in a layer, never in the image.
+# The secret is a complete .npmrc: the `@helix-x:registry=` line and its auth.
 #
 # Ignore rules live in Dockerfile.dockerignore beside this file (see the backend
 # Dockerfile for why it is not a plain .dockerignore).
@@ -22,38 +24,28 @@ FROM node:${NODE_VERSION}-bookworm-slim AS build
 ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
 RUN corepack enable
 
-# helix-x-web is linked from source, and a linked package resolves its own
-# imports (and the design system's Tailwind CSS) from ITS node_modules — so the
-# framework checkout needs its own install. Corepack picks the pnpm version its
-# package.json pins, which differs from this repo's.
-WORKDIR /ws/framework/helix-x-web
-COPY framework/helix-x-web/ ./
-RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
-    pnpm install --frozen-lockfile
-
-# @helix-x/core-sdk is consumed from its dist/, built here rather than trusted
-# from the host.
-WORKDIR /ws/framework/helix-x-core-sdk
-COPY framework/helix-x-core-sdk/ ./
-RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
-    pnpm install --frozen-lockfile \
- && pnpm build
-
 # This app: manifests first so the install layer caches across source edits.
 # Every workspace package.json is copied so the lockfile's importers match.
-WORKDIR /ws/example/helix-x-rawla
-COPY example/helix-x-rawla/package.json example/helix-x-rawla/pnpm-lock.yaml example/helix-x-rawla/pnpm-workspace.yaml ./
-COPY example/helix-x-rawla/apps/frontend/package.json apps/frontend/
-COPY example/helix-x-rawla/apps/backend/package.json apps/backend/
-COPY example/helix-x-rawla/packages/client-sdk/package.json packages/client-sdk/
+# .pnpmfile.cjs is a no-op here (HELIX_FRAMEWORK is unset), but the lockfile
+# records its checksum, so --frozen-lockfile needs it present.
+WORKDIR /app
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .pnpmfile.cjs ./
+# A lockfile written by `pnpm fw:local` / `fw:packed` points at a framework
+# checkout the image does not have; say so instead of ERR_PNPM_OUTDATED_LOCKFILE.
+COPY scripts/check-lockfile.mjs scripts/
+RUN node scripts/check-lockfile.mjs
+COPY apps/frontend/package.json apps/frontend/
+COPY apps/backend/package.json apps/backend/
+COPY packages/client-sdk/package.json packages/client-sdk/
 RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
+    --mount=type=secret,id=npmrc,target=/root/.npmrc,required=true \
     pnpm install --frozen-lockfile --filter @helix-x-rawla/frontend...
 
-COPY example/helix-x-rawla/tsconfig.base.json ./
-COPY example/helix-x-rawla/packages/client-sdk/ packages/client-sdk/
-COPY example/helix-x-rawla/apps/frontend/ apps/frontend/
+COPY tsconfig.base.json ./
+COPY packages/client-sdk/ packages/client-sdk/
+COPY apps/frontend/ apps/frontend/
 # The guide (docsify). `vite build` copies it to dist/guide/, served at /guide/.
-COPY example/helix-x-rawla/docs/ docs/
+COPY docs/ docs/
 
 # `vite build` runs in production mode and reads the committed .env.production:
 # VITE_API_SERVER is empty, so the bundle calls /api on its own origin.
@@ -71,9 +63,9 @@ ENV BACKEND_UPSTREAM=http://backend:3001 \
     PORT=80 \
     NGINX_ENTRYPOINT_LOCAL_RESOLVERS=1
 
-COPY example/helix-x-rawla/apps/frontend/nginx/default.conf.template /etc/nginx/templates/default.conf.template
-COPY --chmod=0755 example/helix-x-rawla/apps/frontend/nginx/15-backend-upstream.envsh /docker-entrypoint.d/15-backend-upstream.envsh
-COPY --from=build /ws/example/helix-x-rawla/apps/frontend/dist /usr/share/nginx/html
+COPY apps/frontend/nginx/default.conf.template /etc/nginx/templates/default.conf.template
+COPY --chmod=0755 apps/frontend/nginx/15-backend-upstream.envsh /docker-entrypoint.d/15-backend-upstream.envsh
+COPY --from=build /app/apps/frontend/dist /usr/share/nginx/html
 
 EXPOSE 80
 HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \

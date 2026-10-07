@@ -9,7 +9,7 @@ import {
   CardBody,
   CardHeader,
   DescriptionList,
-} from '@helix-x/design-system';
+} from '@helix-x/web/design-system';
 import { PortalAdminLayout } from '../../../shared/PortalAdminLayout';
 import { GateBadges } from '../components/GateBadges';
 import { ReasonDialog } from '../components/ReasonDialog';

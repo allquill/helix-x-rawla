@@ -1,6 +1,6 @@
 import { forwardRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Alert, Button, Card, CardBody, Stepper } from '@helix-x/design-system';
+import { Alert, Button, Card, CardBody, Stepper } from '@helix-x/web/design-system';
 import { useRegistrationConfig } from '../hooks/useRegistrationConfig';
 import { STEP_FIELDS, stepOf, useSubmitRegistration } from '../hooks/useSubmitRegistration';
 import {

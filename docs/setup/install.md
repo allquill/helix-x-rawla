@@ -8,34 +8,29 @@ For a developer's machine. To put the portal on a server, see
 - Node.js 22 or newer, and pnpm 9.12.0
 - `sqlite3` on the command line (or a PostgreSQL server — see
   [Database and migrations](/setup/database.md#local-development-postgresql))
-- The three framework checkouts **beside** this one. Every `@helix-x/*`
-  dependency is a relative path, so the folder layout matters:
+- Access to the Nexus npm registry. The framework (`@helix-x/web`,
+  `@helix-x/backend`, `@helix-x/core-sdk`) is installed from
+  `packages.allquill.com` like any other dependency. Put the registry and your
+  credentials in an `.npmrc` at the repo root — git ignores it:
 
 ```
-helix-x/
-  framework/
-    helix-x-web/          the React kernel, shell, design system and plugins
-    helix-x-backend/      the NestJS modules (must be packed once)
-    helix-x-core-sdk/     the framework's half of the API client
-  example/
-    helix-x-rawla/        this repository
+@helix-x:registry=https://packages.allquill.com/repository/allquill-npm/
+//packages.allquill.com/repository/allquill-npm/:_auth=<base64 of user:password>
+always-auth=true
 ```
 
 ## Install
 
 ```bash
-# from the helix-x/ root
-cd framework/helix-x-backend  && pnpm install && pnpm run pack
-cd ../helix-x-web             && pnpm install
-cd ../helix-x-core-sdk        && pnpm install && pnpm build
-cd ../../example/helix-x-rawla && pnpm install
+pnpm install
 
 cp apps/backend/.env.example  apps/backend/.env
 cp apps/frontend/.env.example apps/frontend/.env
 ```
 
-It is `pnpm run pack`, not `pnpm pack`: `pack` is a built-in pnpm command that
-shadows the script, exits successfully, and repacks nothing.
+No framework checkout is needed. To run against framework changes that are
+not released yet, see "Working against unreleased framework code" in
+`CLAUDE.md` (`pnpm fw:local`).
 
 ## Create the database
 

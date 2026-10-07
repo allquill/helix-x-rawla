@@ -1,0 +1,106 @@
+# Builds and tests the portal, and on main publishes both images.
+#
+# The framework arrives from Nexus like any other dependency (@helix-x/web,
+# @helix-x/backend, @helix-x/core-sdk): nothing here checks out `framework/`.
+# The lockfile guard fails a lockfile written by `pnpm fw:local` /
+# `pnpm fw:packed`, which would point at a checkout CI does not have.
+#
+# Repository settings this needs:
+#   vars.NEXUS_NPM_URL         npm group repo, e.g. https://packages.allquill.com/repository/allquill-npm/
+#   secrets.NEXUS_NPM_AUTH     base64 "user:password" of a read-only user (npm `_auth`)
+#   secrets.DOCKER_USERNAME    docker.allquill.com
+#   secrets.DOCKER_PASSWORD
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main, develop]
+    tags: ['v*']
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: corepack enable
+
+      - name: Lockfile resolves the framework from the registry
+        run: node scripts/check-lockfile.mjs
+
+      - name: Registry credentials
+        env:
+          URL: ${{ vars.NEXUS_NPM_URL }}
+          AUTH: ${{ secrets.NEXUS_NPM_AUTH }}
+        run: |
+          host="${URL#https://}"
+          {
+            echo "@helix-x:registry=${URL}"
+            echo "//${host}:_auth=${AUTH}"
+            echo "always-auth=true"
+          } > "$HOME/.npmrc"
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+      - run: pnpm typecheck
+      - run: pnpm test
+      - run: pnpm lint
+
+  images:
+    needs: verify
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        app: [backend, frontend]
+    steps:
+      - uses: actions/checkout@v4
+
+      # The image's install reads this as a BuildKit secret; it never enters a layer.
+      - name: Registry credentials
+        env:
+          URL: ${{ vars.NEXUS_NPM_URL }}
+          AUTH: ${{ secrets.NEXUS_NPM_AUTH }}
+        run: |
+          host="${URL#https://}"
+          {
+            echo "@helix-x:registry=${URL}"
+            echo "//${host}:_auth=${AUTH}"
+            echo "always-auth=true"
+          } > "$RUNNER_TEMP/npmrc"
+
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: docker.allquill.com
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: docker.allquill.com/helix-x-rawla-${{ matrix.app }}
+          tags: |
+            type=sha,format=short
+            type=ref,event=tag
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/${{ matrix.app }}/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          secret-files: npmrc=${{ runner.temp }}/npmrc
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=${{ matrix.app }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.app }}

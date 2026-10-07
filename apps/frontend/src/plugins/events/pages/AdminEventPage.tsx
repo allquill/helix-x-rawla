@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { RouteViewProps } from '@helix-x/web';
-import { Alert, Badge, Button, Tabs } from '@helix-x/design-system';
+import { Alert, Badge, Button, Tabs } from '@helix-x/web/design-system';
 import { PortalAdminLayout } from '../../../shared/PortalAdminLayout';
 import { CloseTab } from '../components/admin/CloseTab';
 import { DetailsTab } from '../components/admin/DetailsTab';
