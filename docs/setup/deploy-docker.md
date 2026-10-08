@@ -52,17 +52,16 @@ backend never needs to be public.
 - **Access to the Nexus npm registry.** The framework (`@helix-x/web`,
   `@helix-x/backend`, `@helix-x/core-sdk`) is installed from
   `packages.allquill.com` like any other dependency, so the image build needs
-  credentials. They go in an `.npmrc` at the repo root, which git ignores:
+  credentials. The repo's `.npmrc` names the registry and goes into the build;
+  the credential lives in your `~/.npmrc` (see [Install and run](/setup/install.md)):
 
-  ```
-  @helix-x:registry=https://packages.allquill.com/repository/allquill-npm/
-  //packages.allquill.com/repository/allquill-npm/:_auth=<base64 of user:password>
-  always-auth=true
+  ```bash
+  NPM_TOKEN=$(printf 'user:password' | base64) pnpm registry:login
   ```
 
-  `pnpm docker:build` hands that file to the build as a BuildKit secret, which
+  `pnpm docker:build` hands `~/.npmrc` to the build as a BuildKit secret, which
   is mounted only while dependencies install. It never ends up in an image
-  layer. To use a different file, set `NPMRC=/path/to/.npmrc`.
+  layer. To use a different file, set `NPMRC=/path/to/npmrc`.
 - **Image registry access** when you publish or pull:
   `docker login docker.allquill.com`.
 
@@ -94,7 +93,8 @@ native modules `bcrypt` and `better-sqlite3` ship glibc prebuilds.
 2. **Drop to `node`** with `setpriv`. The application never runs as root.
 3. **Maintenance, if asked:** with `DB_MAINTENANCE=true`, stop here and idle,
    so a shell can be opened to apply migrations ([Data, migrations and backups](/setup/production.md#data-migrations-and-backups)).
-4. **Start:** `exec node dist/main`. **It never migrates.** Before serving,
+4. **Start:** `exec node dist/main`. It migrates only with
+   `DB_AUTO_MIGRATE=true`, applying the pending files first. Before serving,
    the app checks `schema_migrations` against the versions this build needs,
    for the framework's track and this app's. If the database is behind, it
    exits and prints the exact migration files and commands to run, in order.
@@ -129,7 +129,7 @@ each Dockerfile**, so each image keeps its own list:
 `apps/frontend/Dockerfile.dockerignore`.
 
 Both are **allow-lists**: they ignore `*`, then re-include only what that
-image needs. Local `.env` files, the `.npmrc` credentials, `data/`,
+image needs. Local `.env` files, the registry credentials, `data/`,
 `node_modules` and `dist` never enter a build. The only env file in the frontend image is the committed
 `.env.production`, which holds public `VITE_*` values only.
 

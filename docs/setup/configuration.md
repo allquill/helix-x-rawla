@@ -62,6 +62,7 @@ variables live in `apps/backend/.env` (template: `apps/backend/.env.example`).
 | `DB_PATH` | `/data/helix_x.db` (Image, Compose) | | SQLite file (SQLite only). Keep it on a volume. |
 | `DB_SYNCHRONIZE` | off | | Leave it `false`: migrations own the schema. `true` rebuilds tables from entities and can drop data. |
 | `DB_LOGGING` | on in `development`, off otherwise | | `true`, `false`, `all`, or a list of TypeORM levels (`query,error,schema,warn,info,log`) |
+| `DB_AUTO_MIGRATE` | `false` | | `true` applies pending migrations at startup, before the schema check — the same as `pnpm db:migrate`. SQLite: a `<DB_PATH>.pre-migrate-<time>` copy is written first. Postgres: an advisory lock stops two instances migrating at once. Off, the app refuses a database that is behind and lists the files to apply ([Database and migrations](/setup/database.md)). |
 | `DB_MAINTENANCE` | `false` | | `true` keeps the container up **without** starting the app, so you can open a shell and apply migrations by hand, e.g. on a new Render disk. Set it back to `false` afterwards. |
 | `MIGRATIONS_DIR` | `/opt/migrations` (Image) | | Where the startup error message says the migration files are: `<dir>/helix-x/` and `<dir>/rawla/`. Unset, it names the framework's inside `node_modules/@helix-x/backend/migrations` and this app's in `apps/backend/migrations` |
 

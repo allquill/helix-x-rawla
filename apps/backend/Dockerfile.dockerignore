@@ -6,7 +6,7 @@
 #
 # Allow-list: exclude everything, then re-include only what the backend image
 # needs. Anything new has to be added here deliberately — which is how local
-# .env secrets, the .npmrc credentials and the SQLite database stay out of the
+# .env secrets, the registry credentials and the SQLite database stay out of the
 # image. (Registry auth arrives as a BuildKit secret instead.)
 
 *
@@ -17,6 +17,8 @@
 !pnpm-lock.yaml
 !pnpm-workspace.yaml
 !.pnpmfile.cjs
+# Names the registry only; the credential arrives as a BuildKit secret.
+!.npmrc
 !scripts/check-lockfile.mjs
 !tsconfig.base.json
 !apps/frontend/package.json

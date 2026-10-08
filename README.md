@@ -48,14 +48,13 @@ nothing else in the app changes.
 ## Quick start
 
 The framework is three ordinary dependencies from Nexus — `@helix-x/web`,
-`@helix-x/backend`, `@helix-x/core-sdk` — so this repo builds on its own. Put
-the registry and your credentials in an `.npmrc` at the repo root (git ignores
-it):
+`@helix-x/backend`, `@helix-x/core-sdk` — so this repo builds on its own. The
+committed `.npmrc` names the registry; your credential goes in your user-level
+`~/.npmrc` (pnpm will not read one from a committed file):
 
-```
-@helix-x:registry=https://packages.allquill.com/repository/allquill-npm/
-//packages.allquill.com/repository/allquill-npm/:_auth=<base64 of user:password>
-always-auth=true
+```bash
+export NPM_TOKEN=$(printf 'user:password' | base64)   # your Nexus account
+pnpm registry:login                                  # writes it to ~/.npmrc, once
 ```
 
 ```bash

@@ -11,7 +11,8 @@
 #
 # The registry credentials arrive as a BuildKit secret (`--secret id=npmrc`),
 # mounted only for the install step — never in a layer, never in the image.
-# The secret is a complete .npmrc: the `@helix-x:registry=` line and its auth.
+# The secret is a user-level .npmrc holding the credential (`pnpm registry:login`
+# writes it to ~/.npmrc); the committed .npmrc in the context names the registry.
 #
 # Ignore rules live in Dockerfile.dockerignore beside this file (see the backend
 # Dockerfile for why it is not a plain .dockerignore).
@@ -29,7 +30,7 @@ RUN corepack enable
 # .pnpmfile.cjs is a no-op here (HELIX_FRAMEWORK is unset), but the lockfile
 # records its checksum, so --frozen-lockfile needs it present.
 WORKDIR /app
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .pnpmfile.cjs ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .pnpmfile.cjs .npmrc ./
 # A lockfile written by `pnpm fw:local` / `fw:packed` points at a framework
 # checkout the image does not have; say so instead of ERR_PNPM_OUTDATED_LOCKFILE.
 COPY scripts/check-lockfile.mjs scripts/

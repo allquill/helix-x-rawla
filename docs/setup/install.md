@@ -10,13 +10,12 @@ For a developer's machine. To put the portal on a server, see
   [Database and migrations](/setup/database.md#local-development-postgresql))
 - Access to the Nexus npm registry. The framework (`@helix-x/web`,
   `@helix-x/backend`, `@helix-x/core-sdk`) is installed from
-  `packages.allquill.com` like any other dependency. Put the registry and your
-  credentials in an `.npmrc` at the repo root — git ignores it:
+  `packages.allquill.com` like any other dependency. The repo's `.npmrc`
+  names the registry; your credential goes in your own `~/.npmrc`, once:
 
-```
-@helix-x:registry=https://packages.allquill.com/repository/allquill-npm/
-//packages.allquill.com/repository/allquill-npm/:_auth=<base64 of user:password>
-always-auth=true
+```bash
+export NPM_TOKEN=$(printf 'user:password' | base64)   # your Nexus account
+pnpm registry:login                                  # writes it to ~/.npmrc, once
 ```
 
 ## Install

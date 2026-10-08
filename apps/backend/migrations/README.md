@@ -7,9 +7,10 @@ upgrades, sample data, troubleshooting and writing a migration — is
 
 ## The rules
 
-- The backend **never** creates or changes a table. It checks
-  `schema_migrations` at startup and refuses to start, printing the exact
-  commands, if the database is behind.
+- The schema is owned by these files. The backend checks `schema_migrations`
+  at startup and refuses to start, printing the exact commands, if the
+  database is behind — unless `DB_AUTO_MIGRATE=true`, when it first applies
+  the pending files itself (see below).
 - Two tracks, **always the framework's first**:
   1. `helix-x` — `apps/backend/node_modules/@helix-x/backend/migrations/{sqlite,postgres}/`
   2. `rawla` — this folder, `{sqlite,postgres}/`
@@ -19,7 +20,26 @@ upgrades, sample data, troubleshooting and writing a migration — is
   the `documents:*` permissions that the framework's `0002` creates; applied
   first it grants nothing and still reports success.
 
-## A new database
+## Applying them for you
+
+`pnpm db:migrate` applies every pending file, in order, to the database in
+`apps/backend/.env` (or `DB_PATH` / `DB_TYPE` + `DATABASE_URL` set inline), and
+does nothing if there is none. Inside the image it is
+`node dist/database/migrate-cli.js`. Starting the app with
+`DB_AUTO_MIGRATE=true` runs the same step first.
+
+- It runs exactly the files the startup check would list — nothing else.
+- **SQLite:** a copy is written to `<DB_PATH>.pre-migrate-<time>` first. That
+  is the undo: migrations are forward-only.
+- **PostgreSQL:** an advisory lock means two instances starting together
+  apply each file once.
+- A failing file is rolled back and stops the run; the database stays at the
+  last file that completed, and the next run resumes there.
+
+The manual commands below remain the way to apply a file you want to review
+or run step by step.
+
+## A new database, by hand
 
 ```bash
 # SQLite
@@ -36,7 +56,7 @@ for f in apps/backend/node_modules/@helix-x/backend/migrations/postgres/*.sql \
 done
 ```
 
-## An existing database
+## An existing database, by hand
 
 Apply only the files it is missing, framework track first, then start the new
 build. The startup refusal lists them by name.

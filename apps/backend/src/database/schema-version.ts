@@ -58,6 +58,11 @@ export async function assertSchemaVersion(dataSource: DataSource): Promise<void>
   try {
     await assertSchemaTracks(dataSource, schemaTracks());
   } catch (error) {
-    throw new Error(`${(error as Error).message}\nSee apps/backend/migrations/README.md.`);
+    throw new Error(
+      `${(error as Error).message}\n` +
+        'Or apply them all at once: `pnpm db:migrate` (in the image: `node dist/database/migrate-cli.js`),\n' +
+        'or start the app with DB_AUTO_MIGRATE=true.\n' +
+        'See apps/backend/migrations/README.md.',
+    );
   }
 }

@@ -5,8 +5,7 @@
 # The lockfile guard fails a lockfile written by `pnpm fw:local` /
 # `pnpm fw:packed`, which would point at a checkout CI does not have.
 #
-# Repository settings this needs:
-#   vars.NEXUS_NPM_URL         npm group repo, e.g. https://packages.allquill.com/repository/allquill-npm/
+# Repository settings this needs (the registry URL is in the committed .npmrc):
 #   secrets.NEXUS_NPM_AUTH     base64 "user:password" of a read-only user (npm `_auth`)
 #   secrets.DOCKER_USERNAME    docker.allquill.com
 #   secrets.DOCKER_PASSWORD
@@ -35,17 +34,15 @@ jobs:
       - name: Lockfile resolves the framework from the registry
         run: node scripts/check-lockfile.mjs
 
+      # The committed .npmrc names the registry only; pnpm will not expand a
+      # credential there, so it goes in the user-level ~/.npmrc.
+      - name: No credential in the committed .npmrc
+        run: "! grep -nE '_auth|_authToken|_password' .npmrc"
+
       - name: Registry credentials
         env:
-          URL: ${{ vars.NEXUS_NPM_URL }}
-          AUTH: ${{ secrets.NEXUS_NPM_AUTH }}
-        run: |
-          host="${URL#https://}"
-          {
-            echo "@helix-x:registry=${URL}"
-            echo "//${host}:_auth=${AUTH}"
-            echo "always-auth=true"
-          } > "$HOME/.npmrc"
+          NPM_TOKEN: ${{ secrets.NEXUS_NPM_AUTH }}
+        run: node scripts/registry-login.mjs
 
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
@@ -66,15 +63,9 @@ jobs:
       # The image's install reads this as a BuildKit secret; it never enters a layer.
       - name: Registry credentials
         env:
-          URL: ${{ vars.NEXUS_NPM_URL }}
-          AUTH: ${{ secrets.NEXUS_NPM_AUTH }}
-        run: |
-          host="${URL#https://}"
-          {
-            echo "@helix-x:registry=${URL}"
-            echo "//${host}:_auth=${AUTH}"
-            echo "always-auth=true"
-          } > "$RUNNER_TEMP/npmrc"
+          NPM_TOKEN: ${{ secrets.NEXUS_NPM_AUTH }}
+          NPM_CONFIG_USERCONFIG: ${{ runner.temp }}/npmrc
+        run: node scripts/registry-login.mjs
 
       - uses: docker/setup-qemu-action@v3
       - uses: docker/setup-buildx-action@v3

@@ -103,6 +103,43 @@ databases only. The full guide, including upgrades and troubleshooting, is
 
 The frontend's health check passes once nginx is serving.
 
+### If Render builds the service from the repository
+
+The Blueprint pulls finished images, so Render never installs a package and
+needs no npm credential. A service you create as a **Node** (or **Docker**)
+service instead builds from this repo on Render, runs `pnpm install` itself, and
+needs the Nexus credential:
+
+1. In the service's **Environment**, add `NPM_TOKEN` = the base64 of
+   `user:password` for `packages.allquill.com` (a read-only account).
+2. Set the **Build Command** to:
+
+   ```bash
+   node scripts/registry-login.mjs && pnpm install --frozen-lockfile --prod=false --config.confirm-modules-purge=false && pnpm run build
+   ```
+
+   - The login comes **first**, so the install has the credential. It writes
+     to Render's user-level `~/.npmrc`. (Not inside the `build` script — that
+     runs after the install.)
+   - `--prod=false`: `render.yaml` sets `NODE_ENV=production`, which makes
+     `pnpm install` skip devDependencies — and `turbo`, `typescript`,
+     `@nestjs/cli` and `vite` are all devDependencies. The symptom is
+     `sh: 1: turbo: not found`. The app still runs with `NODE_ENV=production`.
+   - `--config.confirm-modules-purge=false`: when Render restores a cached
+     production-only `node_modules`, pnpm must rebuild it and otherwise stops
+     to ask for confirmation, which a build cannot answer.
+   - `&&`, not `;`: with `;` a failed install still runs the build, and the log
+     shows the build's error instead of the install's.
+
+Do **not** put the credential, or `${NPM_TOKEN}`, in the committed `.npmrc`.
+pnpm ignores credentials that come from a project `.npmrc` — the build log says
+`WARN Ignored project-level auth setting …` and the install then fails with 401
+— because anyone able to commit could otherwise redirect the registry and
+collect the token.
+
+The lockfile must resolve the framework from Nexus (`pnpm check:lockfile`), or
+the install fails with `ERR_PNPM_OUTDATED_LOCKFILE`.
+
 ## 3. After the first deploy
 
 1. **Set the public URLs.** Copy `rawla-frontend`'s URL from its dashboard,

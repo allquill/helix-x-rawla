@@ -43,7 +43,8 @@ What to check before going live, how the data is kept safe, and how a release is
   ship inside `@helix-x/backend`; this app's (`rawla`) live in
   `apps/backend/migrations/{sqlite,postgres}/NNNN_*.sql`. The image carries
   both, at `/opt/migrations/helix-x/` and `/opt/migrations/rawla/`. **Apply
-  the framework's first.** The backend never migrates. At startup it checks
+  the framework's first** — or let the app do it: `DB_AUTO_MIGRATE=true`, or
+  `node dist/database/migrate-cli.js` in the container. Otherwise it checks
   `schema_migrations` and refuses to run against a database where either
   track is behind, printing what to apply.
   - SQLite: `sqlite3 -bail <db> < /opt/migrations/<track>/sqlite/NNNN_x.sql`

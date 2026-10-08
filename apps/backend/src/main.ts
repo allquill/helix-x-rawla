@@ -9,6 +9,7 @@ import { DataSource } from 'typeorm';
 import { AppModule } from './app.module';
 import { connectionOptions } from './database/connection';
 import { assertSchemaVersion } from './database/schema-version';
+import { runMigrations } from './database/migrate';
 
 /**
  * Refuse to start on a database that is not at SCHEMA_VERSION. It runs on its
@@ -28,6 +29,10 @@ async function checkSchema(): Promise<void> {
 
 async function bootstrap() {
   try {
+    // DB_AUTO_MIGRATE=true: apply pending migrations first (what `pnpm
+    // db:migrate` does). Off by default — the check below then refuses a
+    // database that is behind and prints the files to apply by hand.
+    if (process.env.DB_AUTO_MIGRATE === 'true') await runMigrations();
     await checkSchema();
   } catch (error) {
     console.error(`\n${(error as Error).message}\n`);

@@ -72,13 +72,16 @@ asymmetry is the security property; do not "simplify" it.
 Node ≥ 22, pnpm 9.12.0. Everything runs through Turborepo from the repo root.
 
 ```bash
-pnpm install          # needs .npmrc with Nexus credentials (see below)
+pnpm registry:login   # once: NPM_TOKEN=<base64 user:password> → your ~/.npmrc
+pnpm install
 pnpm build            # the repo-wide gate
 pnpm typecheck
 pnpm test
 pnpm lint
 
 pnpm dev:frontend     # :5173   pnpm dev:backend  # :3001
+pnpm start:frontend   # the production build on :5173 (vite preview; /api proxied to
+                      # BACKEND_UPSTREAM, default :3001 — what nginx does in the image)
 pnpm dev:agents       # :2024   pnpm dev:mcp      # :3002
 
 pnpm generate:sdk   # regenerate the API client
@@ -91,6 +94,7 @@ pnpm fw:registry      # …and back to the Nexus versions
 for f in apps/backend/node_modules/@helix-x/backend/migrations/sqlite/*.sql apps/backend/migrations/sqlite/*.sql; do
   sqlite3 -bail apps/backend/data/helix_x.db < "$f" || break; done
 pnpm seed:sample      # sample members via the API; DB_CONTAINER=… for a containerised DB
+pnpm db:migrate       # apply every pending migration, both tracks (DB_AUTO_MIGRATE=true does it at boot)
 pnpm db:schema:log    # SQL the entities still need vs the database — drafts a migration, checks drift
 pnpm clean            # node_modules, dist, .turbo — a full reinstall follows
 ```
@@ -136,8 +140,12 @@ Each is the whole of one framework repo, assembled by that repo's
 here. Versions are `0.0.x`, where a caret matches exactly one version, so
 **every framework release is a version bump here** — of whichever of the three was released; each is versioned on its own.
 
-`.npmrc` (git-ignored) maps `@helix-x` to Nexus and carries your credentials;
-CI writes its own, and the Docker builds take it as a BuildKit secret.
+The committed `.npmrc` maps `@helix-x` to Nexus and holds **no credential** —
+pnpm refuses to expand `${VAR}` in a project `.npmrc` credential, and CI fails
+if one appears. The credential lives in the user-level `~/.npmrc`, written by
+`pnpm registry:login` from `NPM_TOKEN` (base64 `user:password`): by you once, by
+CI, and by the Render build command. The Docker builds take `~/.npmrc` as a
+BuildKit secret.
 
 **`@helix-x/web` peers everything that must exist once** — `react`,
 `react-dom`, `react-router-dom`, `axios`, `zod`, `react-hook-form`,
@@ -373,7 +381,10 @@ of one `schema_migrations` table, always applied in this order:
 2. **`rawla`** — this app's tables and everything the portal needs to run:
    `apps/backend/migrations/{sqlite,postgres}/NNNN_*.sql`.
 
-The backend never migrates. There are no TypeORM migrations, and
+The backend never migrates **unless asked**: `pnpm db:migrate`, or
+`DB_AUTO_MIGRATE=true` at startup, applies exactly the pending files the check
+would list (`src/database/migrate.ts` — a SQLite backup copy first, a Postgres
+advisory lock around it). There are no TypeORM migrations, and
 `synchronize` is off unless `DB_SYNCHRONIZE=true`. **The app refuses to
 start** unless both tracks have reached what this build needs
 (`HELIX_SCHEMA_VERSION` from the package, `SCHEMA_VERSION` in

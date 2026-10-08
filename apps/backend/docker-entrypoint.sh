@@ -7,11 +7,12 @@
 # then fail with "unable to open database file". The app itself never runs as
 # root.
 #
-# The schema is NOT migrated here. It is owned by the numbered SQL files in
-# /opt/migrations/helix-x/ (the framework's, from @helix-x/backend) and
-# /opt/migrations/rawla/ (apps/backend/migrations/), applied by hand in that
-# order. The app checks schema_migrations before it starts and refuses — with
-# the exact commands to run — when either is missing a migration.
+# The schema is owned by the numbered SQL files in /opt/migrations/helix-x/
+# (the framework's, from @helix-x/backend) and /opt/migrations/rawla/
+# (apps/backend/migrations/), in that order. The app checks schema_migrations
+# before it starts and refuses — with the exact commands to run — when either
+# is missing a migration. With DB_AUTO_MIGRATE=true the app applies the pending
+# files itself first (dist/database/migrate.js); nothing here changes.
 set -e
 
 # DB_TYPE=postgres keeps no file under /data: the ownership fix below is
@@ -44,7 +45,9 @@ fi
 # hand — the app itself refuses to start on a database that is behind, which
 # would otherwise leave nothing running to shell into. Turn it off and restart.
 if [ "${DB_MAINTENANCE:-false}" = "true" ]; then
-  echo "DB_MAINTENANCE: the app is NOT running. For a new SQLite database, from a shell:"
+  echo "DB_MAINTENANCE: the app is NOT running. To apply every pending migration, from a shell:"
+  echo "  node dist/database/migrate-cli.js"
+  echo "Or one file at a time — for a new SQLite database:"
   echo "  for f in ${MIGRATIONS_DIR:-/opt/migrations}/helix-x/sqlite/*.sql ${MIGRATIONS_DIR:-/opt/migrations}/rawla/sqlite/*.sql; do"
   echo "    sqlite3 -bail ${DB_PATH:-/data/helix_x.db} < \"\$f\" || break; done"
   echo "To upgrade, apply only the newer files, each by its full name."

@@ -5,7 +5,7 @@
 # separate allow-lists. Paths are relative to this repo's root, the context.
 #
 # Allow-list: exclude everything, then re-include only what the frontend image
-# needs. Local .env files and the .npmrc credentials stay out; only the
+# needs. Local .env files and the registry credentials stay out; only the
 # committed .env.production (public VITE_* values, no secrets) goes in.
 # (Registry auth arrives as a BuildKit secret instead.)
 
@@ -17,6 +17,8 @@
 !pnpm-lock.yaml
 !pnpm-workspace.yaml
 !.pnpmfile.cjs
+# Names the registry only; the credential arrives as a BuildKit secret.
+!.npmrc
 !scripts/check-lockfile.mjs
 !tsconfig.base.json
 !apps/backend/package.json

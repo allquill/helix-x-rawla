@@ -19,7 +19,11 @@ of one `schema_migrations` table:
   `apps/backend/migrations/sqlite/NNNN_*.sql` and
   `apps/backend/migrations/postgres/NNNN_*.sql`. Applied second.
 
-The backend never migrates. TypeORM migrations are gone, `synchronize` is
+The backend never migrates unless asked — `pnpm db:migrate`, or
+`DB_AUTO_MIGRATE=true` at startup, which run exactly the pending files, in
+order, through `src/database/migrate.ts`. That is why **every file must insert
+its own `schema_migrations` row**: the runner checks after each file and stops
+if the version did not move. TypeORM migrations are gone, `synchronize` is
 off, and the app **refuses to start** unless both tracks have reached the
 version this build needs: `HELIX_SCHEMA_VERSION` from the installed package,
 and `SCHEMA_VERSION` in `src/database/schema-version.ts`. The entities

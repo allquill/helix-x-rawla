@@ -59,10 +59,34 @@ checks that they exist and refuses a database the migrations have not set up.
   in the image, does not expand `0002_*.sql` in a `<` redirection. The glob
   sorts `0001`, `0002`, … in order, so a loop applies them in the right order.
 
-## Set up a database
+## Applying migrations automatically
+
+Two ways, the same code — both run exactly the files the startup check would
+list, in order, and do nothing if none is pending:
+
+| | Command |
+|---|---|
+| Once, from the repo root | `pnpm db:migrate` (reads `apps/backend/.env`; `DB_PATH=…` or `DB_TYPE=postgres DATABASE_URL=…` inline wins) |
+| Inside the backend container | `docker exec -u node <container> node dist/database/migrate-cli.js` — **`-u node`**, or the files it creates are root-owned and the app cannot write them |
+| On every start | set `DB_AUTO_MIGRATE=true` ([Configuration](/setup/configuration.md#backend-runtime)) — in `docker/portal/.env` for Compose |
+
+- **SQLite:** a copy is written to `<DB_PATH>.pre-migrate-<time>` before the
+  first file. That is the undo — migrations are forward-only. Delete old copies
+  once you are happy.
+- **PostgreSQL:** an advisory lock means instances that start together apply
+  each file once; the others wait, then find nothing to do. Back up first
+  (`pg_dump`, or your provider's snapshot).
+- **A failing file stops the run** and is rolled back; the database stays at
+  the last file that completed. Fix the cause and run it again.
+
+Leave `DB_AUTO_MIGRATE` off where you want a person to review each upgrade
+first — the app then refuses to start on a database that is behind, as below.
+
+## Set up a database by hand
 
 Every recipe runs **from the repo root**, and every one ends with a database
-at the latest version of both tracks.
+at the latest version of both tracks. `pnpm db:migrate` does the same in one
+step.
 
 ### Local development: SQLite (the default)
 
@@ -231,8 +255,9 @@ Never run `seed:sample` against a real deployment.
 ## Upgrade an existing database
 
 When a release adds migration files (in this folder, or in a new
-`@helix-x/backend`), apply them **before** starting the new build. It refuses
-to start until they're applied.
+`@helix-x/backend`), apply them **before** starting the new build — with
+`pnpm db:migrate`, by starting it with `DB_AUTO_MIGRATE=true`, or by hand as
+below. Otherwise it refuses to start until they're applied.
 
 **1. See what's applied**, and compare it with the files in each track:
 

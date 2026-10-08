@@ -21,6 +21,7 @@
     "start:backend": "turbo run start --filter @helix-x-rawla/backend",
     "generate:sdk": "pnpm --filter @helix-x-rawla/client-sdk generate",
     "db:schema:log": "pnpm --filter @helix-x-rawla/backend schema:log",
+    "db:migrate": "pnpm --filter @helix-x-rawla/backend migrate",
     "seed:sample": "node scripts/seed-sample-data.mjs",
     "guide": "python3 scripts/serve-docs.py",
     "docker:build": "pnpm docker:build:backend && pnpm docker:build:frontend",
