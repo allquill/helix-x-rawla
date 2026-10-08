@@ -60,6 +60,18 @@ function guide(): Plugin {
 export default defineConfig({
   plugins: [react(), tailwindcss(), guide()],
   server: { port: 5173 },
+  /*
+   * `pnpm start` (vite preview) serves the production build, which calls /api
+   * on its own origin (.env.production leaves VITE_API_SERVER empty) — in a
+   * deployment nginx proxies it. Preview stands in for nginx here, so the same
+   * bundle works locally against the backend on :3001 (BACKEND_UPSTREAM, as in
+   * the image).
+   */
+  preview: {
+    port: process.env.PORT as any || 5173 ,
+    strictPort: true,
+    proxy: { '/api': process.env.BACKEND_UPSTREAM || 'http://localhost:3001' },
+  },
   resolve: {
     /*
      * `@helix-x/web` peers every package below, so a registry install already
