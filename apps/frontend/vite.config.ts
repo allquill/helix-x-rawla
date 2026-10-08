@@ -71,6 +71,7 @@ export default defineConfig({
     port: process.env.PORT as any || 5173 ,
     strictPort: true,
     proxy: { '/api': process.env.BACKEND_UPSTREAM || 'http://localhost:3001' },
+    allowedHosts: [process.env.ALLOWED_HOSTS || ""]
   },
   resolve: {
     /*
