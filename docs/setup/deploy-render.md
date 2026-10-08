@@ -69,7 +69,7 @@ the install fails with `ERR_PNPM_OUTDATED_LOCKFILE`.
 | Setting | Value |
 |---|---|
 | Build Command | `node scripts/registry-login.mjs && pnpm install --frozen-lockfile --prod=false --config.confirm-modules-purge=false && pnpm --filter @helix-x-rawla/backend build` |
-| Start Command | `cd apps/backend && node dist/main` |
+| Start Command | `pnpm run start:backend` (or `cd apps/backend && node dist/main`) |
 | Health Check Path | `/api/health` |
 | Disk | Mount path `/var/data`, 1 GB to start |
 
@@ -93,6 +93,13 @@ the install fails with `ERR_PNPM_OUTDATED_LOCKFILE`.
 | `STRIPE_SECRET_KEY` | `sk_test_…` until you take real payments |
 | `STRIPE_WEBHOOK_SECRET` | a placeholder until step 3 gives the real one |
 | `PORTAL_PUBLIC_URL`, `API_PUBLIC_URL` | both the **frontend's** URL (step 2) — emailed links, the Stripe return URL and document links are built from them |
+
+`pnpm run start:backend` runs through turbo, which by default hides every
+environment variable `turbo.json` does not declare — the backend then fails
+with `Configuration key "OAUTH_JWT_SECRET" does not exist` although the key is
+set on Render. `turbo.json` passes the whole environment through to the
+`start`, `dev` and `preview` tasks (`"passThroughEnv": ["*"]`) for this reason;
+keep it there.
 
 **The schema.** With `DB_AUTO_MIGRATE=true` the first start on the empty disk
 applies every migration (the framework's, then the portal's), and each later
