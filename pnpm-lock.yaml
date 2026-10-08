@@ -980,7 +980,7 @@ packages:
     resolution: {integrity: sha512-PAb2fH3Gl99aHCMzkr91soUuySdCNBINIiyWrccobup0ouXBhVGUaMBvVw817ub/yDZK6Tn4OBs2zqYmYXtOlw==}
 
   '@helix-x/backend@0.0.1':
-    resolution: {integrity: sha512-BLD+76W1Wro/zvOcK9wk8WnRQEpZrij2fzAHwTVsAYV50GB6Xiow/Oxmd3nWjkRDvh4n6Yuaje+9mG9SloVStw==}
+    resolution: {integrity: sha512-3phNKrA8kQW0eR/+cVnU6F3rrH50/CTAAOLZHB0NME14XRLQgbFfqCVFu1rdCxIkEa8/CB61oecUsUle4Jqakw==}
     engines: {node: '>=22'}
     peerDependencies:
       '@aws-sdk/client-s3': ^3.600.0
@@ -1027,25 +1027,49 @@ packages:
         optional: true
       '@modelcontextprotocol/sdk':
         optional: true
+      '@nestjs/common':
+        optional: true
+      '@nestjs/config':
+        optional: true
+      '@nestjs/core':
+        optional: true
+      '@nestjs/platform-express':
+        optional: true
+      '@nestjs/swagger':
+        optional: true
+      '@nestjs/typeorm':
+        optional: true
+      class-transformer:
+        optional: true
+      class-validator:
+        optional: true
       deepagents:
         optional: true
       langchain:
         optional: true
       langsmith:
         optional: true
+      multer:
+        optional: true
+      reflect-metadata:
+        optional: true
+      rxjs:
+        optional: true
+      typeorm:
+        optional: true
       zod:
         optional: true
 
   '@helix-x/core-sdk@0.0.1':
-    resolution: {integrity: sha512-43rlHio2E5y6sRCdRlMtXRgFKCrR3Xc/dusRdqkl50lyR9ZmIoQxSEFO3AvjlMZDqNvF0/k4SUUVZuhCFUFGEg==}
+    resolution: {integrity: sha512-C+/nWWbHcBOmKRoAYkuKUlrTNw62TvlSygVgKPVRx/T0jbki9DJNJSFmFGGjThIY2YWj2TX+KTX1Am5z1Fzv6w==}
     engines: {node: '>=22'}
     hasBin: true
 
   '@helix-x/web@0.0.1':
-    resolution: {integrity: sha512-t2UrT4L0MhbEPzFsQuAPpnT2nU9dXqrwmzOVxcm6BRtNvC1xwcJ++nH5nRxF0akw8ddvhdd+6NHRz+rfPfwmQg==}
+    resolution: {integrity: sha512-P+bXBUQzFcP17Ytpj95Vag55EhnjDAtD+/FYQvqCbjq5M/jRS+ud1lJJOg6CFUxQRu2z8KE5fxtjLxbKmI33Vw==}
     peerDependencies:
-      '@assistant-ui/react': ^0.10.0
-      '@assistant-ui/react-langgraph': ^0.3.0
+      '@assistant-ui/react': ^0.10.42
+      '@assistant-ui/react-langgraph': ^0.5.12
       '@helix-x/core-sdk': '>=0.0.1'
       '@hookform/resolvers': ^5.9.1
       '@langchain/langgraph-sdk': ^0.0.34
@@ -6122,31 +6146,31 @@ snapshots:
       '@flystorage/file-storage': 1.2.2
       '@flystorage/local-fs': 1.2.0
       '@langchain/langgraph-sdk': 1.11.1(@langchain/core@1.2.10)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
-      '@nestjs/common': 10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2)
-      '@nestjs/config': 3.3.0(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(rxjs@7.8.2)
-      '@nestjs/core': 10.4.22(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/platform-express@10.4.22)(reflect-metadata@0.2.2)(rxjs@7.8.2)
       '@nestjs/jwt': 10.2.0(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))
       '@nestjs/passport': 10.0.3(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(passport@0.7.0)
-      '@nestjs/platform-express': 10.4.22(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@10.4.22)
-      '@nestjs/swagger': 7.4.2(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@10.4.22)(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)
-      '@nestjs/typeorm': 11.0.3(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@10.4.22)(reflect-metadata@0.2.2)(rxjs@7.8.2)(typeorm@0.3.31(better-sqlite3@13.0.3)(pg@8.23.0)(ts-node@10.9.2(@types/node@22.20.4)(typescript@5.9.3)))
       bcrypt: 6.0.0
-      class-transformer: 0.5.1
-      class-validator: 0.14.4
-      multer: 2.4.0
       nodemailer: 6.10.1
       passport: 0.7.0
       passport-http-bearer: 1.0.1
       passport-jwt: 4.0.1
-      reflect-metadata: 0.2.2
-      rxjs: 7.8.2
-      typeorm: 0.3.31(better-sqlite3@13.0.3)(pg@8.23.0)(ts-node@10.9.2(@types/node@22.20.4)(typescript@5.9.3))
     optionalDependencies:
       '@aws-sdk/client-s3': 3.1145.0
       '@aws-sdk/lib-storage': 3.1145.0(@aws-sdk/client-s3@3.1145.0)
       '@aws-sdk/s3-request-presigner': 3.1145.0
       '@flystorage/aws-s3': 1.2.0
       '@langchain/core': 1.2.10
+      '@nestjs/common': 10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2)
+      '@nestjs/config': 3.3.0(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(rxjs@7.8.2)
+      '@nestjs/core': 10.4.22(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/platform-express@10.4.22)(reflect-metadata@0.2.2)(rxjs@7.8.2)
+      '@nestjs/platform-express': 10.4.22(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@10.4.22)
+      '@nestjs/swagger': 7.4.2(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@10.4.22)(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)
+      '@nestjs/typeorm': 11.0.3(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@10.4.22)(reflect-metadata@0.2.2)(rxjs@7.8.2)(typeorm@0.3.31(better-sqlite3@13.0.3)(pg@8.23.0)(ts-node@10.9.2(@types/node@22.20.4)(typescript@5.9.3)))
+      class-transformer: 0.5.1
+      class-validator: 0.14.4
+      multer: 2.4.0
+      reflect-metadata: 0.2.2
+      rxjs: 7.8.2
+      typeorm: 0.3.31(better-sqlite3@13.0.3)(pg@8.23.0)(ts-node@10.9.2(@types/node@22.20.4)(typescript@5.9.3))
       zod: 4.6.5
     transitivePeerDependencies:
       - react
