@@ -7,7 +7,7 @@
     "node": ">=22"
   },
   "scripts": {
-    "build": "pnpm registry:login && turbo run build",
+    "build": "turbo run build",
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",
     "lint": "turbo run lint",
