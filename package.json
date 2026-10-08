@@ -17,6 +17,7 @@
     "start": "turbo run start",
     "build:frontend": "turbo run build --filter @helix-x-rawla/frontend",
     "start:frontend": "turbo run start --filter @helix-x-rawla/frontend",
+    "build:backend": "turbo run build --filter @helix-x-rawla/backend",
     "start:backend": "turbo run start --filter @helix-x-rawla/backend",
     "generate:sdk": "pnpm --filter @helix-x-rawla/client-sdk generate",
     "db:schema:log": "pnpm --filter @helix-x-rawla/backend schema:log",
