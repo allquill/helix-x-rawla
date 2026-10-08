@@ -63,7 +63,7 @@ variables live in `apps/backend/.env` (template: `apps/backend/.env.example`).
 | `DB_SYNCHRONIZE` | off | | Leave it `false`: migrations own the schema. `true` rebuilds tables from entities and can drop data. |
 | `DB_LOGGING` | on in `development`, off otherwise | | `true`, `false`, `all`, or a list of TypeORM levels (`query,error,schema,warn,info,log`) |
 | `DB_AUTO_MIGRATE` | `false` | | `true` applies pending migrations at startup, before the schema check — the same as `pnpm db:migrate`. SQLite: a `<DB_PATH>.pre-migrate-<time>` copy is written first. Postgres: an advisory lock stops two instances migrating at once. Off, the app refuses a database that is behind and lists the files to apply ([Database and migrations](/setup/database.md)). |
-| `DB_MAINTENANCE` | `false` | | `true` keeps the container up **without** starting the app, so you can open a shell and apply migrations by hand, e.g. on a new Render disk. Set it back to `false` afterwards. |
+| `DB_MAINTENANCE` | `false` | | `true` keeps the container up **without** starting the app, so you can open a shell and apply migrations by hand. `DB_AUTO_MIGRATE=true` is usually simpler. Set it back to `false` afterwards. |
 | `MIGRATIONS_DIR` | `/opt/migrations` (Image) | | Where the startup error message says the migration files are: `<dir>/helix-x/` and `<dir>/rawla/`. Unset, it names the framework's inside `node_modules/@helix-x/backend/migrations` and this app's in `apps/backend/migrations` |
 
 **Authentication**
@@ -107,7 +107,7 @@ variables live in `apps/backend/.env` (template: `apps/backend/.env.example`).
 |---|---|---|---|
 | `DOCUMENTS_SIGNING_SECRET` | — | ✅ | Signs the short-lived view and download links. At least 32 characters. **Boot fails without it.** |
 | `DOCUMENTS_STORAGE_DRIVER` | `local` | | `local` (a directory) or `s3` (any S3-compatible store) |
-| `DOCUMENTS_LOCAL_ROOT` | `data/documents` | | `local` only. Compose and Render set `/data/documents`, on the same persistent storage as the database. |
+| `DOCUMENTS_LOCAL_ROOT` | `data/documents` | | `local` only. Compose sets `/data/documents` (Render: `/var/data/documents`), on the same persistent storage as the database. |
 | `DOCUMENTS_STORAGE_NAMING` | `readable` | | `readable` keeps the file name in the stored path; `opaque` stores ids only. Naming, not encryption. New uploads only. |
 | `DOCUMENTS_MAX_FILE_SIZE_MB` | `50` | | Upload limit. The frontend's nginx allows 55 MB on `/api/documents`; raising this means raising that. |
 | `DOCUMENTS_ALLOWED_MIME_TYPES` | *(any)* | | Comma-separated, exact or wildcard (`image/*,application/pdf`) |

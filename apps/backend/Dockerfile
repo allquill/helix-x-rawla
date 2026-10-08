@@ -67,7 +67,7 @@ ENV NODE_ENV=production \
     MIGRATIONS_DIR=/opt/migrations
 
 # The sqlite3 CLI, so the numbered migrations can be applied by hand inside the
-# container (docker exec, Render Shell) — the app itself never changes the schema.
+# container (docker exec) — the app changes the schema only with DB_AUTO_MIGRATE=true.
 RUN apt-get update \
  && apt-get install -y --no-install-recommends sqlite3 \
  && rm -rf /var/lib/apt/lists/*

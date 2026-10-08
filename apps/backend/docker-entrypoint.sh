@@ -41,7 +41,7 @@ elif [ "$(id -u)" = "0" ]; then
 fi
 
 # DB_MAINTENANCE=true: keep the container up WITHOUT starting the app, so an
-# operator can open a shell (docker exec, Render Shell) and apply migrations by
+# operator can open a shell (docker exec) and apply migrations by
 # hand — the app itself refuses to start on a database that is behind, which
 # would otherwise leave nothing running to shell into. Turn it off and restart.
 if [ "${DB_MAINTENANCE:-false}" = "true" ]; then

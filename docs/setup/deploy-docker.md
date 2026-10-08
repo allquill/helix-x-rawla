@@ -33,7 +33,6 @@ backend never needs to be public.
 | `apps/backend/Dockerfile`, `apps/backend/Dockerfile.dockerignore`, `apps/backend/docker-entrypoint.sh` | Backend image |
 | `apps/frontend/Dockerfile`, `apps/frontend/Dockerfile.dockerignore`, `apps/frontend/nginx/` | Frontend image and nginx config |
 | `docker/portal/` | Docker Compose stack: `docker-compose.yml`, and `.env.example`, the single settings template |
-| `render.yaml`, `docs/setup/deploy-render.md` | Render Blueprint and step-by-step guide |
 | `scripts/seed-sample-data.mjs` | Fills a dev database with test data through the API (`pnpm seed:sample`) |
 
 ---
@@ -171,7 +170,7 @@ loading anything into your local image list.
 
 ### Multi-arch publishing
 
-Servers and Render run `linux/amd64`. An image built on an Apple Silicon Mac
+Most servers run `linux/amd64`. An image built on an Apple Silicon Mac
 with `docker:build` is `linux/arm64` only, and **an amd64 host cannot start
 it**. `docker:push` therefore builds both platforms into one tag.
 

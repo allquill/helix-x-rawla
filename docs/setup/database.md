@@ -231,12 +231,17 @@ API=http://localhost/api DB_TYPE=postgres DB_CONTAINER=rawla-portal-postgres-1 p
 
 ### Render, or any container platform
 
-With a new, empty disk the backend refuses to start, so there's nothing to
-open a shell into. Start the container in maintenance mode instead:
+The simplest: set **`DB_AUTO_MIGRATE=true`**, and the backend applies every
+migration on its first start and the new ones on each later deploy. On Render
+that is all it takes ([Deploying to Render](/setup/deploy-render.md)).
+
+To apply them yourself instead: with a new, empty disk the backend refuses to
+start, so there's nothing to open a shell into. Start the container in
+maintenance mode:
 
 1. Set **`DB_MAINTENANCE=true`** and deploy. The container stays up and
    doesn't start the app.
-2. Open a shell in it (Render: **rawla-backend → Shell**) and run:
+2. Open a shell in it and run `node dist/database/migrate-cli.js`, or file by file:
 
    ```sh
    for f in /opt/migrations/helix-x/sqlite/*.sql /opt/migrations/rawla/sqlite/*.sql; do
@@ -275,7 +280,7 @@ ready-to-run command.
 sqlite3 -bail apps/backend/data/helix_x.db < apps/backend/node_modules/@helix-x/backend/migrations/sqlite/0002_documents.sql
 sqlite3 -bail apps/backend/data/helix_x.db < apps/backend/migrations/sqlite/0003_documents_access.sql
 sqlite3 -bail apps/backend/data/helix_x.db < apps/backend/migrations/sqlite/0004_events_volunteers.sql
-# inside the container / Render Shell:
+# inside the container:
 sqlite3 -bail /data/helix_x.db < /opt/migrations/helix-x/sqlite/0002_documents.sql
 sqlite3 -bail /data/helix_x.db < /opt/migrations/rawla/sqlite/0003_documents_access.sql
 sqlite3 -bail /data/helix_x.db < /opt/migrations/rawla/sqlite/0004_events_volunteers.sql

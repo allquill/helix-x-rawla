@@ -55,8 +55,9 @@ What to check before going live, how the data is kept safe, and how a release is
   otherwise, because `/bin/sh` doesn't expand a glob in `<`). An **existing**
   database gets only the newer files. A new image whose `@helix-x/backend`
   adds a framework migration will not start until it is applied. On a
-  platform where the only shell is inside the backend container (Render),
-  start it with `DB_MAINTENANCE=true`. Every command, per environment, is in
+  platform where the only shell is inside the backend container, set
+  `DB_AUTO_MIGRATE=true`, or start it with `DB_MAINTENANCE=true` and apply
+  them from that shell. Every command, per environment, is in
   [Database and migrations](/setup/database.md).
 - **Backups.** Copy the file while the backend is stopped, or use SQLite's
   online backup:
@@ -102,11 +103,10 @@ and its schema is unchanged.
   framework's first, with `psql -v ON_ERROR_STOP=1`.
   The backend won't start on an empty database.
   [Step by step](/setup/database.md#local-development-postgresql).
-- **Render:** a Render Postgres database, instead of the disk. Add a
-  `databases:` entry to `render.yaml` and set `DATABASE_URL` from it with
-  `fromDatabase: { name: …, property: connectionString }`, plus
-  `DB_TYPE=postgres`. You can then drop the backend's `disk`, and with it the
-  single-instance and deploy-downtime limits.
+- **Render:** a Render Postgres database instead of the disk: set
+  `DB_TYPE=postgres` and `DATABASE_URL` to its internal connection string on
+  the backend, and drop the disk — and with it the single-instance and
+  deploy-downtime limits ([Deploying to Render](/setup/deploy-render.md#postgresql-instead-of-the-disk)).
 - **Backups:** use `pg_dump` or your provider's snapshots, instead of copying
   a file.
 
@@ -115,16 +115,18 @@ and its schema is unchanged.
 1. **Framework changed?** Bump whichever of `@helix-x/web`, `@helix-x/backend`
    and `@helix-x/core-sdk` was released to its new version, run `pnpm install`,
    and commit the lockfile.
-2. **Publish:** `TAG=<version> pnpm docker:push`.
+2. **Docker hosts — publish:** `TAG=<version> pnpm docker:push`.
 3. **Point the deployment at it:**
    - Compose: set `BACKEND_TAG` and `FRONTEND_TAG` in `docker/portal/.env`,
      then `docker compose pull && docker compose up -d`.
-   - Render: bump both `image.url` tags in `render.yaml` and commit.
+   - Render builds from the repo: push the commit and it rebuilds
+     ([Deploying to Render](/setup/deploy-render.md#upgrading)).
    - Elsewhere: re-run the containers with the new tag.
 4. **Migrations:** if the release adds `NNNN_*.sql` files (in
-   `apps/backend/migrations/`, or in a new `@helix-x/backend`), apply them by
-   hand, framework track first, **before** step 3. Additive changes are safe
-   for the running version.
+   `apps/backend/migrations/`, or in a new `@helix-x/backend`), apply them
+   **before** step 3 — by hand, framework track first, or with
+   `DB_AUTO_MIGRATE=true` the new backend does it as it starts. Additive
+   changes are safe for the running version.
    [How](/setup/database.md#upgrade-an-existing-database).
    Otherwise the new backend refuses to start and lists what's missing. On
    Render with a disk, apply them in the old instance's Shell, or deploy with
