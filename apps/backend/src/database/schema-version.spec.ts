@@ -3,14 +3,14 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import Database from 'better-sqlite3';
 import { DataSource } from 'typeorm';
-import { describeSchemaProblem, readSchemaTracks } from '@helix-x/backend';
-import { assertSchemaVersion, SCHEMA_VERSION, schemaTracks } from './schema-version';
+import { assertSchemaTracks, describeSchemaProblem, readSchemaTracks } from '@helix-x/backend';
+import { SCHEMA_VERSION, schemaTracks } from './schema-version';
 
 /**
- * The startup check (schema-version.ts, on @helix-x/backend's
- * assertSchemaTracks). Its message is the only guidance an operator gets when
- * a deploy is ahead of its database, so what it tells them to run — and in
- * which order — is pinned here, against real databases built from the files.
+ * The startup check (@helix-x/backend's ensureSchema → assertSchemaTracks,
+ * on this app's schemaTracks()). Its message is the only guidance an operator
+ * gets when a deploy is ahead of its database, so what it tells them to run —
+ * and in which order — is pinned here, against real databases built from the files.
  */
 describe('schema-version', () => {
   const tracks = schemaTracks({});
@@ -56,13 +56,13 @@ describe('schema-version', () => {
 
   it('accepts a database with every migration of both tracks applied', async () => {
     const ds = await database([...allOf(framework.dir), ...allOf(app.dir)]);
-    await expect(assertSchemaVersion(ds)).resolves.toBeUndefined();
+    await expect(assertSchemaTracks(ds, tracks)).resolves.toBeUndefined();
     await ds.destroy();
   });
 
   it('tells an empty database to apply the framework, then the app, with -bail and real file names', async () => {
     const ds = await database([]);
-    const error = await assertSchemaVersion(ds).catch((e: Error) => e);
+    const error = await assertSchemaTracks(ds, tracks).catch((e: Error) => e);
     await ds.destroy();
     const text = (error as Error).message;
     expect(text).toContain('never been migrated');

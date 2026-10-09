@@ -5,35 +5,21 @@ import type { NestExpressApplication } from '@nestjs/platform-express';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { ValidationPipe } from '@nestjs/common';
 import { apiReference } from '@scalar/nestjs-api-reference';
-import { DataSource } from 'typeorm';
 import { AppModule } from './app.module';
 import { connectionOptions } from './database/connection';
-import { assertSchemaVersion } from './database/schema-version';
-import { runMigrations } from './database/migrate';
-
-/**
- * Refuse to start on a database that is not at SCHEMA_VERSION. It runs on its
- * own short-lived connection BEFORE Nest boots, because module init hooks read
- * portal settings — on an unmigrated database they would fail first, with a
- * bare "no such table".
- */
-async function checkSchema(): Promise<void> {
-  const dataSource = new DataSource({ ...connectionOptions((key) => process.env[key]), entities: [] });
-  await dataSource.initialize();
-  try {
-    await assertSchemaVersion(dataSource);
-  } finally {
-    await dataSource.destroy();
-  }
-}
+import { ensureSchema } from '@helix-x/backend';
+import { schemaTracks } from './database/schema-version';
 
 async function bootstrap() {
   try {
-    // DB_AUTO_MIGRATE=true: apply pending migrations first (what `pnpm
-    // db:migrate` does). Off by default — the check below then refuses a
-    // database that is behind and prints the files to apply by hand.
-    if (process.env.DB_AUTO_MIGRATE === 'true') await runMigrations();
-    await checkSchema();
+    // Before Nest boots: module init hooks may query the database, and on an
+    // unmigrated one would fail first with a bare "no such table". With
+    // DB_AUTO_MIGRATE=true the pending migrations are applied first (what
+    // `pnpm db:migrate` does); otherwise a database that is behind is refused,
+    // with the files to apply.
+    await ensureSchema(connectionOptions((key) => process.env[key]), schemaTracks(), {
+      migrate: process.env.DB_AUTO_MIGRATE === 'true',
+    });
   } catch (error) {
     console.error(`\n${(error as Error).message}\n`);
     process.exit(1);

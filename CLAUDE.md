@@ -143,9 +143,9 @@ here. Versions are `0.0.x`, where a caret matches exactly one version, so
 The committed `.npmrc` maps `@helix-x` to Nexus and holds **no credential** —
 pnpm refuses to expand `${VAR}` in a project `.npmrc` credential, and CI fails
 if one appears. The credential lives in the user-level `~/.npmrc`, written by
-`pnpm registry:login` from `NPM_TOKEN` (base64 `user:password`): by you once, by
-CI, and by the Render build command. The Docker builds take `~/.npmrc` as a
-BuildKit secret.
+`pnpm registry:login` from `NPM_TOKEN` (base64 `user:password`) — a one-line
+`npm config set`, run by you once, by CI, and by the Render build command. The
+Docker builds take `~/.npmrc` as a BuildKit secret.
 
 **`@helix-x/web` peers everything that must exist once** — `react`,
 `react-dom`, `react-router-dom`, `axios`, `zod`, `react-hook-form`,
@@ -383,8 +383,8 @@ of one `schema_migrations` table, always applied in this order:
 
 The backend never migrates **unless asked**: `pnpm db:migrate`, or
 `DB_AUTO_MIGRATE=true` at startup, applies exactly the pending files the check
-would list (`src/database/migrate.ts` — a SQLite backup copy first, a Postgres
-advisory lock around it). There are no TypeORM migrations, and
+would list (`ensureSchema` / `migrateDatabase` from `@helix-x/backend` — a
+SQLite backup copy first, a Postgres advisory lock around it). There are no TypeORM migrations, and
 `synchronize` is off unless `DB_SYNCHRONIZE=true`. **The app refuses to
 start** unless both tracks have reached what this build needs
 (`HELIX_SCHEMA_VERSION` from the package, `SCHEMA_VERSION` in

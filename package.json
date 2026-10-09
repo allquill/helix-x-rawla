@@ -39,7 +39,7 @@
     "fw:packed": "HELIX_FRAMEWORK=packed pnpm install --no-frozen-lockfile",
     "fw:registry": "git checkout -- pnpm-lock.yaml && pnpm install",
     "check:lockfile": "node scripts/check-lockfile.mjs",
-    "registry:login": "node scripts/registry-login.mjs"
+    "registry:login": "npm config set --location=user //packages.allquill.com/repository/allquill-npm/:_auth \"${NPM_TOKEN:?set NPM_TOKEN to the base64 of user:password}\""
   },
   "devDependencies": {
     "turbo": "^2.10.12",

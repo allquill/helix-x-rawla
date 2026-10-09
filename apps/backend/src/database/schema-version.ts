@@ -1,10 +1,8 @@
 import { existsSync } from 'node:fs';
 import { join, resolve } from 'node:path';
-import type { DataSource } from 'typeorm';
 import {
   HELIX_SCHEMA_TRACK,
   HELIX_SCHEMA_VERSION,
-  assertSchemaTracks,
   helixMigrationsDir,
   type SchemaTrack,
 } from '@helix-x/backend';
@@ -20,9 +18,10 @@ import {
  *   rawla    this app's tables and configuration — apps/backend/migrations/
  *
  * Bump SCHEMA_VERSION in the same change that adds a migration pair
- * (.claude/rules/database-migrations.md). The app never migrates a database
- * itself, so this check is what turns "someone forgot to apply 0004" into a
- * clear refusal at startup instead of a missing-column error mid-request.
+ * (.claude/rules/database-migrations.md). The app migrates a database only
+ * when asked (`pnpm db:migrate`, DB_AUTO_MIGRATE=true), so this check is what
+ * turns "someone forgot to apply 0004" into a clear refusal at startup instead
+ * of a missing-column error mid-request.
  */
 export const SCHEMA_TRACK = 'rawla';
 export const SCHEMA_VERSION = '0004';
@@ -51,18 +50,4 @@ export function schemaTracks(env: NodeJS.ProcessEnv = process.env): SchemaTrack[
       dir: base ? `${base}/rawla` : join(APP_ROOT, 'migrations'),
     },
   ];
-}
-
-/** Refuse to serve on a database where either track is behind this build. */
-export async function assertSchemaVersion(dataSource: DataSource): Promise<void> {
-  try {
-    await assertSchemaTracks(dataSource, schemaTracks());
-  } catch (error) {
-    throw new Error(
-      `${(error as Error).message}\n` +
-        'Or apply them all at once: `pnpm db:migrate` (in the image: `node dist/database/migrate-cli.js`),\n' +
-        'or start the app with DB_AUTO_MIGRATE=true.\n' +
-        'See apps/backend/migrations/README.md.',
-    );
-  }
 }

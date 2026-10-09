@@ -42,7 +42,7 @@ jobs:
       - name: Registry credentials
         env:
           NPM_TOKEN: ${{ secrets.NEXUS_NPM_AUTH }}
-        run: node scripts/registry-login.mjs
+        run: npm run registry:login
 
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
@@ -65,7 +65,7 @@ jobs:
         env:
           NPM_TOKEN: ${{ secrets.NEXUS_NPM_AUTH }}
           NPM_CONFIG_USERCONFIG: ${{ runner.temp }}/npmrc
-        run: node scripts/registry-login.mjs
+        run: npm run registry:login
 
       - uses: docker/setup-qemu-action@v3
       - uses: docker/setup-buildx-action@v3

@@ -32,8 +32,8 @@ importers:
         specifier: ^1.2.0
         version: 1.2.0
       '@helix-x/backend':
-        specifier: 0.0.1
-        version: 0.0.1(2l3onyl3n5cbhzohvyhzkyafnu)
+        specifier: 0.0.2
+        version: 0.0.2(2l3onyl3n5cbhzohvyhzkyafnu)
       '@nestjs/common':
         specifier: ^10.4.0
         version: 10.4.22(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2)
@@ -979,8 +979,8 @@ packages:
   '@flystorage/stream-mime-type@1.1.0':
     resolution: {integrity: sha512-PAb2fH3Gl99aHCMzkr91soUuySdCNBINIiyWrccobup0ouXBhVGUaMBvVw817ub/yDZK6Tn4OBs2zqYmYXtOlw==}
 
-  '@helix-x/backend@0.0.1':
-    resolution: {integrity: sha512-3phNKrA8kQW0eR/+cVnU6F3rrH50/CTAAOLZHB0NME14XRLQgbFfqCVFu1rdCxIkEa8/CB61oecUsUle4Jqakw==}
+  '@helix-x/backend@0.0.2':
+    resolution: {integrity: sha512-SnXZDH9MCrksfuZle+JQsiFunujX670jHHIKIBvDHZbkJ+SHMqr8yddbGQoE8YCRAOzw9YEPPhxc20piIJQzRg==}
     engines: {node: '>=22'}
     peerDependencies:
       '@aws-sdk/client-s3': ^3.600.0
@@ -6141,7 +6141,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@helix-x/backend@0.0.1(2l3onyl3n5cbhzohvyhzkyafnu)':
+  '@helix-x/backend@0.0.2(2l3onyl3n5cbhzohvyhzkyafnu)':
     dependencies:
       '@flystorage/file-storage': 1.2.2
       '@flystorage/local-fs': 1.2.0

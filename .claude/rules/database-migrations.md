@@ -21,7 +21,7 @@ of one `schema_migrations` table:
 
 The backend never migrates unless asked — `pnpm db:migrate`, or
 `DB_AUTO_MIGRATE=true` at startup, which run exactly the pending files, in
-order, through `src/database/migrate.ts`. That is why **every file must insert
+order, through `migrateDatabase` / `ensureSchema` from `@helix-x/backend`. That is why **every file must insert
 its own `schema_migrations` row**: the runner checks after each file and stops
 if the version did not move. TypeORM migrations are gone, `synchronize` is
 off, and the app **refuses to start** unless both tracks have reached the

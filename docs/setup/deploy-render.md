@@ -38,7 +38,7 @@ Both services install `@helix-x/*` from Nexus, so both need:
    commands are below; they share this shape:
 
    ```bash
-   node scripts/registry-login.mjs && pnpm install --frozen-lockfile --prod=false --config.confirm-modules-purge=false && <build>
+   pnpm registry:login && pnpm install --frozen-lockfile --prod=false --config.confirm-modules-purge=false && <build>
    ```
 
    - The login comes **first**, so the install has the credential. It writes
@@ -68,7 +68,7 @@ the install fails with `ERR_PNPM_OUTDATED_LOCKFILE`.
 
 | Setting | Value |
 |---|---|
-| Build Command | `node scripts/registry-login.mjs && pnpm install --frozen-lockfile --prod=false --config.confirm-modules-purge=false && pnpm --filter @helix-x-rawla/backend build` |
+| Build Command | `pnpm registry:login && pnpm install --frozen-lockfile --prod=false --config.confirm-modules-purge=false && pnpm --filter @helix-x-rawla/backend build` |
 | Start Command | `pnpm run start:backend` (or `cd apps/backend && node dist/main`) |
 | Health Check Path | `/api/health` |
 | Disk | Mount path `/var/data`, 1 GB to start |
@@ -121,7 +121,7 @@ config and the reference values from the migrations, and no members. Don't run
 
 | Setting | Value |
 |---|---|
-| Build Command | `node scripts/registry-login.mjs && pnpm install --frozen-lockfile --prod=false --config.confirm-modules-purge=false && pnpm --filter @helix-x-rawla/frontend... build` |
+| Build Command | `pnpm registry:login && pnpm install --frozen-lockfile --prod=false --config.confirm-modules-purge=false && pnpm --filter @helix-x-rawla/frontend... build` |
 | Publish Directory | `apps/frontend/dist` |
 | Environment | `NPM_TOKEN`, as above |
 

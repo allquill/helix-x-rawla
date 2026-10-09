@@ -68,10 +68,11 @@ export default defineConfig({
    * the image).
    */
   preview: {
-    port: process.env.PORT as any || 5173 ,
+    port: Number(process.env.PORT) || 5173,
     strictPort: true,
     proxy: { '/api': process.env.BACKEND_UPSTREAM || 'http://localhost:3001' },
-    allowedHosts: [process.env.ALLOWED_HOSTS || ""]
+    // Comma-separated; unset keeps Vite's default (localhost only).
+    allowedHosts: process.env.ALLOWED_HOSTS?.split(',').map((host) => host.trim()).filter(Boolean),
   },
   resolve: {
     /*

@@ -12,7 +12,7 @@
 # (apps/backend/migrations/), in that order. The app checks schema_migrations
 # before it starts and refuses — with the exact commands to run — when either
 # is missing a migration. With DB_AUTO_MIGRATE=true the app applies the pending
-# files itself first (dist/database/migrate.js); nothing here changes.
+# files itself first (ensureSchema, from @helix-x/backend); nothing here changes.
 set -e
 
 # DB_TYPE=postgres keeps no file under /data: the ownership fix below is
